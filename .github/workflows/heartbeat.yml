@@ -1,0 +1,36 @@
+name: heartbeat
+# Closes the "machine was off -> monthly refresh silently skipped, nobody knows" gap (open-loop
+# liveness). On the 5th of each month, check whether a refresh branch/commit appeared this month;
+# if not, open an issue so the missed run is VISIBLE (PHILOSOPHY P6: degradation that's hidden
+# compounds). This is detection only — it never edits the matrix.
+on:
+  schedule:
+    - cron: '0 12 5 * *'   # 12:00 UTC on the 5th
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-liveness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Detect missing monthly refresh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MONTH=$(date -u '+%Y-%m')
+          # any commit this month touching the source matrix?
+          HITS=$(git log --since="${MONTH}-01" --oneline -- skills/shopping-aggregator/reference | wc -l)
+          if [ "$HITS" -eq 0 ]; then
+            echo "No refresh commit found for $MONTH — opening heartbeat issue."
+            gh issue create -R "$GITHUB_REPOSITORY" \
+              --title "heartbeat: no shopping-aggregator refresh in $MONTH" \
+              --body "The scheduled monthly refresh produced no commit to the source matrix this month. Likely the local machine was off, or the run failed. Please check the local refresh log and re-run the refresh manually if needed." \
+              || echo "issue create failed"
+          else
+            echo "Refresh activity detected for $MONTH ($HITS commit(s)) — healthy."
+          fi
