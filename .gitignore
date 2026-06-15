@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local / scratch
+*.log
+.env
+.env.*
+tmp/
+scratch/
+.refresh-tmp/
