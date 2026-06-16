@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.2] — 2026-06-16
+
+`install-guide.md` slimmed from 133 → 93 lines (30% smaller) by delegating L0 install
+mechanics (prerequisites, MCP transport types, `claude mcp add` procedure, secret-handling
+hygiene, Windows notes) to market-intel's authoritative install-guide via cross-references.
+
+This eliminates the duplicated-content drift risk that surfaced in v0.1.1 (where the same
+OS-clipboard command updates had to be made in two places). What remains in this file is
+only what's specific to shopping-aggregator's tool mix: the four shopping-tool kinds
+(MCPs, browser extensions, mobile apps, OSS self-host), user-side tool detection (extensions
+the skill can't probe automatically), and the deviation list versus market-intel.
+
+The companion-config-repo pattern reference now also points to market-intel as the canonical
+spec; the same pattern works for a `shopping-aggregator-config/` companion if a user wants
+to maintain Keepa subscription + browser-extension install state outside this matrix.
+
+No tool/matrix changes.
+
 ## [0.1.1] — 2026-06-16
 
 - **`reference/install-guide.md`** — secret-handling hygiene now lists clipboard commands for
