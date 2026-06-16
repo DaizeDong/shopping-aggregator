@@ -139,6 +139,15 @@ Hand the selected sources + sub-questions to the heavy harness:
   (CN platforms).
 - **Adjacent research** (reviews, "is this brand reliable", "should I wait for Prime Day") →
   delegate to `market-intel` or `deep-research`.
+- **Independent cross-validation + channel discovery (cross-model)** → delegate to the **Codex MCP**
+  (`mcp__codex__*` — GPT with its own web search), a genuinely independent second model + search
+  backend. Use it to (a) discover authorized channels / cheaper authentic sources your fixed retailer
+  list missed, (b) cross-check the provisional cheapest pick, (c) sanity-check authenticity /
+  counterfeit reputation. **Codex prices are L5 *leads*, never authoritative** — any price it surfaces
+  must re-pass the live-fetch + citation gate (Step 6 / guardrail #1) before entering the landed-cost
+  ranking. **Best-effort**: if the Codex MCP is not connected, skip it and note the gap (guardrail #9).
+  Call it via the **MCP server** (`codex mcp-server`), NOT Bash `codex exec` (the latter hits a
+  cloud-config egress block inside the agent sandbox). Full how-to: `reference/codex-crossval.md`.
 
 Require every subagent to return a **structured evidence unit**, not free prose:
 ```
@@ -212,7 +221,9 @@ These are **price-data-specific** extensions of the market-intel guardrails. Rea
    reverse-search subagent: scam / counterfeit / "X is a fake reseller" / refurb-not-as-advertised
    / shipping-from-China-charged-as-US / dead-on-arrival reviews. Report must include a "Risks &
    counter-evidence" section. Empty → "actively reverse-searched, none found — not proof of
-   safety."
+   safety." If the **Codex MCP** is connected, also run this reverse-search through it as an
+   independent cross-model check (treat its findings as L5 corroboration, not proof; see
+   `reference/codex-crossval.md`).
 9. **Failures become explicit gaps.** Any subagent that returns `failed/empty` triggers one query
    rewrite + retry; if still empty, list it in an explicit "Not covered" section. A report must
    never look complete while hiding a missing retailer.
