@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.1] — 2026-06-16
+
+- **`reference/install-guide.md`** — secret-handling hygiene now lists clipboard commands for
+  all three OSes (PowerShell `Get-Clipboard`, macOS `pbpaste`, Linux `xclip -o`/`wl-paste`)
+  rather than implying PowerShell. The "Windows notes" section retains PowerShell appropriately
+  since it's the Windows-specific section.
+- **`reference/refresh-protocol.md`** — "push to DaizeDong/shopping-aggregator" replaced with
+  "push to whichever Git remote this skill repo lives at."
+
+No tool/matrix changes. Forkability cleanup only.
+
 ## [0.1.0] — 2026-06-15
 
 Initial public release. Hand-curated matrix derived from a 5-subagent shopping landscape survey
