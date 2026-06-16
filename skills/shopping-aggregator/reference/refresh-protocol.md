@@ -99,8 +99,8 @@ In `CHANGELOG.md` at the repo root: date + per-domain added/removed/changed. Bum
 
 ### Commit + push
 
-To `DaizeDong/shopping-aggregator`. Heartbeat workflow checks for monthly activity — see
-`.github/workflows/heartbeat.yml`.
+To whichever Git remote this skill repo lives at. The heartbeat workflow checks for monthly
+activity — see `.github/workflows/heartbeat.yml`.
 
 ## What's NOT in this protocol (defer to market-intel)
 
