@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4] — 2026-06-16
+
+Add **Codex MCP as an optional cross-model cross-validation + channel-discovery back-end** (NOT a price source). Prompted by a user question + an empirical test: a different model (GPT) with its own web search is a genuinely independent second opinion for the *soft* layer (authorized channels, missed cheaper authentic sources, counterfeit reputation, cross-checking the cheapest pick) — but unreliable for authoritative live prices on anti-bot retail pages, so its prices are **L5 leads** that must re-pass the live-fetch + citation gate before ranking. Doctrine: Codex is a delegation back-end like `deep-research` / `market-intel` (PHILOSOPHY P5), so it is documented under `reference/`, **not** added to `reference/tools/` or the source matrix / registry — no matrix/registry churn.
+
+- **`reference/codex-crossval.md`** (new) — how-to: why the MCP route not `codex exec` (the latter hits a `cloud config bundle` egress timeout in the agent sandbox; the `codex mcp-server` MCP route works — verified `✔ Connected` 2026-06-16), the `--search` vs `-c tools.web_search=true` gotcha, best model = newest (gpt-5.5 / xhigh, ChatGPT-subscription auth), the L5-lead rule, and how to fold results (re-verify new channels, surface divergences per guardrail #7, best-effort skip per #9).
+- **`SKILL.md` Step 5** — added the Codex-MCP cross-validation / discovery delegate bullet (L5 leads, best-effort, MCP-not-exec).
+- **`SKILL.md` guardrail #8** — the disconfirmation reverse-search may also run through the Codex MCP as an independent cross-model check (L5 corroboration).
+- No tool / matrix / registry changes.
+
 ## [0.1.3] — 2026-06-16
 
 Sync to market-intel v0.12.0 spec change: `companion-config-spec` v1 now formally
