@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.3] — 2026-06-16
+
+Sync to market-intel v0.12.0 spec change: `companion-config-spec` v1 now formally
+recognizes two storage modes for a companion repo's secrets — Mode A (committed to private
+repo, single source of truth) and Mode B (gitignored, out-of-band backup). The
+shopping-aggregator install-guide's L3 row already delegates to market-intel's spec for the
+formal contract; no shopping-aggregator-side doc changes required (the cross-reference
+picks up the new section automatically). Bump for traceability only.
+
 ## [0.1.2] — 2026-06-16
 
 `install-guide.md` slimmed from 133 → 93 lines (30% smaller) by delegating L0 install
