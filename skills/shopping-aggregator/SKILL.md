@@ -79,6 +79,14 @@ CN, expect `taobao-tmall`, `jd-pdd`, plus `claude-mcps` and possibly `oss-self-h
 historical-low queries always include `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall`
 (慢慢买).
 
+**Then map the product to its CHANNEL CLASSES** — read `reference/channel-classes.md` and enumerate
+the authorized-retailer classes the product spans (mass-market · category-specialist · brand-direct ·
+warehouse · local-pickup-only · cross-border · refurb). This is the **demand-side** counterweight to
+the supply-side domain list above: a channel with no connected tool (e.g. Micro Center — website
+only) is still in scope and routes to playwright / a store-specific scrape, **not skipped**. The
+in-scope classes are the **coverage floor** — every one must reach a real read (E1) or be listed as a
+`not-attempted` gap (guardrail #9).
+
 Pick a depth budget and hold to its hard caps:
 
 | depth | max subagents | max rounds | max verifiers | use when |
@@ -154,7 +162,9 @@ Require every subagent to return a **structured evidence unit**, not free prose:
 {
   status: ok|partial|empty|failed,
   retailer: "amazon.com" | "ebay" | ...,
-  product_match: { title, asin/itemId/skuId, confidence: high/med/low },
+  product_match: { title, asin/itemId/skuId, variant_key, confidence: high/med/low },
+  // variant_key (REQUIRED) = normalized "brand|model|color|edition|condition" read off the PDP;
+  // prices with a DIFFERENT variant_key are DIFFERENT SKUs — list separately, never compared as one (guardrail #7).
   prices: [{
     sticker, currency,
     shipping, tax_estimate, coupon_applied, cashback_estimate,
@@ -162,7 +172,11 @@ Require every subagent to return a **structured evidence unit**, not free prose:
     stock_state: in_stock|low_stock|out_of_stock|preorder,
     seller_name (REQUIRED for L1–L4 retailer units — see guardrail #5), seller_rating, condition: new|refurb|used,
     snapshot_ts: "YYYY-MM-DD HH:MM TZ",
-    source_url, source_tier: L1|L2|L3|L4|L5
+    source_url,
+    seller_tier: L1|L2|L3|L4|L5,   // WHO sold it (first-party … unverifiable) — see guardrail #5
+    evidence_grade: E1|E2|E3        // HOW the price was obtained: E1 = live PDP read / official API ·
+                                    // E2 = aggregator field (BigGo/Keepa/SERP-with-price) · E3 = SERP
+                                    // snippet / cross-model recall = a LEAD. Ranking checks this FIRST (guardrail #5).
   }],
   history: { 90d_low, 90d_high, 365d_low, "now_vs_low": "$X above", source_url } | null,
   coupon_attempts: [{ code, applied: yes|no, savings }],
@@ -218,12 +232,27 @@ These are **price-data-specific** extensions of the market-intel guardrails. Rea
    seller field). Don't rank L4/L5 as winners without explicit user override. Mark every retailer's
    tier in the output. (Run B: a Best Buy "$4,899" listing was actually a 3.74★ Marketplace 3P —
    caught only by reading Sold-by.)
+   **Evidence grade is ORTHOGONAL to seller tier and gates ranking FIRST.** Tag every price `E1`
+   (live PDP read / official API), `E2` (aggregator field — BigGo / Keepa / a SERP result carrying a
+   price), or `E3` (SERP snippet / cross-model recall = a *lead*). **Only `E1` may be a ranked
+   winner**; `E2` may enter the ranking only with a corroborating `E1` of the **same variant_key**;
+   `E3` is never ranked — it must be re-fetched to `E1` first. A clean first-party domain does NOT
+   upgrade an E3 snippet — evidence_grade is checked before seller_tier. (Run B: the "$5,140" figure
+   was an E3 SERP snippet; the real E1 white-OC PDP was $4,299.99 — neither the same number nor the
+   same SKU.)
 6. **No silent degradation.** When Keepa is unavailable and you fall back to spot-only playwright,
    the report must say `⚠ historical data unavailable, only live price shown — cannot confirm
    if this is a good deal vs. recent floor.` Never swap silently.
 7. **Cross-snapshot disagreement = re-fetch, don't average.** If two playwright pulls of the same
    page disagree by >5%, re-fetch a 3rd time and either resolve or surface both with timestamps —
    prices can genuinely change mid-fan-out (Buy Box rotation).
+   **Cross-SOURCE disagreement (different sources, same product):** FIRST confirm the prices share the
+   **same `variant_key`** — mismatched variants are two SKUs, listed separately, NOT a disagreement.
+   If two same-variant_key sources differ by >5%, write a Disagreement-matrix row with a cause from
+   the closed set {different seller, stale/aggregated (E2/E3), coverage-gap}, and resolve by evidence
+   grade (E1 wins; an E2/E3 that can't be lifted to E1 corroborates or is discarded — **never
+   averaged**). (Run B: codex ~$3.6–4.0k vs Newegg E1 PDP $4,299.99 vs a $5,140 E3 snippet were never
+   reconciled — that is this gap.)
 8. **Disconfirmation mandate (esp. for cheapest-source recommendations).** Run a dedicated
    reverse-search subagent: scam / counterfeit / "X is a fake reseller" / refurb-not-as-advertised
    / shipping-from-China-charged-as-US / dead-on-arrival reviews. Report must include a "Risks &
@@ -231,9 +260,14 @@ These are **price-data-specific** extensions of the market-intel guardrails. Rea
    safety." If the **Codex MCP** is connected, also run this reverse-search through it as an
    independent cross-model check (treat its findings as L5 corroboration, not proof; see
    `reference/codex-crossval.md`).
-9. **Failures become explicit gaps.** Any subagent that returns `failed/empty` triggers one query
-   rewrite + retry; if still empty, list it in an explicit "Not covered" section. A report must
-   never look complete while hiding a missing retailer.
+9. **Failures become explicit gaps — AND so does what you never tried (coverage floor).** Any
+   subagent that returns `failed/empty` triggers one query rewrite + retry; if still empty, list it in
+   an explicit "Not covered" section. **Beyond failures:** a channel class that is IN SCOPE per
+   `reference/channel-classes.md` but was **never attempted** is also a gap — record it
+   `status: not-attempted` with a reason, emit a `coverage_gap` line (Step 7), and the report's
+   "Coverage gaps" section MUST list every in-scope class not taken to `E1` depth. Completeness-by-
+   omission (silence about a channel you never queried — e.g. a category-specialist or local-pickup
+   class) is a bug. A report may not look complete while a buyer channel was never checked.
 10. **Affiliate disclosure tracking (read-only).** Many extensions / sites (Honey, Karma,
     Slickdeals, smzdm) operate on affiliate hijacking. This is fine for the *user* to know but
     don't let it bias the ranking — when an extension claims "save $X via our exclusive link,"
@@ -255,10 +289,14 @@ real world just proved right or wrong.
 
 ```jsonc
 { "ts":"<UTC>", "domain":"amazon-us", "source":"keepa",
-  "outcome":"verified|unverifiable|dead|fallback_used|price_mismatch|coupon_fake",
+  "outcome":"verified|unverifiable|dead|fallback_used|price_mismatch|coupon_fake|coverage_gap",
   "detail":"<what diverged, e.g. Keepa said 90d-low $89 but Camelcamelcamel said $79>",
   "user_correction": null }   // set when the user manually corrected an entry — highest-weight truth
 ```
+
+Also emit one `coverage_gap` line per IN-SCOPE channel class (`reference/channel-classes.md`) you did
+NOT take to E1 depth this run — this is how a **missing CHANNEL** (not just a dead tool) reaches the
+refresh loop. `coverage_gap` is a real outcome value the refresh-protocol prioritizes on.
 
 If you can't write the file (e.g. the repo isn't checked out), note the observations in your reply.
 
