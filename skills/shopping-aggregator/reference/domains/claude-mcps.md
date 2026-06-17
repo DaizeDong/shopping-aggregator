@@ -8,7 +8,7 @@ Claude Code", "make Claude do the shopping".
 
 | MCP | route | coverage | install | risk |
 |---|---|---|---|---|
-| **BigGo MCP** ([biggo-mcp.md](../tools/biggo-mcp.md)) | ④ free | Amazon, eBay, AliExpress, Taobao, Shopee — multi-platform price compare + **history** | `uvx BigGo-MCP-Server@latest` | low; **18★ small project — watch for drift**, last update 2025-04 |
+| **BigGo MCP** ([biggo-mcp.md](../tools/biggo-mcp.md)) | ④ free | Amazon, eBay, AliExpress, Taobao, Shopee — multi-platform price compare + **history**; **weak for niche/US-specific SKUs — empty ≠ unavailable, fall back to Bright Data SERP + retailer scrape** | `uvx BigGo-MCP-Server@latest` | low; **18★ small project — watch for drift**, last update 2025-04 |
 | **Apify price-intelligence MCP** ([apify-price-intelligence.md](../tools/apify-price-intelligence.md)) | ② paid | Amazon, Walmart, Target, eBay, Best Buy — broadest US-retailer | Apify MCP config + token | low; pay-per-call $0.008–$0.15; relies on Apify actor maintenance |
 | **Keepa MCP** ([keepa.md](../tools/keepa.md)) | ① paid | Amazon all 11 markets — **full price/BSR/Buy Box history** | KEEPA_API_KEY + `cosjef/Keepa_MCP` or `BWB03/keepa-adapter` (.mcpb) | low; **€49/mo+** real cost; tokens stall large sweeps |
 | **Taobao MCP** ([taobao-mcp.md](../tools/taobao-mcp.md)) | ④ | Taobao + Tmall title/price/specs/reviews | git clone + cookie injection | medium; 9★ small project, requires manual cookie maintenance |
