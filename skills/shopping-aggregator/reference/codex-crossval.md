@@ -18,6 +18,38 @@ backend. Strong for the **soft** layer of a buy decision, weak for authoritative
   **L5 lead** that must re-pass the live-fetch + citation gate (SKILL.md Step 6 / guardrail #1)
   before it can enter the landed-cost ranking.
 
+## ⚠️ CRITICAL: disable Codex's own browser/MCP tools, or it hangs for HOURS
+
+The user's `~/.codex/config.toml` registers Codex's OWN MCP servers (e.g. `[mcp_servers.playwright]`).
+If you call the Codex MCP without disabling them, Codex will try to **drive its own headless browser**
+to fetch a live retail page — and on an anti-bot page (Newegg / Best Buy / Amazon Cloudflare) that
+`browser_navigate` call **hangs with no timeout**. **Real incident 2026-06-17:** a single Codex
+`mcp__playwright browser_navigate` to Newegg ran **38,037 s (~10.5 hours)** before the user aborted.
+It also collides with Claude's own playwright instance (two `npx @playwright/mcp` fighting over the
+browser profile).
+
+**The fix — ALWAYS pass these when calling `mcp__codex__codex`:**
+- `config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "..." }`
+  — `mcp_servers: {}` strips Codex's browser/MCP tools so it can ONLY use the built-in web_search.
+- `sandbox: "read-only"` + `approval-policy: "never"` (headless — nobody can answer an approval prompt).
+- In the **prompt** also say: *"Use ONLY web_search. Do NOT use any browser / playwright / navigate /
+  page / shell tool."* (belt-and-suspenders.)
+- This reinforces the doctrine: Codex does **web_search soft cross-val**, NOT live-browser price fetch —
+  live fetch is THIS skill's Bright Data / playwright job.
+
+Verified 2026-06-17: with `mcp_servers:{}` + web_search-only, the same query returned in **<1 min**
+(vs the 10.5 h hang). Canonical call:
+
+```
+mcp__codex__codex({
+  prompt: "Use ONLY web_search; no browser/playwright/shell. <buy-intent + ask for price+URL+date>",
+  model: "gpt-5.5",
+  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "high" },
+  sandbox: "read-only",
+  "approval-policy": "never"
+})
+```
+
 ## Call it via the MCP server, NOT `codex exec`
 
 Use the connected **Codex MCP** (`mcp__codex__*`). Do **not** shell out to `codex exec` from the
@@ -53,7 +85,12 @@ loads it with `ToolSearch select:mcp__codex__codex` and calls it.
 4. If the Codex MCP is not connected, skip and note "codex cross-check unavailable" (guardrail #9).
    It is **best-effort** — never block the buy decision on it.
 
-## Empirical note (2026-06-16)
-`codex mcp-server` -> `✔ Connected`; `codex exec` via Bash -> cloud-config timeout (blocked). So the
-MCP route is the supported one. A live 4-item cross-validation (K-beauty -> ZIP 08854) was set up but
-pended a session restart that exposes the `mcp__codex__*` tools.
+## Empirical note (2026-06-16 → 06-17)
+- 2026-06-16: `codex mcp-server` -> `✔ Connected`; `codex exec` via Bash -> cloud-config timeout
+  (blocked). MCP route is the supported one. Tools exposed only after a full session restart.
+- 2026-06-17: first real `mcp__codex__codex` run (RTX 5090 price, xhigh, MCP tools NOT disabled)
+  **hung ~10.5 h** — Codex drove its own playwright `browser_navigate` to Newegg (Cloudflare) with no
+  timeout. Re-run with `config.mcp_servers={}` + web_search-only returned in <1 min. **Lesson is now
+  the CRITICAL section above.** Cross-val data point: Codex web_search put the card at ~$3.6–4.0k,
+  *below* the actual live authorized listings ($4.24–5.14k, all OOS) — exactly why its prices are
+  L5 leads, not authoritative.
