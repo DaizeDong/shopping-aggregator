@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5] — 2026-06-17
+
+Harden the Codex cross-val back-end after a real **10.5-hour hang**. First live `mcp__codex__codex` run (REDACTED-PRODUCT price check, MCP tools not disabled) drove Codex's OWN playwright `browser_navigate` to Newegg (Cloudflare anti-bot), which hung with no timeout for **38,037 s** until the user aborted — NOT a network/auth problem (model calls succeeded, Pro plan, tokens counted). Root cause: the user's `~/.codex/config.toml` registers `[mcp_servers.playwright]`, so Codex tries to drive a headless browser to live retail pages (and collides with Claude's own playwright). 
+
+- **`reference/codex-crossval.md`** — new **⚠️ CRITICAL** section: ALWAYS call `mcp__codex__codex` with `config.mcp_servers={}` (strips Codex's browser/MCP tools → web_search only) + `sandbox:read-only` + `approval-policy:never` + a prompt instruction to use only web_search. Verified 2026-06-17: same query then returned in <1 min. Reinforces the doctrine — Codex does web_search soft cross-val, NOT live-browser price fetch (that's this skill's Bright Data/playwright job). Empirical note updated with the incident + a cross-val data point (Codex's ~$1.0–1.3k undershot the live authorized $1.20–1.45k listings → why its prices are L5 leads).
+- No SKILL.md / matrix / registry changes.
+
 ## [0.1.4] — 2026-06-16
 
 Add **Codex MCP as an optional cross-model cross-validation + channel-discovery back-end** (NOT a price source). Prompted by a user question + an empirical test: a different model (GPT) with its own web search is a genuinely independent second opinion for the *soft* layer (authorized channels, missed cheaper authentic sources, counterfeit reputation, cross-checking the cheapest pick) — but unreliable for authoritative live prices on anti-bot retail pages, so its prices are **L5 leads** that must re-pass the live-fetch + citation gate before ranking. Doctrine: Codex is a delegation back-end like `deep-research` / `market-intel` (PHILOSOPHY P5), so it is documented under `reference/`, **not** added to `reference/tools/` or the source matrix / registry — no matrix/registry churn.
