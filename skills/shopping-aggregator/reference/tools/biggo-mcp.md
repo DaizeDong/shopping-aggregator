@@ -23,12 +23,12 @@ After install, in a subagent: `ToolSearch select:biggo` to load schemas, then ca
 
 ## General experience & gotchas (踩坑)
 - **Small project, watch for drift.** 18★ and last commit 2025-04 — single maintainer. If it breaks, repo issues are slow. Verify last-commit date before recommending install; refresh-protocol re-checks monthly.
-- **BigGo's underlying coverage is best for Taiwan / SEA / global e-commerce, OK for US, weaker for CN domestic (淘宝/天猫 OK; 京东/拼多多 thin).** For deep CN coverage layer 慢慢买 manually.
+- **BigGo's underlying coverage is best for Taiwan / SEA / global e-commerce; OK for US MAINSTREAM consumer goods but WEAK for niche / US-specific SKUs** (real-run 2026-06: returned ZERO for a niche US GPU SKU). **An empty BigGo result is NOT evidence the product is unavailable — it is a BigGo coverage gap; fall back to Bright Data SERP + per-retailer scrape and DO NOT report "no results exist."** Weaker for CN domestic too (淘宝/天猫 OK; 京东/拼多多 thin); for deep CN coverage layer 慢慢买 manually.
 - **No login required** — but advanced features (price alerts, watchlist) on biggo.com itself need a free account; the MCP doesn't expose those.
 - **Rate limits** — BigGo's backend will throttle if you fan out heavily; for >20 SKUs/min consider Apify price-intelligence MCP as the paid scale alternative.
 - **Currency / locale**: BigGo defaults to its own locale heuristics. Pass explicit region/currency parameters if the MCP exposes them, or post-process the returned prices to normalize.
 
 ## Failure signals & fallback
-`✗ Failed` in `claude mcp list` (uvx couldn't fetch), empty results, repeated timeouts (BigGo backend hiccup). **Fallback:** playwright MCP per retailer (slower but always works) → Apify price-intelligence (paid, broader US coverage).
+`✗ Failed` in `claude mcp list` (uvx couldn't fetch), empty results, repeated timeouts (BigGo backend hiccup). On empty, BigGo may suggest its `spec_search` tool — that is a spec lookup, NOT a US live-price source; treat empty as a coverage miss and fall back, don't conclude "no results exist." **Fallback:** playwright MCP per retailer (slower but always works) → Apify price-intelligence (paid, broader US coverage).
 
 ## Last verified: 2026-06

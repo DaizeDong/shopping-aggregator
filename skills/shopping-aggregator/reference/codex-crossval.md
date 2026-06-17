@@ -5,6 +5,11 @@
 > retailer or price API. That is why it lives here under `reference/` and is **not** in
 > `reference/tools/`, the source matrix, or `registry.json`.
 
+> **General rule for any external agentic delegate (codex today; future MCPs):** invoke it with its
+> own browser / sub-MCP tools stripped (sandboxed to its built-in search) and treat it as
+> **best-effort** — skip on hang/timeout per guardrail #9. The codex-specific flags below are this
+> rule's first concrete instance.
+
 ## Why use it
 
 A second, genuinely independent opinion: a different model (OpenAI GPT) with its **own** web-search

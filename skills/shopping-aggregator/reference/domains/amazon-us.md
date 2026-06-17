@@ -40,6 +40,9 @@ For history:
   cheapest in-stock option but ships only direct. Always check.
 - **"Available from these sellers" deal section** is 3rd-party; condition (new/used) and seller
   rating filter aggressively.
+- **The main Buy Box itself can be a 3rd-party seller**, not Amazon — read "Ships from / Sold by".
+  Only "Sold by Amazon.com" (or the brand's official store) is L1; anything else is a marketplace
+  seller → tier per guardrail #5. Do not assume amazon.com = first-party.
 - **Coupons**: Amazon offers in-page "$X off" tick-box coupons. Most need a click to apply.
   playwright cart-test to verify.
 - **Prime vs non-Prime ship**: $0 vs $5.99 ship for a small order can flip rankings — always price
