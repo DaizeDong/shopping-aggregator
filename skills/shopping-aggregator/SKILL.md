@@ -160,7 +160,7 @@ Require every subagent to return a **structured evidence unit**, not free prose:
     shipping, tax_estimate, coupon_applied, cashback_estimate,
     landed_cost,
     stock_state: in_stock|low_stock|out_of_stock|preorder,
-    seller_name, seller_rating, condition: new|refurb|used,
+    seller_name (REQUIRED for L1–L4 retailer units — see guardrail #5), seller_rating, condition: new|refurb|used,
     snapshot_ts: "YYYY-MM-DD HH:MM TZ",
     source_url, source_tier: L1|L2|L3|L4|L5
   }],
@@ -207,10 +207,17 @@ These are **price-data-specific** extensions of the market-intel guardrails. Rea
 4. **Coupon verification gate.** Don't trust "100 coupons available!" badges. Either verify via
    playwright cart test or label `coupon claims unverified`. Honey-style false-positive coupons
    are real (see Honey 2026 status — `reference/domains/browser-extensions.md`).
-5. **Retailer trust tiers.** L1 first-party retailer (amazon.com, walmart.com sold-by-retailer) ·
-   L2 marketplace seller w/ high rating · L3 marketplace seller w/ low rating or thin history ·
-   L4 unknown / dropshipper · L5 unverifiable. Don't rank L4/L5 as winners without explicit user
-   override. Mark every retailer's tier in the output.
+5. **Retailer trust tiers + seller-identity gate.** L1 first-party retailer · L2 marketplace seller
+   w/ high rating · L3 marketplace seller w/ low rating or thin history · L4 unknown / dropshipper ·
+   L5 unverifiable. **A retailer DOMAIN is not proof of first-party** — Best Buy Marketplace, Walmart
+   Marketplace, Newegg 3P and Amazon 3P all render under the retailer's own domain. **Stamp L1 ONLY
+   after reading the listing's `Sold by` / `Shipped by` field and confirming it is the retailer or the
+   brand itself**; if that field was not read, the unit is **L3 (seller unconfirmed)**, never L1 — so
+   `seller_name` is required on every L1–L4 retailer live-fetch unit, but a missing seller_name
+   **degrades the tier to L3, it does NOT reject the unit** (codex / BigGo L5 leads legitimately lack a
+   seller field). Don't rank L4/L5 as winners without explicit user override. Mark every retailer's
+   tier in the output. (Run B: a Best Buy "$4,899" listing was actually a 3.74★ Marketplace 3P —
+   caught only by reading Sold-by.)
 6. **No silent degradation.** When Keepa is unavailable and you fall back to spot-only playwright,
    the report must say `⚠ historical data unavailable, only live price shown — cannot confirm
    if this is a good deal vs. recent floor.` Never swap silently.

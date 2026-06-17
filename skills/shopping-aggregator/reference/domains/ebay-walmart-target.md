@@ -1,7 +1,7 @@
 # Domain: ebay-walmart-target
 
 **Triage signals:** US multi-retailer compare beyond Amazon — eBay, Walmart, Target, Best Buy,
-Costco, Home Depot, Newegg. Also: "anywhere besides Amazon", "is there a better deal elsewhere".
+Costco, Home Depot, Newegg, Micro Center. Also: "anywhere besides Amazon", "is there a better deal elsewhere".
 
 | source | route | capability | detect | risk |
 |---|---|---|---|---|
@@ -38,12 +38,22 @@ DataDome (Walmart) / PerimeterX (Target) — Bright Data Web Unlocker if you nee
   with multi-week delivery and Chinese-quality knockoffs — explicit trust filter.
 - **Target Circle**: requires login; in-store-only deals don't show online. Acknowledge gap.
 - **Best Buy**: open-box deals are a separate page (bestbuy.com/site/open-box) — often the best
-  price for a specific store's stock; geo-restricted (only the store with the unit ships).
+  price for a specific store's stock; geo-restricted (only the store with the unit ships). **Best Buy
+  Marketplace 3P**: a listing under bestbuy.com can be "Sold & shipped by <third party>" (a low-rated
+  reseller), NOT Best Buy first-party — read the Sold-by field and tier per guardrail #5 (Run B: a
+  "$4,899" Astral was a 3.74★ marketplace seller, not Best Buy).
 - **Costco**: requires membership; member-only prices behind login. playwright with logged-in
   session or skip.
 - **Home Depot / Lowe's**: prices vary by zip code (regional pricing). Default to user's zip;
   state assumption.
 - **Newegg**: marketplace dropshippers same issue as Walmart; trust filter mandatory.
+- **Micro Center**: major US authorized PC-parts retailer, often the cheapest in-store on
+  GPUs/CPUs/components. **PICKUP-ONLY (no shipping) + PER-STORE stock** — the chain-level page lies
+  about local availability; query the SPECIFIC store page for the user's ZIP (storeid in the URL,
+  e.g. North Jersey = 075). codex web_search and BigGo both MISS per-store stock — a store-specific
+  playwright / Bright Data scrape is the only reliable read. Landed cost has no shipping line but is
+  gated on the user being near a store — flag if they aren't. (Run B: the only in-stock authorized
+  Astral 5090 White was 2 units at Micro Center North Jersey, found only this way.)
 
 ## Affiliate hijack alert
 

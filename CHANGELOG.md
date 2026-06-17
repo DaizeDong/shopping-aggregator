@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.6] — 2026-06-17
+
+Skill-improvement batch (Tier 1) from a 9-agent skeptical evaluation of two real end-to-end runs (Korean-skincare → 08854; ASUS ROG Astral RTX 5090 White → 08854). Closes the three decision-grade misses those runs exposed. (Tier 2 — a store-pickup `fulfillment` schema field + a single-page-overflow note — deferred to 0.1.7; `codex-stale-price-note` dropped as already-documented; `bounded-external-delegate` folded into codex-crossval.md as one generalizing line.)
+
+- **`reference/domains/ebay-walmart-target.md`** — added **Micro Center** as a source (triage list + per-retailer gotcha): US authorized PC-parts retailer, **pickup-only + per-store stock**, must scrape the specific store page (storeid) for the buyer's ZIP; codex/BigGo miss per-store stock. Run B's only in-stock authorized unit (Micro Center North Jersey, 2 units) was findable only this way. Also extended the **Best Buy** bullet with the **Marketplace 3P** trap (the "$4,899" Astral was a 3.74★ marketplace seller, not Best Buy first-party).
+- **`SKILL.md` guardrail #5** — upgraded to a **seller-identity gate**: a retailer domain is not proof of first-party (Best Buy/Walmart Marketplace, Newegg/Amazon 3P all render under the retailer domain); **stamp L1 only after reading the `Sold by`/`Shipped by` field**; a missing seller_name **degrades to L3, never rejects** the unit (preserves codex/BigGo L5 leads). `seller_name` marked required-for-L1–L4 in the evidence-unit schema. Mirrors the P2 mechanism-not-intention move already made for `snapshot_ts`.
+- **`reference/domains/amazon-us.md`** — noted the **main Buy Box can be a 3P seller** (read "Ships from/Sold by"; only "Sold by Amazon.com"/brand store is L1).
+- **`reference/tools/biggo-mcp.md` + `reference/domains/claude-mcps.md`** — corrected the falsified "OK for US" coverage claim to "OK for US mainstream; **weak for niche/US-specific SKUs**" (Run B: BigGo returned ZERO for a niche US GPU SKU); **an empty BigGo result ≠ unavailable** — fall back to Bright Data SERP + retailer scrape (P6 visible-degradation). Noted BigGo's `spec_search` suggestion is a spec lookup, not a price source.
+- **`reference/codex-crossval.md`** — added one generalizing line: any external agentic delegate (codex today; future MCPs) is invoked with its browser/sub-MCP tools stripped + best-effort skip per guardrail #9.
+- bump 0.1.5 → 0.1.6. No matrix/registry/tool-doc additions (Micro Center documented in-shard, not as a new tool primitive).
+
 ## [0.1.5] — 2026-06-17
 
 Harden the Codex cross-val back-end after a real **10.5-hour hang**. First live `mcp__codex__codex` run (RTX 5090 price check, MCP tools not disabled) drove Codex's OWN playwright `browser_navigate` to Newegg (Cloudflare anti-bot), which hung with no timeout for **38,037 s** until the user aborted — NOT a network/auth problem (model calls succeeded, Pro plan, tokens counted). Root cause: the user's `~/.codex/config.toml` registers `[mcp_servers.playwright]`, so Codex tries to drive a headless browser to live retail pages (and collides with Claude's own playwright). 
