@@ -3,6 +3,11 @@
 One line per domain. At triage, match the buy intent to 1–N domains, then read ONLY the matched
 shard(s) in `domains/`. Do not read shards you didn't match.
 
+> **These domains are organized by ACCESS METHOD (supply-side) — they do NOT enumerate the buyer's
+> channel universe.** After matching domains here, ALSO map the product to its demand-side **channel
+> classes** in `channel-classes.md`. That is what surfaces tool-less authorized retailers (e.g. Micro
+> Center — website only) which this access-method index structurally omits.
+
 | domain | triage signals | top pick (barrier route) | shard |
 |---|---|---|---|
 | amazon-us | "Amazon", ASIN, US Amazon shopping, "Amazon 历史价" | playwright ④ live + Camelcamelcamel ① history (Keepa ① if subscribed) | `domains/amazon-us.md` |

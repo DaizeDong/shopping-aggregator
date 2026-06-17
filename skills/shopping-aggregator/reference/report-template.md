@@ -16,11 +16,14 @@
 
 ## Landed-cost ranking (the answer)
 
-| Rank | Retailer | Sticker | Ship | Tax | Coupon | Cashback est. | **Landed** | Condition | Seller / tier | Stock | Snapshot |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | <retailer.com> | $X | $Y | $Z | -$C | -$K | **$L** | new | <name>, L1 | in_stock | <ts> |
-| 2 | ... | | | | | | | | | | |
-| ... | | | | | | | | | | | |
+> One row per `variant_key`. **Ev** = evidence grade: E1 live PDP/API · E2 aggregator · E3 snippet
+> (a lead — never the ranked winner). Only an E1 row may be #1 (guardrail #5).
+
+| Rank | Retailer | Variant (key) | Sticker | Ship | Tax | Coupon | Cashback est. | **Landed** | Seller / tier | **Ev** | Stock | Snapshot |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <retailer.com> | <brand model color edition / new> | $X | $Y | $Z | -$C | -$K | **$L** | <name>, L1 | E1 | in_stock | <ts> |
+| 2 | ... | | | | | | | | | | | |
+| ... | | | | | | | | | | | | |
 
 **But actually** (footnote on top picks):
 - Top pick has <warranty / return policy / shipping speed> better than #2; if user values that, it's
@@ -65,6 +68,10 @@ If nothing found, state explicitly: "actively reverse-searched, none found — n
 
 ## Disagreement matrix (when sources diverged)
 
+> Only compare **same-`variant_key`** prices here — different variants are separate SKUs, not
+> disagreements. Cause ∈ {different seller, stale/aggregated (E2/E3), coverage-gap}. Resolve by
+> evidence grade (E1 wins) — never average.
+
 | Claim | Source A | Source B | Cause | Lean |
 |---|---|---|---|---|
 | 90-day low | Keepa: $89 | Camelcamelcamel: $79 | Keepa misses some 3P deals; Camel includes Warehouse | Camel ($79) |
@@ -81,7 +88,7 @@ If nothing found, state explicitly: "actively reverse-searched, none found — n
 
 Full list with tier + timestamp. Mark `✓verified / ⚠unverifiable / ✗dead`.
 
-- [<retailer.com>](<url>) — L1 first-party · fetched 2026-MM-DD HH:MM · ✓verified
+- [<retailer.com>](<url>) — L1 first-party · **E1 PDP-read** · fetched 2026-MM-DD HH:MM · ✓verified
 - [Camelcamelcamel](https://camelcamelcamel.com/product/<asin>) — L2 history · ✓verified
 - ...
 

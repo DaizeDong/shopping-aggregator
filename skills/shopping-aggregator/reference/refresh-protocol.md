@@ -49,6 +49,13 @@ Beyond the generic MCP-registry + GitHub + community surfaces in market-intel, a
    search `topic:claude-skill shopping`, `topic:mcp-server shopping`, `topic:mcp-server ecommerce`.
 6. **慢慢买 / 什么值得买 / 购物党 status pages and microblog accounts** — CN tools often go
    silent without formal announcement; watch their 微博/微信 official accounts.
+7. **Channel-completeness audit (coverage-driven, NOT just tool-driven).** Surfaces 1–6 hunt for new
+   TOOLS — they structurally cannot surface a retailer that has no tool (Micro Center was invisible
+   for exactly this reason). So ALSO audit `reference/channel-classes.md` against reality: for each
+   major product category + region, list the authorized retailers a knowledgeable buyer would check,
+   and flag any channel CLASS or canonical retailer missing from the shards. A missing channel is a
+   coverage gap even when no tool exists for it. `coverage_gap` events in `metrics/live-runs.jsonl`
+   (emitted by real runs per SKILL.md guardrail #9 / Step 7) feed this audit directly.
 
 ### Apply the same quality guardrails
 
@@ -107,8 +114,9 @@ activity — see `.github/workflows/heartbeat.yml`.
 - Anti-regression gate (`verify_matrix.py`) — market-intel's gate runs in CI and bans matrix
   regressions. This skill **does not yet** have its own gate (planned in ROADMAP). Until then,
   refresh discipline is voluntary — gate-shaped enforcement is on the ROADMAP for v0.2.
-- CONSTITUTION-injection-as-hard-constraints — inherits the philosophy but does not yet ship a
-  dedicated CONSTITUTION.md for the shopping skill (planned).
+- CONSTITUTION-injection-as-hard-constraints — the skill now ships its own `CONSTITUTION.md` at the
+  repo root (I.1–VII). A refresh sweep updates the matrix and may NOT relax the constitution (see
+  CONSTITUTION VII).
 - Horizon-scan for new domains — read market-intel's protocol section "Horizon scan."
 
 ## Feedback loop
@@ -120,6 +128,9 @@ SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritizati
 jq -r '.domain + "\t" + .source + "\t" + .outcome' metrics/live-runs.jsonl | sort | uniq -c | sort -rn
 ```
 
-Sources with the most `dead` / `price_mismatch` / `user_correction` events get top priority in
-the next sweep. A `user_correction` is the highest-weight signal — the user manually fixed
-something we were wrong about.
+Sources/channels with the most `dead` / `price_mismatch` / `coverage_gap` events get top priority in
+the next sweep. A `coverage_gap` line means a real run hit an in-scope channel it could not take to E1
+depth — this is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh
+loop; route it to the channel-completeness audit above. The highest-weight signal is the
+`user_correction` **field** (a JSON key present on any line — NOT an `outcome` value) — the user
+manually fixed something we were wrong about.

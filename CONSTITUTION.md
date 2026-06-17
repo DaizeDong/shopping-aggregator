@@ -13,9 +13,16 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   without this fail synthesis. `[S]`
 - **I.2** Every price entry MUST carry `stock_state ∈ {in_stock, low_stock, out_of_stock,
   preorder}`. `[S]`
-- **I.3** Every retailer entry MUST carry a tier `L1..L5`. `[S]`
+- **I.3** Every retailer price entry MUST carry a `seller_tier` (`L1..L5` — who sold it) AND an
+  `evidence_grade` (`E1|E2|E3` — how the price was obtained). Only `E1` (live PDP read / official API)
+  may be a ranked winner; `E3` (SERP snippet / cross-model recall) is a lead, never ranked. `[S]`
+- **I.3a** Every price entry MUST carry a `variant_key` (normalized brand|model|color|edition|
+  condition). Prices with different variant_key are DIFFERENT SKUs and MUST NOT be merged or compared
+  as one. `[S]`
 - **I.4** Every decision-grade claim (recommendation, ranking, "good deal" verdict) MUST be
-  supported by ≥2 independent sources OR explicitly labeled `confidence: low — single source`.
+  supported by ≥2 independent sources OR explicitly labeled `confidence: low — single source`. **The
+  #1 recommendation specifically MUST rest on ≥2 independent `E1` reads of the same `variant_key`; the
+  winner may NOT use the low-confidence single-source escape.** `[S]`
 - **I.5** A coupon counted toward savings MUST be marked one of:
   - `✓ cart-tested`
   - `⚠ unverified — extension claim only`
@@ -34,7 +41,10 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   is unavailable and the skill falls back to a secondary, the fallback MUST be flagged in-line
   in the report. Silent degradation is a bug. `[S]`
 - **II.4** The verifier subagent that re-fetches cited URLs MUST have **zero prior context** from
-  the writer subagent. Same-subagent self-verification is a bug.
+  the writer subagent. Same-subagent self-verification is a bug. For any `E1`/`L1` price that enters
+  the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
+  **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
+  **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
 - **II.5** Live-run observations MUST be appended to `metrics/live-runs.jsonl` when a real run
   completes. Skipping the append is a bug (refresh-protocol depends on it).
 
