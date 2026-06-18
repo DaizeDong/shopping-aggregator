@@ -1,6 +1,6 @@
 # Roadmap
 
-`shopping-aggregator` is at v0.2.0 — the structural/framework batch landed the CONSTITUTION,
+`shopping-aggregator` is at v0.3.2 — the v0.2.0 structural/framework batch landed the CONSTITUTION,
 the demand-side channel-class primitive, the evidence-unit schema (`variant_key` /
 `seller_tier` / `evidence_grade`), the seller-identity gate, and the codex-crossval back-end
 on top of the v0.1.0 base (9 domain shards, 22 tool docs, the SKILL.md orchestration core, the
@@ -8,11 +8,10 @@ philosophy inherited from market-intel). This file tracks what's next.
 
 ## v0.2 — Match market-intel's enforcement layer
 
-- [ ] **Anti-regression gate (`tools/verify_matrix.py`)** — port from market-intel. Catch
-      shard↔tool-doc↔index drift, dead-repo entries, hallucinated tools. Wire as required CI
-      status check on PR to main. **LANDING in the 0.3.0 batch (in progress)** — the skill's
-      first executable lint gate, closing the coverage/reconciliation loop that the 0.2.0
-      schema/guardrail work could only enforce by-construction (advisory) until now.
+- [x] **Anti-regression gate (`tools/verify_matrix.py`)** — **shipped in 0.3.0** (CI-enforced via
+      `.github/workflows/gate.yml`): 6 deterministic checks (THREEWAY shard↔tool-doc↔index drift,
+      FRESH, TEMPLATE, VERSION, RENAME, LIVERUNS). market-intel's RICHER judgement checks
+      (REPO/STAR/GHACTIVE/COVER/CHURN/DELETE) are not yet ported — those remain the gap.
 - [x] **CONSTITUTION.md** — shipped in 0.2.0. Explicit hard constraints injected at refresh-time
       so the editing subagents physically can't propose changes that violate the philosophy.
       (Market-intel did this in its v0.4-0.5 era.)

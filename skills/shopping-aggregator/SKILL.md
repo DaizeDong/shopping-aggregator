@@ -96,7 +96,10 @@ Camelcamelcamel bookmark, Keepa account, browser extensions (Capital One Shoppin
 For each triaged domain read **only** its shard `reference/domains/<domain>.md`, pick the best
 **available** source, and **prefer the free browser-automation route (④) over paid APIs when it
 fits** — playwright reads the real Amazon / Taobao page in one shot; paid APIs (Keepa, Rainforest,
-PriceAPI) earn their cost only for what playwright can't (deep history, scale, compliance). **Never
+PriceAPI) earn their cost only for what playwright can't (deep history, scale, compliance). **A channel class with NO domain shard**
+(brand-direct, cross-border/import, non-PC category-specialists e.g. Sephora/Crutchfield/REI) has no
+shard to read — run it directly via the route in `reference/channel-classes.md` (usually ④ playwright +
+that class's caveat); do NOT create a shard for it. **Never
 block on install:** if the decision depends on a missing source, recommend it (command + cost in
 `reference/volatile/pricing-install.md`) but **proceed this turn with a fallback + flag the gap** (a
 new MCP only works after a session restart / `/mcp` reconnect). Prefer HTTP-transport on Windows
@@ -235,7 +238,7 @@ user to `/schedule` (cron re-run) or a native Keepa / Camelcamelcamel / 慢慢�
 ## Progressive loading rules
 
 SKILL.md (this file) is always loaded — keep it the only frequently-loaded content. Read on-demand,
-**never a whole directory**: `reference/sources-index.md` at triage; only the matched
+**never a whole directory**: `reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
 `reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
 `reference/tools/<slug>.md`; `reference/install-guide.md` when setting up a source;
 `reference/evidence-schema.md` at Step 5; `reference/volatile/pricing-install.md` only when guiding an
