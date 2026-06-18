@@ -49,7 +49,7 @@ Verified 2026-06-17: with `mcp_servers:{}` + web_search-only, the same query ret
 mcp__codex__codex({
   prompt: "Use ONLY web_search; no browser/playwright/shell. <buy-intent + ask for price+URL+date>",
   model: "gpt-5.5",
-  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "high" },
+  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "xhigh" },
   sandbox: "read-only",
   "approval-policy": "never"
 })

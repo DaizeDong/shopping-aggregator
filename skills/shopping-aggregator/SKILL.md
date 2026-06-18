@@ -4,329 +4,246 @@ description: Use when the user wants to compare prices for a SPECIFIC product th
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
-Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
-
 # shopping-aggregator
 
-A thin orchestration layer for consumer shopping price comparison. It does **only three things that
-nothing else does**: (1) parse a buy intent (product, region, budget, urgency, sensitivity) into
-a triage of the right shopping domains; (2) detect which specialized shopping MCP / extension / OSS
-tool is actually connected and guide installing missing ones; (3) enforce **price-specific**
-quality guardrails (snapshot timestamp, stock state, landed cost normalization, coupon-cart
-verification, retailer trust tiers). The heavy lifting — live page fetch, history backfill,
-adversarial verification, citation synthesis — is **delegated** to playwright MCP / BigGo MCP /
-Keepa MCP / `deep-research` / `market-intel`'s research harness. Do not re-implement those.
+A thin orchestration layer for consumer shopping price comparison. It does **only three things nothing
+else does**: (1) parse a buy intent into a triage of the right shopping domains + channel classes; (2)
+detect which specialized shopping MCP / extension / OSS tool is connected and guide installing missing
+ones; (3) enforce **price-specific** guardrails (snapshot timestamp, stock state, landed-cost
+normalization, coupon-cart verification, retailer trust tiers). The heavy lifting — live page fetch,
+history backfill, adversarial verification, citation synthesis — is **delegated** to playwright / BigGo
+/ Keepa MCPs / `deep-research` / `market-intel`. Do not re-implement those.
 
-> **Design philosophy (governs all changes): root-cause design, not incremental patching** — change
-> the assumption underneath a problem, not the symptom on top. This thin-delegation shape, the
-> landed-cost (not sticker-price) ranking primitive, and the timestamp-mandatory volatile-data rule
-> all follow from it. Full statement in the repo's `PHILOSOPHY.md`; every change must pass "does it
-> fix the framing, or just patch a symptom?"
+> **Design philosophy (governs all changes): root-cause design, not incremental patching** — fix the
+> assumption underneath a problem, not the symptom on top. Full statement in `PHILOSOPHY.md`; every
+> change must pass "does it fix the framing, or just patch a symptom?"
 
-## Sister skill — when to use which
+## Scope — when this skill applies, and when to stop
 
-| You want | Use |
-|---|---|
-| "Help me compare prices and find the cheapest place to buy product X" | **this skill (shopping-aggregator)** |
-| "Is this a good deal, should I wait for a sale, what's the historical low?" | **this skill** |
-| "Research the competitive landscape / market sizing / category trends for X" | **market-intel** |
-| "Find arbitrage / FBA / wholesale opportunities (seller side)" | **market-intel** (ecommerce-arbitrage shard) |
-| "X/Twitter sentiment / competitor analysis / SEO intel" | **market-intel** |
-
-If both apply (e.g. "I'm buying X — also tell me what reviewers think and whether the category is
-declining"), invoke this skill for the buy decision and **delegate the side-research to market-intel
-as a sub-task** rather than re-doing it here.
-
-## When to stop and delegate immediately
-
-Before doing anything, decide if this skill even applies:
-
-- **Single retailer + you already picked it** ("just check Amazon for Bose QC45") → open the page, no
-  workflow needed.
-- **Bulk arbitrage / FBA sourcing / supplier discovery** → delegate to `market-intel`'s
-  `ecommerce-arbitrage` shard. Different sources (Keepa for history, Helium 10 sales estimates,
-  alibaba.com sourcing) and different verifier mindset.
-- **Pure category research, no specific product** ("how big is the smart-lock market") →
-  `market-intel`.
+**Use this skill** for the consumer buy decision: "compare prices / find the cheapest place to buy X",
+"is this a good deal / should I wait for a sale / what's the historical low". **Stop and delegate**
+otherwise — before doing anything, route away these non-buy-decision asks:
+- **Single retailer + already picked** ("just check Amazon for Bose QC45") → open the page, no workflow.
+- **Bulk arbitrage / FBA sourcing / supplier discovery** → `market-intel` `ecommerce-arbitrage` shard
+  (different sources — Keepa, Helium 10, alibaba — and a seller-side verifier mindset).
+- **Category research / market sizing / competitive landscape / X-Twitter sentiment / SEO intel** (no
+  specific product, e.g. "how big is the smart-lock market") → `market-intel`.
 - **Single-fact lookup** ("what's Costco's return policy") → plain web search, no workflow.
 
-## Workflow
+If both apply ("buying X — also tell me what reviewers think / whether the category is declining"),
+own the buy decision here and **delegate the side-research to market-intel as a sub-task**.
 
+## Workflow
 ### Step 1 — Parse the buy intent (BLOCKING)
 
-Capture all five before fanning out. **Default-good for ambiguous asks: ask the user for the missing
-fields before proceeding.** Skipping this step is the most common failure mode — it produces a
-generic landscape report when the user wanted a buy decision.
+Capture all five before fanning out. **For ambiguous asks, ask the user for the missing fields first.**
+Skipping this is the most common failure mode — it yields a generic landscape report instead of a buy
+decision.
+| field | why it changes routing |
+|---|---|
+| **Product** (brand+model+spec+condition) | controls SKU-level matching (new/refurb/used) |
+| **Region** (US / CN / cross-border) | switches domain set: US → Amazon/eBay/Walmart/Best Buy; CN → Taobao/JD/PDD; cross-border → both + customs |
+| **Budget / urgency** | "wait for sale" → Keepa/Camelcamelcamel historical-low; "need Wed" → hard-filter shipping speed |
+| **Sensitivity** (warranty, refurb-OK, rating cutoff, returns) | drives trust tiers (AliExpress rating, Amazon WHD vs marketplace) |
+| **Existing accounts / extensions** | use what's installed; don't recommend new tooling unless clearly worth it |
 
-| field | examples | why it changes routing |
-|---|---|---|
-| **Product** | "Bose QuietComfort 45 (QC45), refurb OK" | brand + model + spec + condition (new/refurb/used) controls SKU-level matching |
-| **Region** | US (NJ), CN (mainland), cross-border | switches domain set: US-only → Amazon/eBay/Walmart/Best Buy; CN-only → Taobao/JD/PDD; cross-border → both + customs |
-| **Budget / urgency** | "<$200", "willing to wait for sale", "need it for Wed" | "wait for sale" enables Keepa/Camelcamelcamel historical-low; "need Wed" hard-filters shipping speed |
-| **Sensitivity** | warranty, refurb-OK, seller rating cutoff, shipping speed, returns | drives trust tiers (AliExpress seller rating, Amazon WHD vs marketplace) |
-| **Existing accounts / extensions** | "I have Amazon Prime + Capital One Shopping" | use what's already installed; don't recommend new tooling unless clearly worth it |
+If the user said only "find me the cheapest", confirm region + condition first — cheapest "new from
+authorized US seller" ≠ cheapest "any condition + any AliExpress seller."
 
-If the user said only "find me the cheapest", confirm region + condition acceptability before
-fanning out. Cheapest "new from authorized seller in US" ≠ cheapest "any condition + any seller
-on AliExpress."
+### Step 2 — Triage (domains → channel classes → depth)
 
-### Step 2 — Triage to domains
+**Step 2 output you MUST produce: `[matched domains | in-scope channel classes | depth cap]`.**
 
-Read `reference/sources-index.md` (thin one-line-per-domain index). Match the buy intent to 1–N
-domains. **Do not read full domain shards yet.** If region = US, expect to hit `amazon-us`,
-`ebay-walmart-target`, `browser-extensions`, `mobile-apps-aggregators`, `claude-mcps`. If region =
-CN, expect `taobao-tmall`, `jd-pdd`, plus `claude-mcps` and possibly `oss-self-host`. For
-historical-low queries always include `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall`
-(慢慢买).
+#### 2a — Triage to domains
+Read `reference/sources-index.md` (thin index); match the buy intent to 1–N of the 9 domains
+(full list there). **Do not read full domain shards yet.** US typically → `amazon-us`,
+`ebay-walmart-target`, `browser-extensions`, `mobile-apps-aggregators`, `ai-shopping-assistants`,
+`claude-mcps`; CN → `taobao-tmall`, `jd-pdd`, `claude-mcps`, maybe `oss-self-host`. Historical-low
+queries always add `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall` (慢慢买).
 
-**Then map the product to its CHANNEL CLASSES** — read `reference/channel-classes.md` and enumerate
-the authorized-retailer classes the product spans (mass-market · category-specialist · brand-direct ·
-warehouse · local-pickup-only · cross-border · refurb). This is the **demand-side** counterweight to
-the supply-side domain list above: a channel with no connected tool (e.g. Micro Center — website
-only) is still in scope and routes to playwright / a store-specific scrape, **not skipped**. The
-in-scope classes are the **coverage floor** — every one must reach a real read (E1) or be listed as a
-`not-attempted` gap (guardrail #9).
+#### 2b — Map to channel classes
+Read `reference/channel-classes.md` and enumerate the authorized-retailer classes the product spans
+(mass-market · category-specialist · brand-direct · warehouse · local-pickup-only · cross-border ·
+refurb). This is the **demand-side** counterweight to 2a: a tool-less channel (e.g. Micro Center —
+website only) is still in scope, routes to playwright / a store-specific scrape, **not skipped**. The
+in-scope classes are the **coverage floor** — each must reach a real read (E1) or be a `not-attempted`
+gap (guardrail #9).
 
-Pick a depth budget and hold to its hard caps:
-
+#### 2c — Depth budget
+Pick a depth and hold its hard caps:
 | depth | max subagents | max rounds | max verifiers | use when |
 |---|---|---|---|---|
-| quick | 3 | 1 | 1 | one product + one region, no history needed |
-| standard (default) | 6 | 2 | 3 | typical "what's the best price right now" |
-| deep | 12 | 3 | 5 | explicit "comprehensive / 全面 / check everywhere" or high-ticket purchase ($500+) where execution cost > research cost |
+| **quick (default)** | 3 | 1 | 1 | a single mainstream in-stock SKU, one region, no history needed |
+| standard | 6 | 2 | 3 | multi-retailer "best price right now" with real channel spread |
+| deep | 12 | 3 | 5 | explicit "comprehensive / 全面" or high-ticket ($500+) where execution cost > research cost |
 
-Maintain a running count; when a cap is hit, stop fanning out and move to synthesis.
+For a single mainstream SKU the value is **landed-cost + timestamp + seller-identity check, not a full
+fan-out** — `quick` is the honest default; escalate only when channel spread or ticket size earns it.
+Maintain a running count; at a cap, stop fanning out and synthesize.
 
 ### Step 3 — Detect available sources (do NOT guess by tool name)
 
-Run `claude mcp list` and parse the three-state health output — a source is only usable if it
-shows `✓ Connected`. Treat `✗ Failed` and `! Needs authentication` as **not available**.
-Tool-name prefix matching (`mcp__*shopping*`) is unreliable: deferred tools, plugin prefixes,
-and dead connections all distort it.
-
-For shopping specifically, also detect:
-- **playwright MCP** — almost always connected; the default ④ route for live page fetch.
-- **firecrawl** skill — adequate fallback for static pages; **NOT enough for Amazon/Taobao**
-  (anti-bot, 500 / login-wall — see `reference/domains/amazon-us.md` "real-run lesson"). Skip to
-  playwright for those.
-- **BigGo MCP** — primary purpose-built consumer price-compare MCP (see `reference/tools/biggo-mcp.md`).
-- **Keepa MCP** — historical-price authority for Amazon.
-- **Apify price-intelligence MCP** — paid, broadest US-retailer coverage.
-
-Also check user-side tooling (you can ask, you can't auto-detect): Camelcamelcamel bookmark, Keepa
-account, browser extensions (Capital One Shopping / Karma / 购物党 / 慢慢买 App).
+Run `claude mcp list` and parse the three-state health — usable only if `✓ Connected`; treat
+`✗ Failed` / `! Needs authentication` as **not available**. Tool-name prefix matching (`mcp__*shopping*`)
+is unreliable (deferred tools, plugin prefixes, dead connections distort it). Detect: **playwright MCP**
+(default ④ live-fetch); **firecrawl** (static fallback, **NOT enough for Amazon/Taobao** anti-bot — use
+playwright, see `domains/amazon-us.md`); **BigGo MCP** (`tools/biggo-mcp.md`); **Keepa MCP** (Amazon
+history); **Apify price-intelligence MCP** (paid, broadest US). Also ask the user (can't auto-detect):
+Camelcamelcamel bookmark, Keepa account, browser extensions (Capital One Shopping / Karma / 购物党 / 慢慢买 App).
 
 ### Step 4 — Select sources + guide install (non-blocking)
 
-For each triaged domain, read **only** its shard: `reference/domains/<domain>.md`. Pick the best
-**available** source. **Prefer the free browser-automation / act-like-human route (④) over paid
-APIs when it fits** — playwright MCP can read the real Amazon / Taobao rendered page in one shot;
-paid APIs (Keepa, Rainforest, PriceAPI) earn their cost only when they unlock something playwright
-can't (deep history, scale, compliance).
-
-If the topic clearly depends on a source that is missing:
-
-> "This buy decision depends on <source> (e.g. price history → Keepa). Recommend installing it:
-> `claude mcp add -s user <...>` (exact command + cost in `reference/volatile/pricing-install.md`).
-> **Note: a newly added MCP only takes effect after you restart the session or `/mcp` reconnect —
-> it will NOT work this turn.** For now I'll proceed with a fallback source and flag the gap."
-
-Never block on install. Prefer HTTP-transport sources on Windows (no local Node/uv needed; stdio
-`npx`/`uvx` MCPs are flaky there). See `reference/install-guide.md` for L0 mechanics +
-secret-handling hygiene (keys must NEVER enter the transcript).
+For each triaged domain read **only** its shard `reference/domains/<domain>.md`, pick the best
+**available** source, and **prefer the free browser-automation route (④) over paid APIs when it
+fits** — playwright reads the real Amazon / Taobao page in one shot; paid APIs (Keepa, Rainforest,
+PriceAPI) earn their cost only for what playwright can't (deep history, scale, compliance). **Never
+block on install:** if the decision depends on a missing source, recommend it (command + cost in
+`reference/volatile/pricing-install.md`) but **proceed this turn with a fallback + flag the gap** (a
+new MCP only works after a session restart / `/mcp` reconnect). Prefer HTTP-transport on Windows
+(stdio `npx`/`uvx` MCPs are flaky). L0 mechanics + secret hygiene (keys NEVER in transcript):
+`reference/install-guide.md`.
 
 ### Step 5 — Delegate execution
 
 Hand the selected sources + sub-questions to the heavy harness:
+- **Per-retailer live price** → playwright MCP (one subagent/retailer; each loads the MCP via
+  ToolSearch first — subagents inherit MCPs only in deferred form).
+- **Multi-retailer one-shot** → BigGo MCP, else Apify price-intelligence MCP, else fan out playwright.
+- **History query** → Keepa MCP / Camelcamelcamel web fetch (Amazon free) / 慢慢买 (CN).
+- **Adjacent research** (reviews, brand reliability, "wait for Prime Day?") → `market-intel` /
+  `deep-research`.
+- **Independent cross-model crossval + channel discovery** → **Codex MCP** (`mcp__codex__*`, GPT +
+  own search): discover missed channels, cross-check the cheapest pick, sanity-check authenticity.
+  **Codex prices are L5 *leads*** — re-pass the live-fetch + citation gate (#1) before ranking.
+  Best-effort: skip + note the gap (#9) if absent. Setup + how-to: `reference/codex-crossval.md`.
 
-- **Per-retailer live price** → playwright MCP (one subagent per retailer; each told to load the
-  MCP via ToolSearch first — subagents inherit MCPs only in deferred form).
-- **Multi-retailer one-shot** → BigGo MCP if connected, else Apify price-intelligence MCP, else
-  fan out playwright.
-- **History query** → Keepa MCP (Amazon) / Camelcamelcamel web fetch (Amazon free) / 慢慢买
-  (CN platforms).
-- **Adjacent research** (reviews, "is this brand reliable", "should I wait for Prime Day") →
-  delegate to `market-intel` or `deep-research`.
-- **Independent cross-validation + channel discovery (cross-model)** → delegate to the **Codex MCP**
-  (`mcp__codex__*` — GPT with its own web search), a genuinely independent second model + search
-  backend. Use it to (a) discover authorized channels / cheaper authentic sources your fixed retailer
-  list missed, (b) cross-check the provisional cheapest pick, (c) sanity-check authenticity /
-  counterfeit reputation. **Codex prices are L5 *leads*, never authoritative** — any price it surfaces
-  must re-pass the live-fetch + citation gate (Step 6 / guardrail #1) before entering the landed-cost
-  ranking. **Best-effort**: if the Codex MCP is not connected, skip it and note the gap (guardrail #9).
-  Call it via the **MCP server** (`codex mcp-server`), NOT Bash `codex exec` (the latter hits a
-  cloud-config egress block inside the agent sandbox). Full how-to: `reference/codex-crossval.md`.
-
-Require every subagent to return a **structured evidence unit**, not free prose:
+Require every subagent to return a **structured evidence unit**, not free prose — bare fields below;
+full annotated schema + tiering/grade rules: `reference/evidence-schema.md` (read at Step 5):
 ```
-{
-  status: ok|partial|empty|failed,
-  retailer: "amazon.com" | "ebay" | ...,
-  product_match: { title, asin/itemId/skuId, variant_key, confidence: high/med/low },
-  // variant_key (REQUIRED) = normalized "brand|model|color|edition|condition" read off the PDP;
-  // prices with a DIFFERENT variant_key are DIFFERENT SKUs — list separately, never compared as one (guardrail #7).
-  prices: [{
-    sticker, currency,
-    shipping, tax_estimate, coupon_applied, cashback_estimate,
-    landed_cost,
-    stock_state: in_stock|low_stock|out_of_stock|preorder,
-    seller_name (REQUIRED for L1–L4 retailer units — see guardrail #5), seller_rating, condition: new|refurb|used,
-    snapshot_ts: "YYYY-MM-DD HH:MM TZ",
-    source_url,
-    seller_tier: L1|L2|L3|L4|L5,   // WHO sold it (first-party … unverifiable) — see guardrail #5
-    evidence_grade: E1|E2|E3        // HOW the price was obtained: E1 = live PDP read / official API ·
-                                    // E2 = aggregator field (BigGo/Keepa/SERP-with-price) · E3 = SERP
-                                    // snippet / cross-model recall = a LEAD. Ranking checks this FIRST (guardrail #5).
-  }],
-  history: { 90d_low, 90d_high, 365d_low, "now_vs_low": "$X above", source_url } | null,
-  coupon_attempts: [{ code, applied: yes|no, savings }],
-  notes: "..."
-}
+status, retailer, product_match{ title, asin/itemId/skuId, variant_key, confidence },
+prices[{ sticker, currency, shipping, tax_estimate, coupon_applied, cashback_estimate, landed_cost,
+         stock_state, seller_name, seller_rating, condition, snapshot_ts, source_url,
+         seller_tier, evidence_grade }],
+history{ 90d_low, 90d_high, 365d_low, now_vs_low, source_url }|null, coupon_attempts[{ code, applied, savings }], notes
 ```
-with a length cap per field. The main agent reduces these units — it does **not** read raw page
-dumps. If fan-out exceeds ~5 retailers, insert a combiner layer (each combiner merges 3–4 workers)
-so the main context never holds N long page dumps.
+Length-cap each field. The main agent **reduces** these units — never reads raw page dumps; if fan-out
+exceeds ~5 retailers, insert a combiner layer (each merges 3–4 workers). Then, before synthesis, spawn
+the **zero-context verifier** (CONSTITUTION II.4): a fresh subagent with NO prior context that
+re-fetches every cited URL backing an `E1`/`L1` price entering the ranking and independently confirms
+price + stock + timestamp + **seller** (Sold-by/Shipped-by) + **evidence_grade** (a real PDP/API read,
+not a snippet). Same-subagent self-verification is a bug.
 
 ### Step 6 — Normalize and rank by LANDED COST
 
-This is the most-skipped step and the most decision-relevant.
+The most-skipped step and the most decision-relevant.
+- **Currency**: convert all to the user's region currency; cite the FX rate + timestamp, never round
+  silently.
+- **Landed cost = sticker + shipping + tax + (− coupon) + (− cashback).** Sticker alone is a ranking
+  trap (Prime free-ship vs eBay $15 ship flips winners). Tax: user's state % for US (e.g. NJ 6.625%);
+  cross-border → duty estimate or flag "unknown duties — confirm at checkout."
+- **Coupons**: verify by **playwright cart test** (badges lie); mark each `code, applied?, $`.
+- **Trust-adjust**: drop marketplace listings < 95% rating or < 500 ratings unless user OK'd it
+  (AliExpress especially).
+- **Output** the table sorted by landed cost, a "but actually" footnote on the top-2 (warranty /
+  returns / shipping-speed differentiators), and an explicit history note ("$X above 90-day low / at
+  365-day low / NEW LOW"; cite the Camelcamelcamel/Keepa chart when recommending "wait for sale").
 
-- **All prices to user's preferred currency** (default = user's region currency). When converting,
-  cite the FX rate + timestamp; do not silently round.
-- **Add: shipping + tax + coupon savings - cashback estimate → landed cost.** Sticker price alone
-  is a ranking trap — Amazon Prime free-ship vs eBay $15 ship can flip a "winner."
-- **Tax estimate**: use user's state (e.g. NJ sales tax 6.625%) for US; for cross-border include
-  customs duty estimate or flag "unknown duties — confirm at checkout."
-- **Coupon application**: verify by **playwright cart test** when possible (don't trust the
-  retailer's "coupons available" badge — most don't actually apply). Mark each `code, applied?, $`.
-- **Trust-adjust**: drop seller-marketplace listings with rating < 95% or < 500 ratings unless user
-  said it's fine. AliExpress especially needs this filter.
-- **Output the table sorted by landed cost**, with a "but actually" footnote on top-2 picks
-  (warranty, return policy, shipping speed differentiators).
-- **History note**: "current price is $X above 90-day low / at 365-day low / NEW LOW" — explicitly.
-  If recommending "wait for sale," cite the historical seasonality (Camelcamelcamel chart link or
-  Keepa screenshot).
+**Before you emit the report, self-check** (cheap substitute for an executable gate) —
+- [ ] Every ranked row carries `variant_key` + `snapshot_ts` + `seller_tier` + `evidence_grade`?
+- [ ] The #1 recommendation rests on ≥2 `E1` reads of the **same `variant_key`** (not single-source)?
+- [ ] A "Coverage gaps" section is present, including every in-scope channel class `not-attempted`?
+- [ ] `Sold by` was read for every unit stamped `L1` (else it is `L3`, not `L1`)?
+- [ ] The zero-context verifier (Step 5) actually re-confirmed each ranked `E1`/`L1` price?
+- [ ] No `E3` lead is sitting in the ranking, and no two snapshots were silently averaged?
 
 ## Quality guardrails (HARD rules — apply during synthesis)
 
-These are **price-data-specific** extensions of the market-intel guardrails. Read both together.
-
-1. **Snapshot timestamp is MANDATORY.** Every price entry must carry
-   `[fetched YYYY-MM-DD HH:MM TZ]`. Prices change hourly (esp. Amazon Buy Box). A price without a
-   timestamp is "unverified." When recommending, also state the snapshot date at report top.
-2. **Stock state is part of the price.** "$120 cheapest" with `out_of_stock` is not the answer.
-   Rank in-stock first; OOS or preorder = footnote, not top pick.
-3. **Landed cost, not sticker price.** See Step 6. If a source returns sticker only and you can't
-   compute landed cost, label it `⚠ sticker only — actual landed cost may be higher.`
-4. **Coupon verification gate.** Don't trust "100 coupons available!" badges. Either verify via
-   playwright cart test or label `coupon claims unverified`. Honey-style false-positive coupons
-   are real (see Honey 2026 status — `reference/domains/browser-extensions.md`).
-5. **Retailer trust tiers + seller-identity gate.** L1 first-party retailer · L2 marketplace seller
-   w/ high rating · L3 marketplace seller w/ low rating or thin history · L4 unknown / dropshipper ·
-   L5 unverifiable. **A retailer DOMAIN is not proof of first-party** — Best Buy Marketplace, Walmart
-   Marketplace, Newegg 3P and Amazon 3P all render under the retailer's own domain. **Stamp L1 ONLY
-   after reading the listing's `Sold by` / `Shipped by` field and confirming it is the retailer or the
-   brand itself**; if that field was not read, the unit is **L3 (seller unconfirmed)**, never L1 — so
-   `seller_name` is required on every L1–L4 retailer live-fetch unit, but a missing seller_name
-   **degrades the tier to L3, it does NOT reject the unit** (codex / BigGo L5 leads legitimately lack a
-   seller field). Don't rank L4/L5 as winners without explicit user override. Mark every retailer's
-   tier in the output. (Run B: a Best Buy "REDACTED-PRICE" listing was actually a 3.74★ Marketplace 3P —
-   caught only by reading Sold-by.)
-   **Evidence grade is ORTHOGONAL to seller tier and gates ranking FIRST.** Tag every price `E1`
-   (live PDP read / official API), `E2` (aggregator field — BigGo / Keepa / a SERP result carrying a
-   price), or `E3` (SERP snippet / cross-model recall = a *lead*). **Only `E1` may be a ranked
-   winner**; `E2` may enter the ranking only with a corroborating `E1` of the **same variant_key**;
-   `E3` is never ranked — it must be re-fetched to `E1` first. A clean first-party domain does NOT
-   upgrade an E3 snippet — evidence_grade is checked before seller_tier. (Run B: the "$1,450" figure
-   was an E3 SERP snippet; the real E1 PDP was $1,199.99 — neither the same number nor the
-   same SKU.)
-6. **No silent degradation.** When Keepa is unavailable and you fall back to spot-only playwright,
-   the report must say `⚠ historical data unavailable, only live price shown — cannot confirm
-   if this is a good deal vs. recent floor.` Never swap silently.
-7. **Cross-snapshot disagreement = re-fetch, don't average.** If two playwright pulls of the same
-   page disagree by >5%, re-fetch a 3rd time and either resolve or surface both with timestamps —
-   prices can genuinely change mid-fan-out (Buy Box rotation).
-   **Cross-SOURCE disagreement (different sources, same product):** FIRST confirm the prices share the
-   **same `variant_key`** — mismatched variants are two SKUs, listed separately, NOT a disagreement.
-   If two same-variant_key sources differ by >5%, write a Disagreement-matrix row with a cause from
-   the closed set {different seller, stale/aggregated (E2/E3), coverage-gap}, and resolve by evidence
-   grade (E1 wins; an E2/E3 that can't be lifted to E1 corroborates or is discarded — **never
-   averaged**). (Run B: codex ~$1.0–1.3k vs Newegg E1 PDP $1,199.99 vs a $1,450 E3 snippet were never
-   reconciled — that is this gap.)
-8. **Disconfirmation mandate (esp. for cheapest-source recommendations).** Run a dedicated
-   reverse-search subagent: scam / counterfeit / "X is a fake reseller" / refurb-not-as-advertised
-   / shipping-from-China-charged-as-US / dead-on-arrival reviews. Report must include a "Risks &
-   counter-evidence" section. Empty → "actively reverse-searched, none found — not proof of
-   safety." If the **Codex MCP** is connected, also run this reverse-search through it as an
-   independent cross-model check (treat its findings as L5 corroboration, not proof; see
-   `reference/codex-crossval.md`).
-9. **Failures become explicit gaps — AND so does what you never tried (coverage floor).** Any
-   subagent that returns `failed/empty` triggers one query rewrite + retry; if still empty, list it in
-   an explicit "Not covered" section. **Beyond failures:** a channel class that is IN SCOPE per
-   `reference/channel-classes.md` but was **never attempted** is also a gap — record it
-   `status: not-attempted` with a reason, emit a `coverage_gap` line (Step 7), and the report's
-   "Coverage gaps" section MUST list every in-scope class not taken to `E1` depth. Completeness-by-
-   omission (silence about a channel you never queried — e.g. a category-specialist or local-pickup
-   class) is a bug. A report may not look complete while a buyer channel was never checked.
-10. **Affiliate disclosure tracking (read-only).** Many extensions / sites (Honey, Karma,
-    Slickdeals, smzdm) operate on affiliate hijacking. This is fine for the *user* to know but
-    don't let it bias the ranking — when an extension claims "save $X via our exclusive link,"
-    cross-check against the same retailer's public price.
+Price-data-specific extensions of the market-intel guardrails — read both together. Long-form
+rationale + war-stories for #5/#5b/#7/#8/#9/#10: `reference/evidence-schema.md`.
+1. **Snapshot timestamp is MANDATORY.** Every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`
+   (prices change hourly — Amazon Buy Box); one without is "unverified." State the snapshot date at
+   report top.
+2. **Stock state is part of the price.** Rank in-stock first; OOS / preorder = footnote, not top pick.
+3. **Landed cost, not sticker.** See Step 6. Sticker-only with no computable landed cost → label
+   `⚠ sticker only — actual landed cost may be higher.`
+4. **Coupon verification gate.** Don't trust "coupons available!" badges — verify via playwright cart
+   test or label `coupon claims unverified` (Honey-style false positives are real; Honey 2026 status in
+   `reference/domains/browser-extensions.md`).
+5. **Seller tiers (L1–L5 — WHO sold it).** A DOMAIN is not proof of first-party (Best Buy / Walmart /
+   Newegg / Amazon all host 3P under their own domain) — stamp **L1 ONLY after reading `Sold by` /
+   `Shipped by`**; if unread, **L3, never L1**. Missing `seller_name` **degrades to L3, does NOT
+   reject**. Don't rank L4/L5 winners without override; mark every tier. Defs + Run-B war-story:
+   `reference/evidence-schema.md` (#5).
+5b. **Evidence grade (E1/E2/E3 — HOW obtained — gates ranking FIRST, before seller_tier).** Only `E1`
+   (live PDP / official API) may be a ranked winner; `E2` (aggregator) enters only with a corroborating
+   `E1` of the **same `variant_key`**; `E3` (SERP / cross-model recall) is never ranked — re-fetch to
+   `E1`. A first-party domain does NOT upgrade an E3 snippet. Rules: `reference/evidence-schema.md` (#5b).
+6. **No silent degradation.** Falling back from Keepa to spot-only playwright → the report MUST say
+   `⚠ historical data unavailable, only live price shown — cannot confirm if this is a good deal vs.
+   recent floor.` Never swap silently.
+7. **Disagreement = re-fetch / reconcile, never average** (procedure + war-story: `evidence-schema.md` #7):
+   - (a) **Cross-snapshot** (same page, two pulls >5% apart): re-fetch a 3rd time; resolve or surface
+     both with timestamps.
+   - (b) **Cross-SOURCE recon** (different sources): FIRST confirm same `variant_key` (mismatched = two
+     SKUs, separate, NOT a disagreement); if same-key and >5% apart, write a Disagreement-matrix row
+     (cause ∈ `{different seller, stale/aggregated (E2/E3), coverage-gap}`) and resolve by grade — E1
+     wins; an E2/E3 that can't be lifted corroborates or is discarded, never averaged.
+8. **Disconfirmation mandate.** Run a dedicated reverse-search subagent (scam / counterfeit / fake-
+   reseller / refurb-not-as-advertised / DOA) against the cheapest pick; report a "Risks &
+   counter-evidence" section — empty = "actively reverse-searched, none found — not proof of safety,"
+   never silence. Taxonomy + Codex option: `reference/evidence-schema.md` (#8).
+9. **Failures AND never-tried become explicit gaps** (coverage floor; full rule: `evidence-schema.md` #9):
+   - (a) **Failures:** any subagent returning `failed/empty` → one query rewrite + retry; if still
+     empty, list in an explicit "Not covered" section.
+   - (b) **Coverage floor:** an in-scope channel class (`reference/channel-classes.md`) **never
+     attempted** is also a gap — record `status: not-attempted` + reason, emit a `coverage_gap` line
+     (Step 7); the "Coverage gaps" section MUST list every in-scope class not taken to `E1`.
+     Completeness-by-omission is a bug.
+10. **Affiliate disclosure tracking (read-only).** Extensions/sites that affiliate-hijack (Honey,
+    Karma, Slickdeals, smzdm) MUST NOT bias the ranking — cross-check any "save $X via our link" claim
+    against the retailer's public price. Detail: `reference/evidence-schema.md` (#10).
 
 ## Output
 
-Synthesize per `reference/report-template.md`: snapshot timestamp, parsed buy intent (so the user
-can confirm we understood), landed-cost ranked table, history note, coupon-applied list, risks &
-counter-evidence, explicit coverage gaps + "configure source X for deeper data" lines, full
-source list.
+Synthesize per `reference/report-template.md`: snapshot timestamp, parsed buy intent (for the user to
+confirm), landed-cost ranked table, history note, coupon-applied list, risks & counter-evidence,
+explicit coverage gaps + "configure source X for deeper data" lines, full source list.
 
 ## Close the feedback loop (Step 7 — write what you observed)
 
-At the end of a real shopping run, append one line per source you actually touched to
-`metrics/live-runs.jsonl` (this reuses verdicts the guardrails already produced — near-zero extra
-cost). This is the highest-value error signal: it tells the next refresh which matrix entries the
-real world just proved right or wrong.
+At the end of a real run, append one line per source touched to `metrics/live-runs.jsonl` (reuses
+guardrail verdicts — tells the next refresh which matrix entries the world just proved right/wrong),
+plus one `coverage_gap` line per IN-SCOPE channel class (`reference/channel-classes.md`) NOT taken to
+E1 — this is how a missing CHANNEL (not just a dead tool) reaches the refresh loop
+(`reference/refresh-protocol.md`).
 
 ```jsonc
 { "ts":"<UTC>", "domain":"amazon-us", "source":"keepa",
   "outcome":"verified|unverifiable|dead|fallback_used|price_mismatch|coupon_fake|coverage_gap",
-  "detail":"<what diverged, e.g. Keepa said 90d-low $89 but Camelcamelcamel said $79>",
-  "user_correction": null }   // set when the user manually corrected an entry — highest-weight truth
+  "detail":"<what diverged>", "user_correction": null }  // user_correction = highest-weight truth
 ```
 
-Also emit one `coverage_gap` line per IN-SCOPE channel class (`reference/channel-classes.md`) you did
-NOT take to E1 depth this run — this is how a **missing CHANNEL** (not just a dead tool) reaches the
-refresh loop. `coverage_gap` is a real outcome value the refresh-protocol prioritizes on.
-
-If you can't write the file (e.g. the repo isn't checked out), note the observations in your reply.
+Per CONSTITUTION II.5: if you can't write the file (repo not checked out / not writable), note the
+observations in your reply instead — dropping them entirely is a bug.
 
 ## Recurring / monitoring use
 
-This skill is **one-shot** — it answers "should I buy this now and where." If the user wants
-"watch this product and tell me when it drops below $X", that's a wrap: instruct them to use
-`/schedule` (cron job that re-runs the skill on cadence) or set a Keepa / Camelcamelcamel /
-慢慢买 native price alert. Monitoring + distribution is out of scope for this thin layer
-(market-intel P5 — same doctrine).
+**One-shot** — "should I buy this now and where." For "watch this and alert me below $X", point the
+user to `/schedule` (cron re-run) or a native Keepa / Camelcamelcamel / 慢慢买 price alert; monitoring
++ distribution is out of scope for this thin layer (market-intel P5).
 
 ## Progressive loading rules
 
-- SKILL.md (this file) is always loaded — keep it the only frequently-loaded content.
-- Read `reference/sources-index.md` at triage (thin).
-- Read `reference/domains/<domain>.md` only for triaged domains. **Never read the whole domains/
-  directory.**
-- Read `reference/tools/index.md` (thin) to find a picked tool's doc slug; then read
-  `reference/tools/<slug>.md` **only for the specific tool you're about to use**. **Never read the
-  whole `tools/` directory** — that breaks progressive loading.
-- Read `reference/install-guide.md` when setting up any source. It points down to per-domain (L1)
-  and per-tool (L2) detail.
-- Read `reference/volatile/pricing-install.md` only when actually guiding an install — prices and
-  commands there are time-stamped and may be stale; verify against the official site before use.
+SKILL.md (this file) is always loaded — keep it the only frequently-loaded content. Read on-demand,
+**never a whole directory**: `reference/sources-index.md` at triage; only the matched
+`reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
+`reference/tools/<slug>.md`; `reference/install-guide.md` when setting up a source;
+`reference/evidence-schema.md` at Step 5; `reference/volatile/pricing-install.md` only when guiding an
+install (time-stamped — verify against the official site first).
 
 ## Maintenance
 
-The source matrix decays. When asked to "refresh the shopping-aggregator source matrix /
-刷新比价工具库", or on a scheduled sweep, follow `reference/refresh-protocol.md`: fan out one
-subagent per domain to find new/changed/dead tools since each shard's `last_verified`, apply the
-same quality guardrails, edit shards incrementally, record the diff in `CHANGELOG.md`, and bump
-the plugin version. Refresh cadence is faster than market-intel's: **monthly** (consumer shopping
-moves on Q/quarterly promo cycle; browser-extension policies change fast).
+The matrix decays. To "refresh the source matrix / 刷新比价工具库" or on a scheduled sweep, follow
+`reference/refresh-protocol.md` (per-domain fan-out for new/changed/dead tools since each shard's
+`last_verified`, apply guardrails, edit shards incrementally, diff in `CHANGELOG.md`, bump version).
+Cadence: **monthly** (faster than market-intel — promo cycles + browser-extension policy churn).

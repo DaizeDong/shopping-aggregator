@@ -1,18 +1,22 @@
 # Roadmap
 
-`shopping-aggregator` is v0.1.0 — initial release with 9 domain shards, 17 tool docs, the
-SKILL.md orchestration core, and the philosophy inherited from market-intel. This file tracks
-what's next.
+`shopping-aggregator` is at v0.2.0 — the structural/framework batch landed the CONSTITUTION,
+the demand-side channel-class primitive, the evidence-unit schema (`variant_key` /
+`seller_tier` / `evidence_grade`), the seller-identity gate, and the codex-crossval back-end
+on top of the v0.1.0 base (9 domain shards, 22 tool docs, the SKILL.md orchestration core, the
+philosophy inherited from market-intel). This file tracks what's next.
 
 ## v0.2 — Match market-intel's enforcement layer
 
 - [ ] **Anti-regression gate (`tools/verify_matrix.py`)** — port from market-intel. Catch
       shard↔tool-doc↔index drift, dead-repo entries, hallucinated tools. Wire as required CI
-      status check on PR to main.
-- [ ] **CONSTITUTION.md** — explicit hard constraints injected at refresh-time so the editing
-      subagents physically can't propose changes that violate the philosophy. (Market-intel did
-      this in its v0.4-0.5 era.)
-- [ ] **More tool docs** — currently 17; target 30-40 to match market-intel's depth. Specific
+      status check on PR to main. **LANDING in the 0.3.0 batch (in progress)** — the skill's
+      first executable lint gate, closing the coverage/reconciliation loop that the 0.2.0
+      schema/guardrail work could only enforce by-construction (advisory) until now.
+- [x] **CONSTITUTION.md** — shipped in 0.2.0. Explicit hard constraints injected at refresh-time
+      so the editing subagents physically can't propose changes that violate the philosophy.
+      (Market-intel did this in its v0.4-0.5 era.)
+- [ ] **More tool docs** — currently 22; target 30-40 to match market-intel's depth. Specific
       gaps: Bright Data Web Unlocker (referenced but no per-tool doc yet), DealNews,
       InvisibleHand, RetailMeNot Genie, Cently, 京东价保 deep-dive, Slickdeals API discovery,
       r/buildapcsales as a structured source.
