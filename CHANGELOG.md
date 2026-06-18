@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1] — 2026-06-17
+
+Iteration-loop round-1 cleanup. A 4-lens review of 0.3.0 CONVERGED (4/4 lenses converged, zero critical/major regression — the restructure dropped no rule, all evidence-schema.md pointers resolve, the gate is genuine enforcement). These are the residual minors it surfaced:
+- **`reference/report-template.md`** — the ranking-table note pointed the "only an E1 row may be #1" rule at guardrail #5, but the 0.3.0 split moved that rule to **#5b** (#5 is now seller-tier). Fixed.
+- **`SKILL.md` Step 3** — two in-prose pointers (`domains/amazon-us.md`, `tools/biggo-mcp.md`) were missing the `reference/` prefix every other pointer in the file uses → would mis-resolve for an agent following them verbatim. Fixed.
+- **`tools/verify_matrix.py`** — THREEWAY docstring clarified as EXISTENCE-only (per-domain placement is advisory, not gated) — removes a slight overclaim.
+- bump 0.3.0 → 0.3.1. Gate: PASS.
+
 ## [0.3.0] — 2026-06-17
 
 APPRAISAL-driven batch from an honest 6-lens self-evaluation of v0.2.0. Overall finding: the skill was 思路-correct but had written many advisory "MUST" rules with **NO executable gate** behind them — violating its own PHILOSOPHY P2 (mechanism, not intention) — and `SKILL.md` (332 lines) had outgrown its thin always-loaded budget against the parent market-intel (299). This batch closes the P2 gap with the skill's first real gate, repairs a dead feedback loop, and slims the entry-point doc.
