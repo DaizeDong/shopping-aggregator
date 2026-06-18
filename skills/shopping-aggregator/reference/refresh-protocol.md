@@ -111,9 +111,12 @@ activity — see `.github/workflows/heartbeat.yml`.
 
 ## What's NOT in this protocol (defer to market-intel)
 
-- Anti-regression gate (`verify_matrix.py`) — market-intel's gate runs in CI and bans matrix
-  regressions. This skill **does not yet** have its own gate (planned in ROADMAP). Until then,
-  refresh discipline is voluntary — gate-shaped enforcement is on the ROADMAP for v0.2.
+- Anti-regression gate — this skill **ships its own** `tools/verify_matrix.py` + `.github/workflows/
+  gate.yml` (as of v0.3.0): 6 deterministic artifact/contract checks (THREEWAY registry↔docs↔index ·
+  FRESH last_verified · TEMPLATE Coverage-gaps+Ev · VERSION CHANGELOG↔plugin sync · RENAME no
+  source_tier leak · LIVERUNS metrics JSONL valid). Run `python tools/verify_matrix.py` before any
+  matrix change; CI runs it on push + PR. market-intel's RICHER judgement checks
+  (REPO/STAR/GHACTIVE/COVER/CHURN/DELETE) are **not yet ported** — those remain the gap.
 - CONSTITUTION-injection-as-hard-constraints — the skill now ships its own `CONSTITUTION.md` at the
   repo root (I.1–VII). A refresh sweep updates the matrix and may NOT relax the constitution (see
   CONSTITUTION VII).
