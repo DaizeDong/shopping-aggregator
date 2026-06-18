@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.2] — 2026-06-17
+
+Structure-audit cleanup. A 6-lens structural audit returned **MINOR-ONLY (leaning CONVERGED)** — the architecture is sound (thin layer, layered-DRY canonical-home+pointer, scoped gate, no orphans/double-homing; DRY lens converged outright). Landed only the 3 genuine items + doc-honesty; explicitly did NOT re-open structure (no new shards, no SKILL.md re-split, no brittle gate checks — those were named churn/net-negative).
+
+- **`reference/refresh-protocol.md`** — flipped an operationally-live falsehood: it told a refresh-sweep agent the skill "does not yet have its own gate (planned)", but the gate shipped in 0.3.0. Now states it ships `tools/verify_matrix.py` + `gate.yml` (6 checks); market-intel's richer judgement checks remain the gap.
+- **`tools/verify_matrix.py`** — added a 6th deterministic check **LIVERUNS**: `metrics/live-runs.jsonl` (consumed by the refresh loop) — every non-blank line must parse as JSON + carry the 6 required keys (BLOCK); `outcome` in the declared set (WARN). A corrupt metrics file no longer silently breaks the refresh loop.
+- **`SKILL.md`** — Step 4: made the shardless-channel-class path explicit (brand-direct / cross-border / non-PC category-specialists have no domain shard → run them directly via the channel-classes route; do NOT create shards). Progressive-loading block: added `channel-classes.md` (a triage-tier load that was omitted).
+- **`ROADMAP.md`** — version → 0.3.2; checked off the now-shipped gate bullet.
+- bump 0.3.1 → 0.3.2. Gate: PASS (6 checks). README version/count refresh deferred (human-only cosmetic). **Structure declared converged — stop.**
+
 ## [0.3.1] — 2026-06-17
 
 Iteration-loop round-1 cleanup. A 4-lens review of 0.3.0 CONVERGED (4/4 lenses converged, zero critical/major regression — the restructure dropped no rule, all evidence-schema.md pointers resolve, the gate is genuine enforcement). These are the residual minors it surfaced:
