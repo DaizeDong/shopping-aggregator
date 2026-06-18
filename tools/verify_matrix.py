@@ -28,6 +28,10 @@ Checks:
             means a rename was left half-done (BLOCK). The prose column label "Source tier:" is a
             DIFFERENT, allowed token and is not matched. CHANGELOG.md (repo root, not under skills/)
             legitimately records the rename in its history and is exempt by being out of scope.
+  LIVERUNS  metrics/live-runs.jsonl (the refresh loop consumes it): every non-blank line parses as
+            JSON AND carries the 6 required keys ts/domain/source/outcome/detail/user_correction
+            (BLOCK — a corrupt metrics file silently breaks the refresh loop); `outcome` in the
+            declared set (WARN, mirroring FRESH — an out-of-enum outcome is rot, not a broken contract).
 
 Why FRESH is WARN, not BLOCK: a missing freshness stamp is a documentation-rot signal, not a broken
 contract — surfacing it for a human to fix is the right severity, and a hard block here would make
@@ -191,6 +195,28 @@ def run_checks():
             if RENAME_RE.search(read(fp)):
                 rel = os.path.relpath(fp, ROOT).replace("\\", "/")
                 block("RENAME", f"token `source_tier` leaked into {rel} — it was renamed to seller_tier + evidence_grade")
+
+    # ---- LIVERUNS: metrics/live-runs.jsonl is valid JSONL the refresh loop can consume ----
+    LIVERUNS = os.path.join(SKILL, "metrics", "live-runs.jsonl")
+    REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
+    # SKILL.md Step 7 enum + the bootstrap "created"/"meta" genesis values.
+    OUTCOME_OK = {"created", "verified", "unverifiable", "dead", "fallback_used",
+                  "price_mismatch", "coupon_fake", "coverage_gap"}
+    if os.path.exists(LIVERUNS):
+        for i, ln in enumerate(read(LIVERUNS).splitlines(), 1):
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                rec = json.loads(ln)
+            except Exception as e:
+                block("LIVERUNS", f"metrics/live-runs.jsonl line {i} is not valid JSON: {e}")
+                continue
+            missing = REQUIRED_KEYS - set(rec)
+            if missing:
+                block("LIVERUNS", f"metrics/live-runs.jsonl line {i} missing keys: {sorted(missing)}")
+            if rec.get("outcome") not in OUTCOME_OK:
+                warn("LIVERUNS", f"metrics/live-runs.jsonl line {i} outcome '{rec.get('outcome')}' not in the declared set")
 
 
 def main():
