@@ -14,7 +14,9 @@ pass (a gate that can't run is a BLOCK, not a green light).
 Checks:
   THREEWAY  every slug in reference/tools/registry.json has a reference/tools/<slug>.md AND a row in
             reference/tools/index.md, and vice-versa (BLOCK on any mismatch). registry.json may list
-            a slug once per domain, so slugs are de-duplicated before comparison.
+            a slug once per domain, so slugs are de-duplicated before comparison. This is
+            EXISTENCE-only (each slug present in all three places); per-domain PLACEMENT (which slug
+            sits under which domain heading) is advisory, not gated.
   FRESH     every reference/domains/*.md and reference/tools/*.md carries a `Last verified:` /
             `last_verified` line (WARN — see rationale below — never BLOCK).
   TEMPLATE  reference/report-template.md has a "Coverage gaps" section heading AND an "Ev" column in

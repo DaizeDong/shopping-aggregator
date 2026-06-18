@@ -17,7 +17,7 @@
 ## Landed-cost ranking (the answer)
 
 > One row per `variant_key`. **Ev** = evidence grade: E1 live PDP/API · E2 aggregator · E3 snippet
-> (a lead — never the ranked winner). Only an E1 row may be #1 (guardrail #5).
+> (a lead — never the ranked winner). Only an E1 row may be #1 (guardrail #5b).
 
 | Rank | Retailer | Variant (key) | Sticker | Ship | Tax | Coupon | Cashback est. | **Landed** | Seller / tier | **Ev** | Stock | Snapshot |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
