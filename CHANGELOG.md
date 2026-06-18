@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3] — 2026-06-17
+
+Documentation-consistency sweep (no skill-logic change). Grep-audited the whole repo for stale version strings, wrong counts, broken links, and pre-0.2.0 feature descriptions; only the two READMEs were stale.
+- **`README.md` + `README_CN.md`** — version badge 0.1.0 → 0.3.3; fixed a broken **doubled `SKILL.md` link** (`skills/shopping-aggregator/skills/shopping-aggregator/SKILL.md` → `skills/shopping-aggregator/SKILL.md`); rewrote Status/roadmap to reflect what shipped since v0.1.0 (channel-class primitive, seller_tier+evidence_grade split, variant_key, coverage floor, CONSTITUTION, codex-crossval, the executable gate), corrected tool-doc count **17 → 22**, re-scoped remaining gaps to market-intel's richer judgement checks; added the new headline guardrails (evidence-grade-gates-ranking, seller-identity-not-domain, variant pinning, coverage floor) to the guardrails list and the channel-class mapping to the intent-parse step.
+- Verified the rest is NOT stale: ROADMAP / refresh-protocol / CONSTITUTION / PHILOSOPHY / shards already current as of 0.3.2; remaining `source_tier` mentions are the gate's own definition (exempt) + the live-runs genesis line (historical record); the two `guardrail #5` shard refs correctly point to seller-tier (genuinely #5).
+- bump 0.3.2 → 0.3.3. Gate: PASS.
+
 ## [0.3.2] — 2026-06-17
 
 Structure-audit cleanup. A 6-lens structural audit returned **MINOR-ONLY (leaning CONVERGED)** — the architecture is sound (thin layer, layered-DRY canonical-home+pointer, scoped gate, no orphans/double-homing; DRY lens converged outright). Landed only the 3 genuine items + doc-honesty; explicitly did NOT re-open structure (no new shards, no SKILL.md re-split, no brittle gate checks — those were named churn/net-negative).
