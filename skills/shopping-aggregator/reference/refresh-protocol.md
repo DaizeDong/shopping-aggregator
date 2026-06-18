@@ -114,7 +114,7 @@ activity — see `.github/workflows/heartbeat.yml`.
 - Anti-regression gate — this skill **ships its own** `tools/verify_matrix.py` + `.github/workflows/
   gate.yml` (as of v0.3.0): 6 deterministic artifact/contract checks (THREEWAY registry↔docs↔index ·
   FRESH last_verified · TEMPLATE Coverage-gaps+Ev · VERSION CHANGELOG↔plugin sync · RENAME no
-  source_tier leak · LIVERUNS metrics JSONL valid). Run `python tools/verify_matrix.py` before any
+  leaked legacy tier token · LIVERUNS metrics JSONL valid). Run `python tools/verify_matrix.py` before any
   matrix change; CI runs it on push + PR. market-intel's RICHER judgement checks
   (REPO/STAR/GHACTIVE/COVER/CHURN/DELETE) are **not yet ported** — those remain the gap.
 - CONSTITUTION-injection-as-hard-constraints — the skill now ships its own `CONSTITUTION.md` at the
