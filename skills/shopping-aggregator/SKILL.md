@@ -87,7 +87,7 @@ Run `claude mcp list` and parse the three-state health — usable only if `✓ C
 `✗ Failed` / `! Needs authentication` as **not available**. Tool-name prefix matching (`mcp__*shopping*`)
 is unreliable (deferred tools, plugin prefixes, dead connections distort it). Detect: **playwright MCP**
 (default ④ live-fetch); **firecrawl** (static fallback, **NOT enough for Amazon/Taobao** anti-bot — use
-playwright, see `domains/amazon-us.md`); **BigGo MCP** (`tools/biggo-mcp.md`); **Keepa MCP** (Amazon
+playwright, see `reference/domains/amazon-us.md`); **BigGo MCP** (`reference/tools/biggo-mcp.md`); **Keepa MCP** (Amazon
 history); **Apify price-intelligence MCP** (paid, broadest US). Also ask the user (can't auto-detect):
 Camelcamelcamel bookmark, Keepa account, browser extensions (Capital One Shopping / Karma / 购物党 / 慢慢买 App).
 
