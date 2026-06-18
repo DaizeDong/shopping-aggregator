@@ -9,7 +9,7 @@ reinventing it.
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Domains](https://img.shields.io/badge/Source%20Matrix-9%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Tool docs](https://img.shields.io/badge/Tool%20docs-per--tool%20how--to-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Version](https://img.shields.io/badge/version-0.1.0-purple?style=flat)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.3-purple?style=flat)](CHANGELOG.md)
 [![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
 
 [English](README.md) | [中文版](README_CN.md)
@@ -66,7 +66,8 @@ rotates hourly).
 things nothing else does**, and delegates everything else:
 
 1. **Parse the buy intent** — product + region + budget + urgency + sensitivity → triage to 1–N
-   of 9 shopping domains.
+   of 9 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
+   retailer — e.g. Micro Center — stays visible instead of being structurally invisible).
 2. **Detect + guide install** — check which specialized shopping MCP/extension/OSS tool is
    connected (via `claude mcp list`, not unreliable tool-name guessing), and if a key source is
    missing, hand you the exact install command — or open its **per-tool how-to doc**
@@ -166,13 +167,21 @@ per-domain) →
 
 These extend market-intel's general guardrails with shopping-specific rules. Hard rules applied
 during synthesis (full list in
-[`SKILL.md`](skills/shopping-aggregator/skills/shopping-aggregator/SKILL.md)):
+[`SKILL.md`](skills/shopping-aggregator/SKILL.md)):
 
 - **Snapshot timestamp is MANDATORY** — every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`.
 - **Stock state is part of the price** — OOS at $X ≠ in-stock at $X+5.
 - **Landed cost, not sticker price** — ship + tax + coupon - cashback.
 - **Coupon verification gate** — playwright cart test, not extension badge.
-- **Retailer trust tiers** L1 first-party → L5 unverifiable; don't rank L4/L5 as winners.
+- **Retailer trust tiers** `seller_tier` L1 first-party → L5 unverifiable; don't rank L4/L5 as winners.
+- **Evidence grade gates ranking first** — `evidence_grade` E1 (live PDP/API) · E2 (aggregator) · E3
+  (snippet/cross-model lead); only an E1 read can be the ranked winner, a domain never upgrades a snippet.
+- **Seller identity, not domain** — a retailer domain hosts 3P marketplace sellers; read `Sold by` /
+  `Shipped by` before stamping first-party (L1).
+- **Variant pinning** — `variant_key` (brand|model|color|bundle|condition); different variant = different
+  SKU, never compared as one.
+- **Coverage floor** — an in-scope channel class never checked is an explicit `coverage_gap`, not silent
+  omission; deterministic invariants are CI-enforced by `tools/verify_matrix.py`.
 - **No silent degradation** — when Keepa is unavailable, fall-back-to-playwright is flagged.
 - **Cross-snapshot disagreement = re-fetch, don't average** — Buy Box rotates.
 - **Disconfirmation mandate** — counterfeit / DOA / fraud reverse-search.
@@ -195,12 +204,15 @@ research); weekly for browser-extensions and AI-shopping-assistants. Trigger man
 
 ## Status / roadmap
 
-This is v0.1.0 — initial release. **Hand-curated matrix from a 5-subagent shopping landscape
-survey done 2026-06-15**, paired with patterns inherited from market-intel. Known gaps for v0.2:
+v0.3.3. The v0.1.0 hand-curated matrix (5-subagent landscape survey, 2026-06-15) has since gained:
+the demand-side **channel-class** primitive (tool-less authorized retailers stay visible), a split
+evidence model (**`seller_tier`** = who sold it + **`evidence_grade`** E1/E2/E3 = how the price was
+obtained, only a live read can win), mandatory **`variant_key`** SKU pinning, a coverage floor, the
+**CONSTITUTION** hard-constraint layer, the **codex-crossval** cross-model back-end, and the skill's
+**first executable gate** (`tools/verify_matrix.py` + CI). Remaining gaps:
 
-- Anti-regression gate (port from market-intel's `verify_matrix.py`).
-- CONSTITUTION-as-hard-constraint injection.
-- More tool docs (currently 17; ~30-40 target for parity).
+- market-intel's richer judgement gate checks (REPO / STAR / GHACTIVE / COVER / CHURN / DELETE) — not yet ported.
+- More tool docs (currently 22; ~30-40 target for parity).
 - Per-region tax/shipping-cost auto-computation tables.
 
 See [ROADMAP.md](ROADMAP.md).

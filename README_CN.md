@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Domains](https://img.shields.io/badge/Source%20Matrix-9%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Tool docs](https://img.shields.io/badge/Tool%20docs-per--tool%20how--to-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Version](https://img.shields.io/badge/version-0.1.0-purple?style=flat)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.3-purple?style=flat)](CHANGELOG.md)
 [![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
 
 [English](README.md) | [中文版](README_CN.md)
@@ -60,7 +60,8 @@ Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献
 
 `shopping-aggregator` 就是填这个空白的薄层。它**只做三件别人不做的事**，其它全部委托：
 
-1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 9 个购物 domain 的 1-N 个。
+1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 9 个购物 domain 的 1-N 个，
+   **并映射到需求侧 channel class**（让无工具的授权零售商——如 Micro Center——不再结构性隐形）。
 2. **检测 + 引导安装** — `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
    出确切安装命令，并指向**每工具一文档**
    ([`reference/tools/`](skills/shopping-aggregator/reference/tools/index.md))。
@@ -148,13 +149,18 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 ## 质量护栏（购物特有）
 
 继承 market-intel 通用护栏 + 购物特有规则。合成时强制执行（详见
-[`SKILL.md`](skills/shopping-aggregator/skills/shopping-aggregator/SKILL.md)）：
+[`SKILL.md`](skills/shopping-aggregator/SKILL.md)）：
 
 - **快照时间戳必填** — 每条价格挂 `[fetched YYYY-MM-DD HH:MM TZ]`。
 - **库存状态是价格的一部分** — 缺货 $X ≠ 现货 $X+5。
 - **到手价，不是标价** — 运费 + 税 + 券 - 返利。
 - **优惠码购物车实测** — 实测，不信扩展的"已节省"徽章。
-- **零售商信任分层** L1 first-party → L5 不可验证；L4/L5 不能排冠军。
+- **零售商信任分层** `seller_tier` L1 first-party → L5 不可验证；L4/L5 不能排冠军。
+- **证据等级先于卖家层级闸门排名** — `evidence_grade` E1（实读 PDP/API）· E2（聚合器）· E3（片段/跨模型线索）；
+  只有 E1 实读能当排名冠军，干净域名也不能把片段升级。
+- **卖家身份而非域名** — 零售商域名下挂着第三方市场卖家；盖 first-party(L1) 前必须读 `Sold by` / `Shipped by`。
+- **变体钉死** — `variant_key`（品牌|型号|配色|捆绑|成色）；不同变体 = 不同 SKU，绝不当一个比。
+- **覆盖地板** — 在场却从未查的渠道类 = 显式 `coverage_gap`，不许静默遗漏；确定性不变量由 `tools/verify_matrix.py` CI 强制。
 - **不准默默降级** — Keepa 没用时回退 playwright 要明确告知"历史数据缺失"。
 - **跨快照分歧不平均，重抓** — Buy Box 会换。
 - **反向搜索强制** — 假冒/DOA/欺诈关键词。
@@ -175,12 +181,14 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 
 ## 状态 / 路线
 
-v0.1.0 — 初版。**手动策展矩阵**，源自 2026-06-15 一次 5-subagent 购物比价调研，加上从
-market-intel 继承的模式。v0.2 已知缺口：
+v0.3.3。v0.1.0 的手动策展矩阵（2026-06-15 一次 5-subagent 调研）之后陆续长出：需求侧
+**channel-class** 原语（无工具的授权零售商不再隐形）、拆分的证据模型（**`seller_tier`** 谁卖 +
+**`evidence_grade`** E1/E2/E3 怎么拿到，只有实读能当冠军）、强制 **`variant_key`** SKU 钉死、
+覆盖地板、**CONSTITUTION** 硬约束层、**codex-crossval** 跨模型后端，以及本 skill 的**首个可执行
+闸门**（`tools/verify_matrix.py` + CI）。剩余缺口：
 
-- 反退化门（从 market-intel 的 `verify_matrix.py` 移植）。
-- CONSTITUTION 硬约束注入。
-- 更多工具文档（现 17 个，目标 30-40 与 market-intel 对齐）。
+- market-intel 更丰富的判断型闸门检查（REPO / STAR / GHACTIVE / COVER / CHURN / DELETE）——尚未移植。
+- 更多工具文档（现 22 个，目标 30-40 与 market-intel 对齐）。
 - 各区税/运费自动计算表。
 
 详见 [ROADMAP.md](ROADMAP.md)。
