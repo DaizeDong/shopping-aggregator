@@ -45,8 +45,10 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
   **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
   **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
-- **II.5** Live-run observations MUST be appended to `metrics/live-runs.jsonl` when a real run
-  completes. Skipping the append is a bug (refresh-protocol depends on it).
+- **II.5** Live-run observations MUST be appended to `metrics/live-runs.jsonl` when the repo is
+  checked out and the file is writable. If the run cannot write the file (no repo checkout / not
+  writable), it MUST instead note the observations in its reply. Dropping the observations entirely —
+  neither appended nor reported — is a bug (refresh-protocol depends on them).
 
 ## III — Matrix integrity
 

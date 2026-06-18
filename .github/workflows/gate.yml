@@ -1,0 +1,21 @@
+name: gate
+# The skill's first executable lint gate (PHILOSOPHY P2: mechanism, not intention). Runs the
+# deterministic artifact/contract checks in tools/verify_matrix.py on every push and PR. Exit
+# non-zero = BLOCK the change. Detection only — it never edits the matrix.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Run deterministic matrix gate
+        run: python tools/verify_matrix.py
