@@ -14,11 +14,11 @@
 | **Karma** ([karma-extension.md](../tools/karma-extension.md)) | ✓ healthy (v10.88 May 2026) | wishlist + price-drop + multi-store; works on Amazon | cashback lower than Rakuten |
 | **Coupert** ([coupert.md](../tools/coupert.md)) | ✓ healthy, ~8M users | 200K+ merchants, 70K cashback, ~73% coupon success rate | freemium nudges; sometimes silent affiliate-link rewrite |
 | **Rakuten extension** | ✓ healthy | 3500+ stores cashback; **NOT Amazon** | quarterly payout delay; Amazon not covered |
-| **Cently** | ✓ healthy (v7.35, Feb 2026) | auto-apply codes at checkout | owned by System1 ad-tech — data concerns |
+| **Cently** ([cently.md](../tools/cently.md)) | ✓ healthy (v7.36, ~100K users, updated 2026-03) | auto-apply codes at checkout | owned by System1 ad-tech (NextGen Shopping LLC) — data concerns |
 | **Slickdeals extension** | ✓ healthy (v3.9.1, Jun 2026) | community-deal alerts on PDP | notification noise from forum activity |
-| **RetailMeNot Genie / Deal Finder** | ✓ healthy (v4.23.4, Apr 2026) | coupon apply | smaller catalog post-Vericast cuts |
+| **RetailMeNot** (ex-Genie) ([retailmenot.md](../tools/retailmenot.md)) | ✓ healthy (v4.23.x, Apr 2026; Genie name retired into this listing) | coupon apply + cashback, 20K brands | smaller catalog post-Vericast cuts; last-click affiliate rewrite; intrusive popups |
 | **PayPal Honey** | ⚠⚠ **AVOID 2026** | coupon + Honey Gold cashback; covers Amazon | legal MDL active; Rakuten/Impact/Awin terminations gutted catalog Jan 2026; suspected affiliate-link hijack; uninstall recommended |
-| **InvisibleHand** | ⚠ diminished | 20k+ US/UK + travel | Skimlinks-owned since 2013, minimal updates |
+| **InvisibleHand** ([invisiblehand.md](../tools/invisiblehand.md)) | ⚠ **AVOID — brand retired** | (was 20k+ US/UK + travel) | rebranded to CNET Shopping (Red Ventures); old ID now serves CNET Shopping; MV2 sunset risk, shrinking base — tombstone (D-SUPERSEDED) |
 | **PriceBlink** | ✗ EoL announced | 11k+ retailers incl Amazon | migrating to CNET Shopping — sunset planned |
 
 ## CN-side extensions
