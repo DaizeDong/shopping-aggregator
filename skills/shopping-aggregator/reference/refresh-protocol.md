@@ -125,15 +125,28 @@ activity — see `.github/workflows/heartbeat.yml`.
 ## Feedback loop
 
 The skill writes one line per source touched to `metrics/live-runs.jsonl` during real runs (see
-SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritization input:
+SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritization input. Run the
+ranking tool (replaces the old hand-run `jq | sort | uniq -c` one-liner — one deterministic,
+weighted definition shared by the protocol and the gate):
 
 ```bash
-jq -r '.domain + "\t" + .source + "\t" + .outcome' metrics/live-runs.jsonl | sort | uniq -c | sort -rn
+python tools/refresh_priority.py            # ranked source table (default)
+python tools/refresh_priority.py --by domain   # aggregate by domain
+python tools/refresh_priority.py --json        # machine-readable, for scripted sweeps
 ```
 
-Sources/channels with the most `dead` / `price_mismatch` / `coverage_gap` events get top priority in
-the next sweep. A `coverage_gap` line means a real run hit an in-scope channel it could not take to E1
-depth — this is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh
-loop; route it to the channel-completeness audit above. The highest-weight signal is the
-`user_correction` **field** (a JSON key present on any line — NOT an `outcome` value) — the user
-manually fixed something we were wrong about.
+Work top-down through the ranking in the next sweep. The tool scores each `(domain, source)` by a
+weighted sum of its problem events, **highest weight first**:
+
+- `user_correction` (weight 100) — the user manually fixed something we were wrong about. This is a
+  JSON **key present on the line** (non-null value), **NOT an `outcome` value**; a line can carry it
+  even when its `outcome` is `verified`. Highest-weight signal — always work these first.
+- `dead` (weight 10) — a tool/source stopped working.
+- `price_mismatch` (weight 5) — the source's price diverged from the live authorized listing.
+- `coverage_gap` (weight 3) — a real run hit an in-scope channel it could not take to E1 depth. This
+  is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh loop; route
+  these to the channel-completeness audit above.
+
+A single event can contribute multiple weights (e.g. a `price_mismatch` line that also carries a
+non-null `user_correction`). Non-problem outcomes (`verified`, `created`, ...) carry no weight unless
+they also carry a `user_correction`.
