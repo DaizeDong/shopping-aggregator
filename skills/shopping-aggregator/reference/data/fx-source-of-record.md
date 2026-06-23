@@ -163,7 +163,7 @@ All checks performed 2026-06-22 via `web_search` + live `curl`.
 
 | Claim | Result | Evidence |
 |-------|--------|----------|
-| Frankfurter is free, no key, ECB-backed | Confirmed | [frankfurter.dev](https://frankfurter.dev/), [GitHub lineofflight/frankfurter](https://github.com/lineofflight/frankfurter) |
+| Frankfurter is free, no key; ECB is a data **provider** (`providers=ECB`), not an endorser/sponsor | Confirmed | [frankfurter.dev](https://frankfurter.dev/), [frankfurter.dev/providers](https://frankfurter.dev/providers/), [GitHub lineofflight/frankfurter](https://github.com/lineofflight/frankfurter) |
 | Frankfurter serves USD/EUR/CNY live | Confirmed | live `GET api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,CNY` → `{"amount":1.0,"base":"USD","date":"2026-06-22","rates":{"CNY":6.7748,"EUR":0.87291}}` |
 | Frankfurter `v2/latest` path | **Not live** (404) | live `GET api.frankfurter.dev/v2/latest...` → `{"status":404,"message":"not found"}` — use `v1/latest` |
 | `exchangerate.host` keyless | **FALSE as of 2026-06-22** — now needs access key | [exchangerate.host docs](https://exchangerate.host/documentation), [pricing](https://exchangerate.host/pricing) |
