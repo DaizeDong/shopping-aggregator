@@ -38,6 +38,21 @@
     {"slug": "pricebuddy", "name": "jez500/pricebuddy", "kind": "repo", "repo": "jez500/pricebuddy", "domain": "oss-self-host", "top_pick": true},
     {"slug": "priceghost", "name": "clucraft/PriceGhost", "kind": "repo", "repo": "clucraft/PriceGhost", "domain": "oss-self-host", "top_pick": true},
     {"slug": "pricedive", "name": "DAILtech/PriceDive", "kind": "repo", "repo": "DAILtech/PriceDive", "domain": "oss-self-host", "top_pick": true},
-    {"slug": "discount-bandit", "name": "Cybrarist/Discount-Bandit", "kind": "repo", "repo": "Cybrarist/Discount-Bandit", "domain": "oss-self-host", "top_pick": false}
+    {"slug": "discount-bandit", "name": "Cybrarist/Discount-Bandit", "kind": "repo", "repo": "Cybrarist/Discount-Bandit", "domain": "oss-self-host", "top_pick": false},
+    {"slug": "retailmenot", "name": "RetailMeNot (ex-Genie)", "kind": "ext", "repo": null, "domain": "browser-extensions", "top_pick": false},
+    {"slug": "cently", "name": "Cently", "kind": "ext", "repo": null, "domain": "browser-extensions", "top_pick": false},
+    {"slug": "invisiblehand", "name": "InvisibleHand (AVOID — now CNET Shopping)", "kind": "ext", "repo": null, "domain": "browser-extensions", "top_pick": false},
+    {"slug": "jd-price-protection", "name": "京东价保 (JD Price Protection)", "kind": "service", "repo": null, "domain": "jd-pdd", "top_pick": true},
+    {"slug": "xiaohongshu", "name": "小红书 (Xiaohongshu / RedNote)", "kind": "app", "repo": null, "domain": "taobao-tmall", "top_pick": false},
+    {"slug": "xiaohongshu", "name": "小红书 (Xiaohongshu / RedNote)", "kind": "app", "repo": null, "domain": "jd-pdd", "top_pick": false},
+    {"slug": "xiaohongshu", "name": "小红书 (Xiaohongshu / RedNote)", "kind": "app", "repo": null, "domain": "mobile-apps-aggregators", "top_pick": false},
+    {"slug": "scraperapi", "name": "ScraperAPI", "kind": "saas", "repo": null, "domain": "ebay-walmart-target", "top_pick": false},
+    {"slug": "scraperapi", "name": "ScraperAPI", "kind": "saas", "repo": null, "domain": "claude-mcps", "top_pick": false},
+    {"slug": "aliexpress", "name": "AliExpress (Open Platform / Affiliate API)", "kind": "api", "repo": null, "domain": "ebay-walmart-target", "top_pick": false},
+    {"slug": "aliexpress", "name": "AliExpress (Open Platform / Affiliate API)", "kind": "api", "repo": null, "domain": "oss-self-host", "top_pick": false},
+    {"slug": "bright-data", "name": "Bright Data Web Unlocker", "kind": "saas", "repo": null, "domain": "ebay-walmart-target", "top_pick": false},
+    {"slug": "bright-data", "name": "Bright Data Web Unlocker", "kind": "saas", "repo": null, "domain": "claude-mcps", "top_pick": false},
+    {"slug": "dealnews", "name": "DealNews (+ DealNews API)", "kind": "saas+app", "repo": "dealnews/api-php-client", "domain": "mobile-apps-aggregators", "top_pick": false},
+    {"slug": "reddit-deals", "name": "Reddit deals (r/buildapcsales + r/deals)", "kind": "api", "repo": null, "domain": "mobile-apps-aggregators", "top_pick": false}
   ]
 }
