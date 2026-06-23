@@ -32,7 +32,14 @@
 ## Real-run lesson
 
 **These tools are great for DISCOVERY, weak for COMPARISON.** Don't fan out to Slickdeals/Flipp
-when the user has a specific SKU in hand and wants a landed-cost table. Save them for:
+when the user has a specific SKU in hand and wants a landed-cost table.
+
+> **Grocery hand-off:** When a Flipp result is grocery/CPG (weekly circular, store-card deal, fuel
+> points, Instacart markup question), route to **`domains/grocery-cpg.md`** for the banner-specific
+> loyalty + Instacart-markup mechanics. Flipp finds the deal; grocery-cpg explains the program,
+> the markup trap, and the hyper-regional banner footprint. Always pin the user's ZIP→banner first.
+
+Save them for:
 - "I'm thinking of buying X but no rush" → check Slickdeals/SMZDM for any active drop.
 - "What's hot right now in <category>" → discovery, not comparison.
 

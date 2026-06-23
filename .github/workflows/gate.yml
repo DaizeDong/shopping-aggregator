@@ -17,5 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Run deterministic matrix gate
-        run: python tools/verify_matrix.py
+      - name: Run deterministic matrix gate (offline — network gates skipped via --no-net)
+        # --no-net keeps CI deterministic + hermetic: the REPO/STAR/GHACTIVE network gates need a
+        # gh token + live GitHub and would make every push flaky on rate-limits / transient 5xx.
+        # They are a maintainer-side check (run `python tools/verify_matrix.py` locally, authenticated,
+        # before a matrix change). CI enforces every offline durable-contract + data-integrity check.
+        run: python tools/verify_matrix.py --no-net

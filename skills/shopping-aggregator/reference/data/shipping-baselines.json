@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "last_verified": "2026-06",
+  "domain": "shipping",
+  "title": "Retailer free-shipping baselines (free-ship thresholds for guest / non-member buyers)",
+  "rows": [
+    {
+      "key": "amazon.free_ship_threshold_nonprime",
+      "value": 35,
+      "unit": "USD",
+      "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GZXW7X6AKTHNUP6H",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Free Shipping by Amazon: non-Prime free standard shipping at stated minimum of eligible Amazon-fulfilled items. Official page states threshold generically ('stated minimum'); the $35 figure (books $25; some zips $25) is from secondary E2/E3 sources, not stated as a number on this official page."
+    },
+    {
+      "key": "amazon.free_ship_threshold_books",
+      "value": 25,
+      "unit": "USD",
+      "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GZXW7X6AKTHNUP6H",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E3",
+      "note": "UNVERIFIED on official page: books-only $25 threshold reported only by secondary guides; official help page does not state a numeric book threshold."
+    },
+    {
+      "key": "walmart.free_ship_threshold_nonmember",
+      "value": 35,
+      "unit": "USD",
+      "source_url": "https://www.walmart.com/help/article/walmart-benefits-free-shipping-and-free-delivery-from-your-store/d1738a201207485c99fd53ccdbc49699",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Non-member free standard shipping at $35+ eligible items; below-minimum fee $6.99. Walmart+ members have no order minimum for items sold/shipped by Walmart. Pharmacy/photo/wireless/tires do not count."
+    },
+    {
+      "key": "target.free_ship_threshold_nonmember",
+      "value": 35,
+      "unit": "USD",
+      "source_url": "https://help.target.com/help/TargetGuestHelpArticleDetail?articleId=ka95d000000ws61AAA&articleTitle=What+is+the+%2435+minimum+purchase+threshold%3F",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Free 2-day shipping on eligible items at $35+ minimum purchase. Target Circle Card (formerly RedCard) holders bypass the $35 minimum. Oversized/select items excluded."
+    },
+    {
+      "key": "bestbuy.free_ship_threshold_nonmember",
+      "value": 35,
+      "unit": "USD",
+      "source_url": "https://www.bestbuy.com/site/help-topics/free-shipping/pcmcat276800050002.c?id=pcmcat276800050002",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "$35 minimum (after coupons, before taxes) for free ship-to-home; waived for My Best Buy / Plus / Total members. Marketplace products never free-ship regardless of total. Excludes digital downloads, e-gift cards, special/specialty/scheduled-delivery items."
+    },
+    {
+      "key": "ebay.free_ship_threshold_platform",
+      "value": "none (seller-set)",
+      "unit": "string",
+      "source_url": "https://www.ebay.com/help/policies/default/shipping-policy?id=5035",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "eBay has no platform-wide free-shipping threshold. Shipping cost and any 'free shipping' offer are set per-listing by each seller (Buyer pays vs Seller pays). No universal numeric baseline exists."
+    },
+    {
+      "key": "aliexpress.free_ship_threshold_platform",
+      "value": "threshold varies by product/country (no universal figure)",
+      "unit": "string",
+      "source_url": "https://cdn.contract.alibaba.com/terms/c_end_product_protocol/20240529164446731/20240529164446731.html",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Official AliExpress Free Shipping T&C: free shipping is threshold-based per Participating Product; threshold amount 'may vary' and is per the product detail page and country-specific pages. No single universal number is published officially."
+    },
+    {
+      "key": "aliexpress.choice_free_ship_threshold",
+      "value": "~1.99-3.99 (or 3 items in one Choice cart)",
+      "unit": "USD",
+      "source_url": "https://cdn.contract.alibaba.com/terms/c_end_product_protocol/20240529164446731/20240529164446731.html",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E3",
+      "note": "UNVERIFIED on official source: AliExpress Choice consolidated free-ship thresholds (~$1.99 accessories / ~$3.99 general / 3-item bundle) reported only by secondary guides; the official contract page confirms threshold-based free shipping but does not publish these Choice numbers. Caution: auto-consolidation can push combined value over import de-minimis."
+    }
+  ]
+}

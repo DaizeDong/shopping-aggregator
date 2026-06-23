@@ -6,9 +6,10 @@
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Domains](https://img.shields.io/badge/Source%20Matrix-9%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
-[![Tool docs](https://img.shields.io/badge/Tool%20docs-per--tool%20how--to-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Version](https://img.shields.io/badge/version-0.3.3-purple?style=flat)](CHANGELOG.md)
+[![Domains](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![Tool docs](https://img.shields.io/badge/Tool%20docs-~32%20per--tool-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
+[![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-teal?style=flat)](skills/shopping-aggregator/reference/data/README.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-purple?style=flat)](CHANGELOG.md)
 [![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
 
 [English](README.md) | [中文版](README_CN.md)
@@ -60,7 +61,7 @@ Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献
 
 `shopping-aggregator` 就是填这个空白的薄层。它**只做三件别人不做的事**，其它全部委托：
 
-1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 9 个购物 domain 的 1-N 个，
+1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 12 个购物 domain 的 1-N 个，
    **并映射到需求侧 channel class**（让无工具的授权零售商——如 Micro Center——不再结构性隐形）。
 2. **检测 + 引导安装** — `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
    出确切安装命令，并指向**每工具一文档**
@@ -120,7 +121,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 
 ---
 
-## 数据源矩阵（9 个 domain）
+## 数据源矩阵（12 个 domain）
 
 知识资产。每个 domain shard 写明最佳工具、它的**信息壁垒路线**、如何检测、如何安装。
 
@@ -128,6 +129,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 |---|---|
 | [amazon-us](skills/shopping-aggregator/reference/domains/amazon-us.md) | playwright ④ + Camelcamelcamel ① 免费（+ Keepa ① 付费 看历史） |
 | [ebay-walmart-target](skills/shopping-aggregator/reference/domains/ebay-walmart-target.md) | eBay Browse API ① 免费 + playwright ④ |
+| [auction-resale](skills/shopping-aggregator/reference/domains/auction-resale.md) | eBay Sold SERP ④ 免费（`LH_Sold=1`）+ StockX API ①（需审批）/ playwright ④ 跑 GOAT/Whatnot/Poshmark/Mercari/Depop/ThredUp |
 | [taobao-tmall](skills/shopping-aggregator/reference/domains/taobao-tmall.md) | 慢慢买 ④ + 购物党 ④ |
 | [jd-pdd](skills/shopping-aggregator/reference/domains/jd-pdd.md) | 慢慢买 ④ + 京东价保 ① + 购物党 ④ |
 | [browser-extensions](skills/shopping-aggregator/reference/domains/browser-extensions.md) | Capital One Shopping ① + Karma ①（⚠ 2026 卸载 Honey） |
@@ -135,6 +137,8 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 | [ai-shopping-assistants](skills/shopping-aggregator/reference/domains/ai-shopping-assistants.md) | Perplexity Shopping Pro |
 | [claude-mcps](skills/shopping-aggregator/reference/domains/claude-mcps.md) | BigGo MCP ④ 免费 + Apify price-intelligence ② 付费 |
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy（西方）+ PriceDive（中国唯一新鲜多平台） |
+| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① 周报 circular + 商超会员 App ① 忠诚度（playwright ④ 跑 Instacart 实时购物车）——超本地化，先钉 ZIP+banner |
+| [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④（关税数字见 `data/cross-border-duty.json`，CBP 为准） |
 
 **壁垒路线：** ① 官方 · ② 转售 · ③ 自托管爬虫 · ④ **浏览器自动化 / 模拟人**（消费实时价首选）。
 
@@ -181,15 +185,20 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 
 ## 状态 / 路线
 
-v0.3.3。v0.1.0 的手动策展矩阵（2026-06-15 一次 5-subagent 调研）之后陆续长出：需求侧
+v0.4.0。v0.1.0 的手动策展矩阵（2026-06-15 一次 5-subagent 调研）之后长出 v0.4 域扩展
+（auction-resale、grocery-cpg、cross-border → 12 域），以及：需求侧
 **channel-class** 原语（无工具的授权零售商不再隐形）、拆分的证据模型（**`seller_tier`** 谁卖 +
 **`evidence_grade`** E1/E2/E3 怎么拿到，只有实读能当冠军）、强制 **`variant_key`** SKU 钉死、
-覆盖地板、**CONSTITUTION** 硬约束层、**codex-crossval** 跨模型后端，以及本 skill 的**首个可执行
-闸门**（`tools/verify_matrix.py` + CI）。剩余缺口：
+覆盖地板、**CONSTITUTION** 硬约束层、**codex-crossval** 跨模型后端、**~32 个 per-tool 文档**、
+四张**到手价数据表**（`reference/data/`：美国销售税 · 跨境关税 · FX source-of-record · 运费基线
+——每个数字都带来源引用，CBP / Federal Register 为权威源），以及本 skill 的**可执行闸门**
+（`tools/verify_matrix.py` + CI）。v0.4.0 自进化轮还**移植了 market-intel 更丰富的判断型闸门检查**
+（REPO / STAR / GHACTIVE / DOCCOVER / STALE / COVER / CHURN / DELETE / CONST / METH）、新增
+**DATA** 信封检查 + **NOHARDCODE** 出处 lint，并把 **refresh-priority** 排序
+（`tools/refresh_priority.py`）和 **scenario-eval** 评测（`tools/scenario_eval.py`）自动化。剩余缺口：
 
-- market-intel 更丰富的判断型闸门检查（REPO / STAR / GHACTIVE / COVER / CHURN / DELETE）——尚未移植。
-- 更多工具文档（现 22 个，目标 30-40 与 market-intel 对齐）。
-- 各区税/运费自动计算表。
+- demo 对话 + 与替代品对比文档（v0.5 打包质量）。
+- heartbeat issue 自动关闭 + discovery-state 日志（v0.3 闭环）。
 
 详见 [ROADMAP.md](ROADMAP.md)。
 

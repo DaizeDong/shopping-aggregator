@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0] — 2026-06-22
+
+**Self-evolve round** — the single largest batch since v0.2.0. Run as parallel specialist subagents (data-tables / shards / tool-docs / gate-port / refresh-automation / scenario-eval) with a serial integrator finalizing version + docs + CI. Closes the entire v0.2 enforcement gap, the v0.4 domain expansion, and the landed-cost data gap at once. Matrix **9 → 12 domains**, tool docs **22 → ~32**, gate **6 → ~18 checks**, and the skill gains its first source-cited landed-cost data layer.
+
+**Landed-cost data tables (NEW `reference/data/`).** Four source-of-record tables on a shared envelope `{schema_version, last_verified, rows:[{source_url, verified_date, evidence_grade, ...}]}`:
+- **`us-sales-tax.json`** — per-US-state sales-tax rows (each cited to the state DoR). Landed-cost compute no longer hard-codes "(NJ rate assumed)."
+- **`cross-border-duty.json`** — de-minimis thresholds + typical-category HTS duty rates, US↔CN/EU. **Highest-volatility facts in the repo.** Captures the post-2025 reality: **US §321 de-minimis SUSPENDED for all countries** (EO 14324, eff 2025-08-29; statutory repeal 2027-07-01), EU EUR-150 relief → **EUR 3 flat duty** from 2026-07-01, CN postal allowances. Web-verified this round against Federal Register 2025-16802 + CBP CSMS #66065494 + EU Council 2026-02-11 (all E1).
+- **`shipping-baselines.json`** — carrier/forwarder baseline shipping bands.
+- **`fx-source-of-record.md`** — names the dated, free FX rate source the harness reads (values fetched live, not cached).
+
+**3 new domain shards (matrix 9 → 12), wired into every discovery surface.**
+- **`reference/domains/auction-resale.md`** — resale/used value: eBay Sold SERP ④ free (`LH_Sold=1`), StockX Public API v2 ① (approval-gated), playwright ④ for GOAT/Whatnot/Poshmark/Mercari/Depop/ThredUp. Different trust model from new-retail.
+- **`reference/domains/grocery-cpg.md`** — groceries/CPG: Flipp ① circular discovery + banner-app ① loyalty truth (Kroger fuel points, Target Circle, ShopRite Price Plus, Wegmans, Costco Executive), playwright ④ for live Instacart cart. Hyper-regional — pin ZIP→banner first.
+- **`reference/domains/cross-border.md`** — 海淘/代购/forwarders: Superbuy/Stackry/MyUS/YesStyle ④. **Duty by default** — de-minimis suspended; all figures live in `reference/data/cross-border-duty.json` (CBP / Federal Register / EU Council primary, E1).
+- **Wiring:** 3 rows added to `reference/sources-index.md` + both README source matrices; Domains badge **9 → 12**; a **Flipp grocery hand-off** note spliced into `mobile-apps-aggregators.md` (Flipp stays discoverable there, grocery mechanics route to `grocery-cpg.md`); the `12 domains` count bumped across README/README_CN/SKILL.md.
+
+**Tool docs 22 → ~32.** Added per-tool how-to docs (install + auth + usage + 踩坑) for the documented-but-undocumented gaps: Bright Data, DealNews, InvisibleHand, RetailMeNot, Cently, 京东价保 (jd-price-protection), Slickdeals, reddit-deals, ScraperAPI, AliExpress, Xiaohongshu, and more — each with a registry + index row (THREEWAY stays consistent).
+
+**Gate: market-intel's RICHER judgement checks ported (`tools/verify_matrix.py`, 6 → ~18 checks).** On top of the original deterministic 6 (THREEWAY/FRESH/TEMPLATE/VERSION/RENAME/LIVERUNS): **REPO** (repo existence, 404→BLOCK), **STAR** (★-claim tolerance), **GHACTIVE** (archived/stale push, cached 7d), **DOCCOVER** (live shard repo with no per-tool doc), **STALE** (tool doc >9mo unverified), **COVER/CHURN/DELETE** (git-baseline anti-mass-deletion + rewrite + death-code discipline), **CONST** (CONSTITUTION scope guard), **METH** (SKILL.md keeps the tier/grade legend + ≥10 guardrails). NEW checks added beyond the port: **DATA** (data-table envelope + per-row `source_url`/`verified_date`, future-date BLOCK) and **NOHARDCODE** (a tax/duty number in SKILL.md prose with no `reference/data/` citation and no `(assumed)` stamp → WARN, per CONSTITUTION I.7) and **SHARDSYNC** (a net-new shard must be registered → BLOCK). Network gates honour `--no-net` for offline CI; fail-closed on any uncaught error.
+
+**Refresh + eval automation.** NEW `tools/refresh_priority.py` — deterministic weighted ranking of `metrics/live-runs.jsonl` problem events (`user_correction` 100 / `dead` 10 / `price_mismatch` 5 / `coverage_gap` 3); one definition shared by the refresh-protocol and the gate, replacing the old hand-run `jq | sort | uniq -c`. NEW `tools/scenario_eval.py` — fixture-driven scenario evaluation harness.
+
+**`reference/refresh-protocol.md` — data-table staleness hook.** Every refresh sweep MUST re-confirm the four `reference/data/` tables against their cited primary source and bump `last_verified` — a green DATA shape-check is NOT permission to skip the fact-check. **De-minimis / cross-border duty = mandatory CBP-primary re-check on EVERY sweep** (most volatile + highest blast radius; a wrong de-minimis status silently mis-prices every cross-border landed cost). Adds per-table re-verification guidance for sales-tax / FX / shipping.
+
+**Docs + version.** `ROADMAP.md` restructured — completed work moved to a **Shipped** section (v0.4.0 self-evolve + earlier), stale "RICHER checks not ported" / "more tool docs (currently 22)" / "tax tables" claims removed as now-done; remaining roadmap is v0.3 loop-closing + v0.5 packaging. README/README_CN badges: **Tool docs → ~32 per-tool**, NEW **Data tables** badge (tax | duty | FX | shipping); Status sections de-staled. `.claude-plugin/plugin.json` bump **0.3.3 → 0.4.0**. Gate: **PASS** (`python tools/verify_matrix.py --no-net`, exit 0).
+
 ## [0.3.3] — 2026-06-17
 
 Documentation-consistency sweep (no skill-logic change). Grep-audited the whole repo for stale version strings, wrong counts, broken links, and pre-0.2.0 feature descriptions; only the two READMEs were stale.

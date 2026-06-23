@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""Thin runner for the scenario-eval harness (Signal C: orchestration quality).
+
+This is the NON-DETERMINISTIC counterpart to `verify_matrix.py`. Where verify_matrix gates durable
+artifacts/schema and belongs in CI, this harness grades whether a real buy-decision RUN obeyed the
+CONSTITUTION — a judgement call delegated to heterogeneous LLM judges (Claude + Codex/GPT). It is
+deliberately:
+
+  * OFFLINE BY DEFAULT — no network, no LLM, no API keys. `python tools/scenario_eval.py` only loads +
+    validates scenarios.jsonl and prints the eval plan. Judging is opt-in (`--judge`).
+  * NOT FOR CI — prices are volatile and judges are non-deterministic; wiring this into CI makes CI
+    flaky for no contract benefit. verify_matrix.py is the committable gate.
+  * THIN — it does NOT reimplement the judges (PHILOSOPHY P5 / CONSTITUTION IV.1). With `--judge` it
+    only constructs the blind, ground-truth-free prompts per `judge-protocol.md` and emits the call
+    spec; the actual model invocation is done by the orchestrating agent (Claude in-session, Codex via
+    `mcp__codex__codex`). The runner never holds or echoes a key (CONSTITUTION V).
+
+Usage:
+  python tools/scenario_eval.py                 # offline: validate + print plan (default; skips LLM)
+  python tools/scenario_eval.py --list          # list scenario ids/titles
+  python tools/scenario_eval.py --show <id>      # show one scenario (author-only keys included)
+  python tools/scenario_eval.py --judge \
+        --transcript run.md --scenario <id>      # build blind judge prompts (NO LLM call here)
+
+Exit code is 0 on a clean load even when scenarios would FAIL under judging — this harness REPORTS, it
+does not gate. A non-zero exit means the harness itself could not run (bad scenarios file, missing
+rubric), never "a run scored badly".
+"""
+import argparse
+import json
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EVAL_DIR = os.path.join(
+    ROOT, "skills", "shopping-aggregator", "reference", "scenario-eval"
+)
+SCENARIOS = os.path.join(EVAL_DIR, "scenarios.jsonl")
+RUBRIC = os.path.join(EVAL_DIR, "rubric.md")
+JUDGE_PROTOCOL = os.path.join(EVAL_DIR, "judge-protocol.md")
+
+# Keys that are AUTHOR PROVENANCE ONLY and MUST be stripped before any judge sees a scenario
+# (judge-protocol.md principle 3: no ground truth / expected answer in the judge prompt).
+AUTHOR_ONLY_KEYS = ("fact_anchor", "ideal_behavior_sketch", "notes")
+
+# Heterogeneous judges (judge-protocol.md principle 1). Codex flags mirror reference/codex-crossval.md.
+JUDGES = [
+    {
+        "model": "claude",
+        "via": "in-session (this agent)",
+    },
+    {
+        "model": "gpt-5.5",
+        "via": "mcp__codex__codex",
+        "config": {"mcp_servers": {}, "tools": {"web_search": True},
+                   "model_reasoning_effort": "xhigh"},
+        "sandbox": "read-only",
+        "approval-policy": "never",
+        "prompt_guard": "Use ONLY web_search; no browser/playwright/shell.",
+    },
+]
+
+
+def read(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+def load_scenarios():
+    if not os.path.exists(SCENARIOS):
+        sys.exit(f"FATAL: scenarios file missing: {SCENARIOS}")
+    out = []
+    for i, ln in enumerate(read(SCENARIOS).splitlines(), 1):
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            rec = json.loads(ln)
+        except Exception as e:
+            sys.exit(f"FATAL: scenarios.jsonl line {i} is not valid JSON: {e}")
+        for req in ("id", "title", "region", "buy_intent", "constitution_focus"):
+            if req not in rec:
+                sys.exit(f"FATAL: scenarios.jsonl line {i} ({rec.get('id','?')}) missing key '{req}'")
+        out.append(rec)
+    if not out:
+        sys.exit("FATAL: scenarios.jsonl is empty")
+    ids = [r["id"] for r in out]
+    dupes = {x for x in ids if ids.count(x) > 1}
+    if dupes:
+        sys.exit(f"FATAL: duplicate scenario ids: {sorted(dupes)}")
+    return out
+
+
+def strip_author_keys(rec):
+    """Return a copy safe to put in a judge prompt: no ground truth, no expected answer."""
+    return {k: v for k, v in rec.items() if k not in AUTHOR_ONLY_KEYS}
+
+
+def build_judge_prompt(rec, rubric_text, transcript_text):
+    """Blind, ground-truth-free judge prompt per judge-protocol.md. No LLM call is made here."""
+    blind = strip_author_keys(rec)
+    leaked = [k for k in AUTHOR_ONLY_KEYS if k in blind]
+    if leaked:  # defensive: must never happen
+        raise AssertionError(f"author-only keys leaked into judge prompt: {leaked}")
+    header = (
+        "You are grading whether a shopping buy-decision run obeyed a fixed set of rules (the rubric).\n"
+        "You are NOT given the correct price or the correct store, and you must not assume one. Do not\n"
+        "penalize a price for differing from any value you believe; judge only whether it is properly\n"
+        "sourced (live PDP/API = E1), timestamped, stock-stated, seller/evidence-tiered, and caveated as\n"
+        "the rubric requires. For each criterion output PASS/PARTIAL/FAIL/N/A and quote the exact\n"
+        "transcript/report text justifying it. Absent evidence = FAIL (blocking) or PARTIAL, never a guess.\n"
+    )
+    return (
+        f"{header}\n"
+        f"===== RUBRIC =====\n{rubric_text}\n\n"
+        f"===== SCENARIO (blind) =====\n{json.dumps(blind, ensure_ascii=False, indent=2)}\n\n"
+        f"===== RUN TRANSCRIPT + REPORT =====\n{transcript_text}\n\n"
+        f"===== OUTPUT CONTRACT =====\n"
+        f"Return JSON per judge-protocol.md: {{scenario_id, judge_model, criteria:[{{id,verdict,evidence}}],"
+        f" scenario_verdict, weakest_blocking, judge_notes}}.\n"
+    )
+
+
+def cmd_default(scenarios):
+    print(f"scenario-eval plan  ({len(scenarios)} scenarios)")
+    print(f"  rubric:        {os.path.relpath(RUBRIC, ROOT)}  {'OK' if os.path.exists(RUBRIC) else 'MISSING'}")
+    print(f"  judge-protocol:{os.path.relpath(JUDGE_PROTOCOL, ROOT)}  {'OK' if os.path.exists(JUDGE_PROTOCOL) else 'MISSING'}")
+    print(f"  judges:        {', '.join(j['model'] for j in JUDGES)} (heterogeneous, blind, no ground truth)")
+    print("  mode:          OFFLINE (no LLM, no network). Pass --judge to build judge prompts.")
+    print("  posture:       non-deterministic, NOT in CI, never blocking.\n")
+    for r in scenarios:
+        print(f"  - {r['id']:<24} [{r['region']:^12}] {r['title']}")
+        print(f"      clauses: {', '.join(r.get('constitution_focus', []))}")
+    print("\nThis harness REPORTS; it does not gate. The committable gate is tools/verify_matrix.py.")
+
+
+def cmd_list(scenarios):
+    for r in scenarios:
+        print(f"{r['id']}\t{r['title']}")
+
+
+def cmd_show(scenarios, sid):
+    for r in scenarios:
+        if r["id"] == sid:
+            print(json.dumps(r, ensure_ascii=False, indent=2))
+            return
+    sys.exit(f"no scenario with id '{sid}'")
+
+
+def cmd_judge(scenarios, sid, transcript_path):
+    if not os.path.exists(RUBRIC):
+        sys.exit(f"FATAL: rubric missing: {RUBRIC}")
+    rec = next((r for r in scenarios if r["id"] == sid), None)
+    if rec is None:
+        sys.exit(f"no scenario with id '{sid}'")
+    if not transcript_path or not os.path.exists(transcript_path):
+        sys.exit("FATAL: --judge requires --transcript <path-to-run-transcript+report>")
+    rubric_text = read(RUBRIC)
+    transcript_text = read(transcript_path)
+    prompt = build_judge_prompt(rec, rubric_text, transcript_text)
+    # We DO NOT call any model here (offline-thin: no key, no network in the runner). We emit the
+    # call spec for each heterogeneous judge; the orchestrating agent performs the actual invocation.
+    print("# scenario-eval judge call spec (the agent performs the actual model calls)")
+    print(f"# scenario: {sid}")
+    print(f"# judges:   {', '.join(j['model'] for j in JUDGES)}\n")
+    for j in JUDGES:
+        print(json.dumps({"judge": j, "prompt_chars": len(prompt)}, ensure_ascii=False))
+    out = os.path.join(EVAL_DIR, f".judge-prompt.{sid}.txt")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(prompt)
+    print(f"\nblind judge prompt written: {os.path.relpath(out, ROOT)}")
+    print("(author-only keys fact_anchor/ideal_behavior_sketch/notes are stripped — verified by build_judge_prompt)")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Thin scenario-eval runner (offline by default; not for CI).")
+    ap.add_argument("--list", action="store_true", help="list scenario ids + titles")
+    ap.add_argument("--show", metavar="ID", help="print one scenario as JSON")
+    ap.add_argument("--judge", action="store_true", help="build blind judge prompts (NO LLM call here)")
+    ap.add_argument("--scenario", metavar="ID", help="scenario id for --judge")
+    ap.add_argument("--transcript", metavar="PATH", help="run transcript+report file for --judge")
+    args = ap.parse_args()
+
+    scenarios = load_scenarios()
+
+    if args.list:
+        cmd_list(scenarios)
+    elif args.show:
+        cmd_show(scenarios, args.show)
+    elif args.judge:
+        if not args.scenario:
+            sys.exit("FATAL: --judge requires --scenario <id>")
+        cmd_judge(scenarios, args.scenario, args.transcript)
+    else:
+        cmd_default(scenarios)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

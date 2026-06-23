@@ -68,6 +68,34 @@ Beyond the generic MCP-registry + GitHub + community surfaces in market-intel, a
 - For OSS repos, check both last commit AND issue tracker (lots of unresolved breakage issues =
   effectively abandoned even if last commit recent).
 
+### Data-table staleness hook (landed-cost figures in `reference/data/`)
+
+The four landed-cost tables (`reference/data/us-sales-tax.json`, `cross-border-duty.json`,
+`shipping-baselines.json`, `fx-source-of-record.md`) carry legal/regulatory numbers that move on
+their own clock, independent of any tool. They are gated for *shape* by `verify_matrix.py`'s **DATA**
+check (envelope + per-row `source_url`/`verified_date`), but a well-formed row can still be factually
+stale. **Every refresh sweep MUST re-confirm them against their cited primary source** and bump each
+table's `last_verified` (and the touched rows' `verified_date`) — a green DATA check is NOT permission
+to skip this.
+
+- **De-minimis / cross-border duty = mandatory re-check of the CBP primary source every sweep.**
+  This is the most volatile and highest-blast-radius figure in the whole matrix: the US de-minimis
+  ($800 §321) entry status changed in 2025–2026, and a wrong de-minimis assumption silently mis-prices
+  every cross-border landed-cost compute. So on EVERY refresh — not just the monthly cadence —
+  re-verify `cross-border-duty.json` against **CBP** (cbp.gov / 19 CFR §10.151 / the current Federal
+  Register / Executive Order on §321) as the source-of-record, plus the EU Council figure for EU rows.
+  If de-minimis is suspended/restored or a rate changed, update the row, its `verified_date`, the
+  table `last_verified`, and CHANGELOG it. Never carry a prior sweep's de-minimis status forward
+  unread.
+- **US sales tax** — re-confirm any state row a real run actually used against that state's DoR; bump
+  `verified_date`. Don't mass-re-verify all 50 states blindly — prioritize states surfaced in
+  `metrics/live-runs.jsonl`.
+- **FX source-of-record** — confirm the named rate source (`fx-source-of-record.md`) is still the
+  live, free, dated source the harness reads; FX *values* are fetched live at run time, not cached
+  here, so this is a source-liveness check, not a number re-type.
+- **Shipping baselines** — re-confirm carrier/forwarder baseline bands against the cited rate cards
+  when a run flags a shipping mismatch (`price_mismatch` on a shipping line).
+
 ### Shopping-specific shard updates
 
 For each domain, update changed rows in `domains/<domain>.md`; move/refresh price+install lines
@@ -125,15 +153,28 @@ activity — see `.github/workflows/heartbeat.yml`.
 ## Feedback loop
 
 The skill writes one line per source touched to `metrics/live-runs.jsonl` during real runs (see
-SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritization input:
+SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritization input. Run the
+ranking tool (replaces the old hand-run `jq | sort | uniq -c` one-liner — one deterministic,
+weighted definition shared by the protocol and the gate):
 
 ```bash
-jq -r '.domain + "\t" + .source + "\t" + .outcome' metrics/live-runs.jsonl | sort | uniq -c | sort -rn
+python tools/refresh_priority.py            # ranked source table (default)
+python tools/refresh_priority.py --by domain   # aggregate by domain
+python tools/refresh_priority.py --json        # machine-readable, for scripted sweeps
 ```
 
-Sources/channels with the most `dead` / `price_mismatch` / `coverage_gap` events get top priority in
-the next sweep. A `coverage_gap` line means a real run hit an in-scope channel it could not take to E1
-depth — this is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh
-loop; route it to the channel-completeness audit above. The highest-weight signal is the
-`user_correction` **field** (a JSON key present on any line — NOT an `outcome` value) — the user
-manually fixed something we were wrong about.
+Work top-down through the ranking in the next sweep. The tool scores each `(domain, source)` by a
+weighted sum of its problem events, **highest weight first**:
+
+- `user_correction` (weight 100) — the user manually fixed something we were wrong about. This is a
+  JSON **key present on the line** (non-null value), **NOT an `outcome` value**; a line can carry it
+  even when its `outcome` is `verified`. Highest-weight signal — always work these first.
+- `dead` (weight 10) — a tool/source stopped working.
+- `price_mismatch` (weight 5) — the source's price diverged from the live authorized listing.
+- `coverage_gap` (weight 3) — a real run hit an in-scope channel it could not take to E1 depth. This
+  is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh loop; route
+  these to the channel-completeness audit above.
+
+A single event can contribute multiple weights (e.g. a `price_mismatch` line that also carries a
+non-null `user_correction`). Non-problem outcomes (`verified`, `created`, ...) carry no weight unless
+they also carry a `user_correction`.
