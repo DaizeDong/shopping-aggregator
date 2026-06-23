@@ -32,6 +32,26 @@ Barrier-route legend (same scheme as `market-intel`):
    reads the rendered page in one shot; firecrawl/WebFetch return 500 / login-wall. Reach for paid
    ①/② only for history (Keepa) or scale.
 
+## Non-US/CN regional routing (no dedicated shard — route to ④)
+
+The shards above are deliberately US- and CN-centric (where the access-method ecosystem is richest).
+Major **non-US/CN regional marketplaces have no dedicated shard and no usable consumer price API** —
+they are reached via **playwright ④** (live PDP read), with the EU price-comparison engines as the
+discovery layer on top (see [`channel-classes.md`](./channel-classes.md) price-comparison-engine row +
+the X1 map). Do not invent a shard for these prematurely; route to ④ and confirm at E1.
+
+| region | marketplace(s) | route | note |
+|---|---|---|---|
+| Latin America | **Mercado Libre** (18 LATAM countries: MX/BR/AR/CL/CO/PE/UY/…) | ④ | no public price API; per-country site, prices in local currency + installments ("cuotas") |
+| South Korea | **Coupang** (+ Naver Shopping) | ④ | login/anti-bot heavy; Rocket-delivery price ≠ marketplace 3P price |
+| Japan | **Rakuten** (rakuten.co.jp) | ④ | point-economy distorts effective price (楽天ポイント); read cart, not sticker. Amazon JP → `amazon-us` JP-locale section instead |
+| India | **Flipkart** (+ region: Amazon.in via Keepa) | ④ | no public price API; bank-card instant-discount coupons distort checkout — price the cart |
+
+Verified 2026-06 ([Mercado Libre 18-country scope](https://apify.com/trudax/mercadolibre-scraper),
+[no public price APIs → scraping ecosystem for ML/Rakuten/Flipkart](https://pricesapi.io/)). These are
+④ browser reads because, exactly as the Amazon/Taobao real-run lesson shows, the rendered PDP is the
+only reliable consumer-price source and no compliant API exists for these markets.
+
 ## Sister-skill cross-reference
 
 For broad commercial research, competitor analysis, market sizing, X/Twitter sentiment, SEO
