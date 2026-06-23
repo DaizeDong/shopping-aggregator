@@ -1,48 +1,63 @@
 #!/usr/bin/env python3
-"""Deterministic lint gate for the shopping-aggregator skill — the skill's FIRST executable gate.
+"""Deterministic lint + anti-regression gate for the shopping-aggregator skill.
 
 PHILOSOPHY P2 (mechanism-not-intention): the skill is full of advisory "MUST" with no executable
-check behind them. This script is the cheap, real mechanism the skill lacked. It implements ONLY
-deterministic, non-judgemental checks on DURABLE CONTRACTS / ARTIFACTS — never on prose line numbers,
-guardrail numbering, or anything an LLM would have to "judge". It must keep passing while a parallel
-agent restructures SKILL.md prose, so it gates on schema/artifact facts, not wording.
+check behind them. This script is the cheap, real mechanism the skill lacked. The ORIGINAL six
+checks (THREEWAY/FRESH/TEMPLATE/VERSION/RENAME/LIVERUNS) are deterministic, non-judgemental checks
+on DURABLE CONTRACTS / ARTIFACTS — they must keep passing while a parallel agent restructures
+SKILL.md prose, so they gate on schema/artifact facts, not wording.
 
-Run from the repo root:  python tools/verify_matrix.py
+This file then PORTS market-intel's richer-judgement gates (REPO/GHACTIVE, STAR/DOCCOVER/STALE,
+COVER/CHURN/DELETE, CONST/METH, FRESH-future) and ADDS a DATA envelope check, conservatively:
+the baseline `python tools/verify_matrix.py` MUST stay PASS; anything uncertain is a WARN, never a
+BLOCK. Network gates (REPO/GHACTIVE/STAR) are skipped with `--no-net` for offline CI.
+
+Run from the repo root:  python tools/verify_matrix.py [--no-net] [--base main]
 Exit 0 = PASS · non-zero = FAIL (BLOCK). FAIL-CLOSED: any uncaught exception => FAIL, never a silent
 pass (a gate that can't run is a BLOCK, not a green light).
 
-Checks:
-  THREEWAY  every slug in reference/tools/registry.json has a reference/tools/<slug>.md AND a row in
-            reference/tools/index.md, and vice-versa (BLOCK on any mismatch). registry.json may list
-            a slug once per domain, so slugs are de-duplicated before comparison. This is
-            EXISTENCE-only (each slug present in all three places); per-domain PLACEMENT (which slug
-            sits under which domain heading) is advisory, not gated.
-  FRESH     every reference/domains/*.md and reference/tools/*.md carries a `Last verified:` /
-            `last_verified` line (WARN — see rationale below — never BLOCK).
-  TEMPLATE  reference/report-template.md has a "Coverage gaps" section heading AND an "Ev" column in
-            the ranking table (BLOCK — these are the I.3 evidence-grade + I.6 coverage-gap contracts
-            made visible in the deliverable).
-  VERSION   CHANGELOG.md top version == .claude-plugin/plugin.json version (BLOCK on mismatch).
-  RENAME    the snake_case token `source_tier` does NOT appear in any live skill file under skills/
-            (it was split into seller_tier + evidence_grade in 0.2.0). A leak in SKILL.md or a shard
-            means a rename was left half-done (BLOCK). The prose column label "Source tier:" is a
-            DIFFERENT, allowed token and is not matched. CHANGELOG.md (repo root, not under skills/)
-            legitimately records the rename in its history and is exempt by being out of scope.
-  LIVERUNS  metrics/live-runs.jsonl (the refresh loop consumes it): every non-blank line parses as
-            JSON AND carries the 6 required keys ts/domain/source/outcome/detail/user_correction
-            (BLOCK — a corrupt metrics file silently breaks the refresh loop); `outcome` in the
-            declared set (WARN, mirroring FRESH — an out-of-enum outcome is rot, not a broken contract).
+Checks
+------
+ORIGINAL (durable-contract lint — unchanged behaviour):
+  THREEWAY  registry.json <-> tools/<slug>.md files <-> tools/index.md rows (existence; BLOCK).
+  FRESH     every domain shard + tool doc carries a Last-verified line (WARN; future date BLOCK).
+  TEMPLATE  report-template.md has a "Coverage gaps" heading + an "Ev" column (BLOCK).
+  VERSION   CHANGELOG.md top version == .claude-plugin/plugin.json version (BLOCK).
+  RENAME    snake_case `source_tier` does not leak into any live skill file (BLOCK).
+  LIVERUNS  metrics/live-runs.jsonl is valid JSONL with the 6 required keys (BLOCK; enum WARN).
 
-Why FRESH is WARN, not BLOCK: a missing freshness stamp is a documentation-rot signal, not a broken
-contract — surfacing it for a human to fix is the right severity, and a hard block here would make
-the gate brittle to the kind of prose edits another agent may be making concurrently. A FUTURE-dated
-stamp WOULD be a lie, but cross-checking dates against "now" is out of scope for this first
-deterministic pass (and would couple the gate to wall-clock time); the parent skill's richer gate
-owns that. This gate stays narrow and durable on purpose.
+PORTED from market-intel (richer judgement; network gates honour --no-net):
+  REPO      documented github.com/<owner>/<repo> + registry `repo` slugs exist (gh api, fail-closed).
+            A doc'd repo that 404s => BLOCK; a bare/heuristic slug that 404s => WARN.
+  GHACTIVE  every documented repo is alive (not archived) and pushed within 12mo (archived/404 BLOCK,
+            stale WARN, rate-limited bypass-as-WARN). Cached to metrics/gh-api-cache.json (7d TTL).
+  STAR      where a repo and an (NNk★) annotation co-occur, the count is within 25% (BLOCK on lie).
+  DOCCOVER  a github repo in a LIVE (non-tombstone) shard row with no per-tool doc => WARN (anti-lost).
+  STALE     a tool doc not re-verified in >9 months => WARN (anti-rot nomination).
+  COVER     vs git baseline: total source rows didn't drop >10%, no shard lost >30% (BLOCK).
+  CHURN     vs baseline: a single shard with >40% of lines changed looks like a rewrite => BLOCK.
+  DELETE    vs baseline: a source row removed without a death-code => BLOCK (C4 deletion discipline).
+  CONST     CONSTITUTION.md exists and was NOT modified by this run (scope guard; BLOCK).
+  METH      SKILL.md keeps L1/L5/E1/E3 tiers + ①②③④ route legend + >=10 numbered guardrails.
+
+ADDED (data-integrity — new this revision):
+  DATA      reference/data/*.json conform to the envelope {schema_version,last_verified,rows:[...]}
+            and every row carries source_url + verified_date (BLOCK on violation; future date BLOCK).
+            No data dir / no json files => silent no-op (so the baseline stays green until the
+            parallel agent lands reference/data/). Envelope schema is owned by
+            reference/data/README.md; this check follows that convention.
+
+Why FRESH/STALE/GHACTIVE-stale are WARN, not BLOCK: a missing/old freshness stamp is doc-rot, not a
+broken contract — surfacing it for a human is the right severity, and a hard block would make the
+gate brittle to concurrent prose edits. A FUTURE-dated stamp IS a lie (BLOCK). Network unreachability
+is transient external state — per market-intel's philosophy we surface it as WARN and let a re-run
+pick it up, except a confirmed 404 (a hard fact) which BLOCKs.
 """
+import datetime
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -54,8 +69,27 @@ TOOLS_DIR = os.path.join(REF, "tools")
 TOOLS_INDEX = os.path.join(TOOLS_DIR, "index.md")
 REGISTRY = os.path.join(TOOLS_DIR, "registry.json")
 REPORT_TEMPLATE = os.path.join(REF, "report-template.md")
+SKILLMD = os.path.join(SKILL, "SKILL.md")
+DATA_DIR = os.path.join(REF, "data")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
+CONSTITUTION = os.path.join(ROOT, "CONSTITUTION.md")
 PLUGIN_JSON = os.path.join(ROOT, ".claude-plugin", "plugin.json")
+
+# git-relative path prefix for the shards (used by COVER/CHURN/DELETE baseline diffs)
+SHARD_GIT_PREFIX = "skills/shopping-aggregator/reference/domains"
+
+STAR_TOL = 0.25            # display star annotations vs real, allow 25%
+COVER_GLOBAL_DROP = 0.10   # total source rows may not drop >10%
+COVER_SHARD_DROP = 0.30    # no single shard may lose >30% of its rows
+CHURN_MAX = 0.40           # a single shard changing >40% of lines looks like a rewrite, not an edit
+GHACTIVE_STALE_MONTHS = 12 # a repo not pushed within this is doc-rot (WARN)
+STALE_MONTHS = 9           # a tool doc not re-verified within this is nominated for re-check (WARN)
+GH_CACHE_MAX_AGE_DAYS = 7
+
+NO_NET = "--no-net" in sys.argv
+BASE = "main"
+if "--base" in sys.argv:
+    BASE = sys.argv[sys.argv.index("--base") + 1]
 
 fails, warns = [], []
 
@@ -73,10 +107,63 @@ def read(path):
         return f.read()
 
 
+def git_show(ref, relpath):
+    """git show <ref>:<relpath>; empty string on any failure (e.g. file absent at baseline)."""
+    try:
+        r = subprocess.run(["git", "show", f"{ref}:{relpath}"], cwd=ROOT,
+                           capture_output=True, text=True, encoding="utf-8")
+        return r.stdout if r.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def git_diff(relpath):
+    try:
+        return subprocess.run(["git", "diff", BASE, "--", relpath], cwd=ROOT,
+                              capture_output=True, text=True, encoding="utf-8").stdout
+    except Exception:
+        return ""
+
+
+def git_available():
+    try:
+        return subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT,
+                              capture_output=True, text=True).returncode == 0
+    except Exception:
+        return False
+
+
+def base_ref_exists():
+    try:
+        return subprocess.run(["git", "rev-parse", "--verify", BASE], cwd=ROOT,
+                              capture_output=True, text=True).returncode == 0
+    except Exception:
+        return False
+
+
+REPO_RE = re.compile(r"github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)")
+# repo token immediately before an (NNk★) annotation (only **/spaces between) — STAR pairing.
+STAR_LINE_RE = re.compile(r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\*{0,2}\s*\((\d+(?:\.\d+)?)k★\)")
+
+
+def _strip_git(r):
+    return r[:-4] if r.endswith(".git") else r
+
+
+def count_table_rows(text):
+    """Count markdown source-table rows (lines starting with '|' that aren't header/separator)."""
+    n = 0
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s.startswith("|") and not re.match(r"^\|[\s:|-]+\|?$", s) and "---" not in s:
+            if not re.search(r"\|\s*(source|repo|tool|name)\s*\|", s, re.I):
+                n += 1
+    return n
+
+
 def run_checks():
+    # ================================================================= ORIGINAL CHECKS (unchanged)
     # ---- THREEWAY: registry.json <-> tools/<slug>.md files <-> tools/index.md rows ----
-    # registry.json is authoritative (CONSTITUTION III.5). It may list a slug once PER DOMAIN, so we
-    # de-duplicate to a set of distinct slugs before comparing against the doc files and index rows.
     if not os.path.isdir(TOOLS_DIR):
         block("THREEWAY", "reference/tools/ directory is missing")
         return
@@ -97,18 +184,15 @@ def run_checks():
     if not reg_slugs:
         block("THREEWAY", "registry.json lists no tool slugs")
 
-    # doc files on disk (every *.md except index.md)
     fs_slugs = {
         f[:-3]
         for f in os.listdir(TOOLS_DIR)
         if f.endswith(".md") and f != "index.md"
     }
 
-    # index rows: markdown links like [Name](slug.md)
     idx_text = read(TOOLS_INDEX)
     idx_slugs = set(re.findall(r"\(([a-z0-9][a-z0-9-]*)\.md\)", idx_text))
 
-    # registry -> doc / index
     reg_no_doc = reg_slugs - fs_slugs
     reg_no_idx = reg_slugs - idx_slugs
     if reg_no_doc:
@@ -116,7 +200,6 @@ def run_checks():
     if reg_no_idx:
         block("THREEWAY", f"registry slugs missing from index.md: {sorted(reg_no_idx)}")
 
-    # doc -> registry / index
     doc_no_reg = fs_slugs - reg_slugs
     doc_no_idx = fs_slugs - idx_slugs
     if doc_no_reg:
@@ -124,7 +207,6 @@ def run_checks():
     if doc_no_idx:
         block("THREEWAY", f"tool docs not listed in index.md: {sorted(doc_no_idx)}")
 
-    # index -> registry / doc
     idx_no_reg = idx_slugs - reg_slugs
     idx_no_doc = idx_slugs - fs_slugs
     if idx_no_reg:
@@ -132,7 +214,7 @@ def run_checks():
     if idx_no_doc:
         block("THREEWAY", f"index.md rows with no reference/tools/<slug>.md: {sorted(idx_no_doc)}")
 
-    # ---- FRESH: every domain shard + tool doc carries a Last verified / last_verified line (WARN) ----
+    # ---- FRESH: every domain shard + tool doc carries a Last-verified line (WARN) ----
     FRESH_RE = re.compile(r"last[ _]verified", re.IGNORECASE)
     if os.path.isdir(DOMAINS):
         for f in sorted(os.listdir(DOMAINS)):
@@ -140,8 +222,9 @@ def run_checks():
                 continue
             if not FRESH_RE.search(read(os.path.join(DOMAINS, f))):
                 warn("FRESH", f"domains/{f} has no 'Last verified:' / 'last_verified' line")
+    tool_docs_text = {s: read(os.path.join(TOOLS_DIR, s + ".md")) for s in fs_slugs}
     for slug in sorted(fs_slugs):
-        if not FRESH_RE.search(read(os.path.join(TOOLS_DIR, slug + ".md"))):
+        if not FRESH_RE.search(tool_docs_text[slug]):
             warn("FRESH", f"tools/{slug}.md has no 'Last verified:' / 'last_verified' line")
 
     # ---- TEMPLATE: report-template.md has a Coverage gaps heading + an Ev column (BLOCK) ----
@@ -149,11 +232,8 @@ def run_checks():
         block("TEMPLATE", "reference/report-template.md is missing")
     else:
         tmpl = read(REPORT_TEMPLATE)
-        # Coverage gaps section heading (any markdown heading level), case-insensitive, allow "gap"/"gaps".
         if not re.search(r"^#{1,6}\s+coverage gaps?\b", tmpl, re.IGNORECASE | re.MULTILINE):
             block("TEMPLATE", "report-template.md is missing a 'Coverage gaps' section heading (CONSTITUTION I.6)")
-        # An "Ev" column in the ranking table: a table-cell whose trimmed content is Ev / **Ev** / `Ev`.
-        # Matches "| **Ev** |", "| Ev |", "| `Ev` |" — the evidence_grade column the I.3 contract requires.
         if not re.search(r"\|\s*[*`]*Ev[*`]*\s*\|", tmpl):
             block("TEMPLATE", "report-template.md ranking table is missing an 'Ev' (evidence_grade) column (CONSTITUTION I.3)")
 
@@ -182,10 +262,7 @@ def run_checks():
     if changelog_ver and plugin_ver and changelog_ver != plugin_ver:
         block("VERSION", f"CHANGELOG top version {changelog_ver} != plugin.json version {plugin_ver}")
 
-    # ---- RENAME: the snake_case token `source_tier` must not appear in any live skill file ----
-    # It was split into seller_tier + evidence_grade in 0.2.0. We match the literal snake_case token
-    # with a word boundary so the allowed prose column label "Source tier:" (space, capital S) is NOT
-    # caught. Scope is skills/ only — CHANGELOG.md at repo root legitimately records the rename.
+    # ---- RENAME: snake_case token `source_tier` must not appear in any live skill file ----
     RENAME_RE = re.compile(r"\bsource_tier\b")
     for dirpath, _dirnames, filenames in os.walk(SKILLS):
         for fn in filenames:
@@ -199,7 +276,6 @@ def run_checks():
     # ---- LIVERUNS: metrics/live-runs.jsonl is valid JSONL the refresh loop can consume ----
     LIVERUNS = os.path.join(SKILL, "metrics", "live-runs.jsonl")
     REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
-    # SKILL.md Step 7 enum + the bootstrap "created"/"meta" genesis values.
     OUTCOME_OK = {"created", "verified", "unverifiable", "dead", "fallback_used",
                   "price_mismatch", "coupon_fake", "coverage_gap"}
     if os.path.exists(LIVERUNS):
@@ -217,6 +293,378 @@ def run_checks():
                 block("LIVERUNS", f"metrics/live-runs.jsonl line {i} missing keys: {sorted(missing)}")
             if rec.get("outcome") not in OUTCOME_OK:
                 warn("LIVERUNS", f"metrics/live-runs.jsonl line {i} outcome '{rec.get('outcome')}' not in the declared set")
+
+    # ================================================================= PORTED CHECKS (market-intel)
+    # ---- gather domain shard text + the full corpus repos can hide in ----
+    fs_domains = set()
+    shard_text = {}
+    if os.path.isdir(DOMAINS):
+        fs_domains = {f[:-3] for f in os.listdir(DOMAINS) if f.endswith(".md")}
+        shard_text = {d: read(os.path.join(DOMAINS, d + ".md")) for d in fs_domains}
+
+    extra_paths = [REPORT_TEMPLATE, os.path.join(REF, "sources-index.md"),
+                   os.path.join(REF, "install-guide.md"),
+                   os.path.join(REF, "volatile", "pricing-install.md"),
+                   os.path.join(REF, "channel-classes.md")]
+    extra_text = "\n".join(read(p) for p in extra_paths if os.path.exists(p))
+    all_text = ("\n".join(shard_text.values()) + "\n" + "\n".join(tool_docs_text.values())
+                + "\n" + extra_text)
+
+    # HIGH-CONFIDENCE repos (404 -> BLOCK): explicit github.com URLs + star-annotated slugs + the
+    # registry.json `repo` field (authoritative). Strip a trailing .git (same repo as o/r).
+    repo_set = {_strip_git(r) for r in REPO_RE.findall(all_text)}
+    repo_set |= {_strip_git(m.group(1)) for m in STAR_LINE_RE.finditer(all_text)}
+    for t in reg.get("tools", []):
+        rp = t.get("repo")
+        if rp:
+            repo_set.add(_strip_git(rp))
+    repos = sorted(r for r in repo_set
+                   if not r.endswith(".md") and r.count("/") == 1 and "github.com" not in r)
+
+    # HEURISTIC bare slugs (404 -> WARN only): unstarred slug-like tokens in shard table rows.
+    SLUG_RE = re.compile(r"(?<![A-Za-z0-9_./@-])([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(?![A-Za-z0-9_./-])")
+    warn_slugs = set()
+    for txt in shard_text.values():
+        for ln in txt.splitlines():
+            if not ln.lstrip().startswith("|"):
+                continue
+            for tok in SLUG_RE.findall(ln):
+                o, _, r2 = tok.partition("/")
+                if (("-" in tok or "_" in tok) and o.isascii() and r2.isascii()
+                        and not tok.endswith(".md") and "github.com" not in tok
+                        and tok not in repo_set and not o[:1].isdigit()):
+                    warn_slugs.add(tok)
+
+    _now_ts = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    _now_iso = _now_ts.isoformat()
+
+    # ---- REPO + STAR (fail-closed) ----
+    repo_stars = {}
+    if NO_NET:
+        warn("REPO", "skipped GitHub verification (--no-net)")
+    else:
+        import time
+        for r in repos:
+            res = None
+            for attempt in range(3):
+                res = subprocess.run(
+                    ["gh", "api", f"repos/{r}", "--jq", "{s:.stargazers_count,a:.archived}"],
+                    capture_output=True, text=True, encoding="utf-8")
+                if res.returncode == 0:
+                    break
+                if "Not Found" in (res.stderr or "") or "404" in (res.stderr or ""):
+                    break
+                time.sleep(2 * (attempt + 1))
+            if res is None or res.returncode != 0:
+                stderr = (res.stderr or "") if res else "no result"
+                if "Not Found" in stderr or "404" in stderr:
+                    block("REPO", f"{r} does not exist (404) — hallucinated or dead repo")
+                else:
+                    block("REPO", f"{r} could not be verified after retries (fail-closed): {stderr.strip()[:80]}")
+                continue
+            try:
+                d = json.loads(res.stdout)
+                repo_stars[r] = d["s"]
+            except Exception:
+                block("REPO", f"{r} returned unparseable API response")
+        # heuristic bare slugs: verify but only WARN (avoid false-blocking prose / npm scopes)
+        for r in sorted(warn_slugs):
+            res = subprocess.run(["gh", "api", f"repos/{r}", "--jq", ".full_name"],
+                                 capture_output=True, text=True, encoding="utf-8")
+            if res.returncode != 0 and ("Not Found" in (res.stderr or "") or "404" in (res.stderr or "")):
+                warn("REPO?", f"{r} not found on GitHub — if it's a repo it may be hallucinated/mistyped; "
+                              f"if prose/npm-scope, ignore")
+        # STAR tolerance on lines pairing a repo with an (NNk★)
+        for ln in all_text.splitlines():
+            m = STAR_LINE_RE.search(ln)
+            if not m:
+                continue
+            repo, claimed_k = _strip_git(m.group(1)), float(m.group(2))
+            real = repo_stars.get(repo)
+            if real is None:
+                continue
+            claimed = claimed_k * 1000
+            if real == 0 or abs(claimed - real) / real > STAR_TOL:
+                block("STAR", f"{repo}: claims {claimed_k}k★ but API says {real} (>{int(STAR_TOL*100)}% off)")
+
+    # ---- GHACTIVE (deterministic activity gate; archived/404 BLOCK, stale WARN, RL bypass) ----
+    GH_CACHE = os.path.join(SKILL, "metrics", "gh-api-cache.json")
+    gh_cache = {}
+    if os.path.exists(GH_CACHE):
+        try:
+            gh_cache = json.loads(read(GH_CACHE))
+        except Exception:
+            gh_cache = {}
+    ghactive_results = []
+    if NO_NET:
+        warn("GHACTIVE", "skipped GitHub activity verification (--no-net)")
+    else:
+        for r in repos:
+            c = gh_cache.get(r)
+            if c and "checked_at" in c:
+                try:
+                    age = (_now_ts - datetime.datetime.fromisoformat(c["checked_at"])).days
+                except Exception:
+                    age = 999
+                if age <= GH_CACHE_MAX_AGE_DAYS and c.get("verdict") != "RATE_LIMITED":
+                    ghactive_results.append(c)
+                    continue
+            res = subprocess.run(
+                ["gh", "api", f"repos/{r}", "--jq", "{pushed_at:.pushed_at,archived:.archived}"],
+                capture_output=True, text=True, encoding="utf-8")
+            if res.returncode != 0:
+                stderr = (res.stderr or "")
+                if "Not Found" in stderr or "404" in stderr:
+                    entry = {"repo": r, "pushed_at": None, "archived": None,
+                             "verdict": "BLOCK", "reason": "404 not found", "checked_at": _now_iso}
+                    block("GHACTIVE", f"{r}: 404 not found (URL fabricated, deleted, or moved)")
+                elif "rate limit" in stderr.lower() or "API rate" in stderr or "403" in stderr:
+                    entry = {"repo": r, "pushed_at": None, "archived": None,
+                             "verdict": "RATE_LIMITED", "reason": "gh api rate-limited",
+                             "checked_at": _now_iso}
+                    warn("GHACTIVE", f"{r}: rate-limited — re-run when quota resets (not blocking)")
+                else:
+                    entry = {"repo": r, "pushed_at": None, "archived": None,
+                             "verdict": "RATE_LIMITED",
+                             "reason": f"gh error: {stderr.strip()[:60]}", "checked_at": _now_iso}
+                    warn("GHACTIVE", f"{r}: could not check activity ({stderr.strip()[:60]})")
+                ghactive_results.append(entry)
+                gh_cache[r] = entry
+                continue
+            try:
+                d = json.loads(res.stdout)
+                pushed_at = d.get("pushed_at")
+                archived = bool(d.get("archived"))
+            except Exception:
+                entry = {"repo": r, "pushed_at": None, "archived": None,
+                         "verdict": "RATE_LIMITED", "reason": "unparseable response",
+                         "checked_at": _now_iso}
+                warn("GHACTIVE", f"{r}: unparseable activity response")
+                ghactive_results.append(entry)
+                gh_cache[r] = entry
+                continue
+            if archived:
+                entry = {"repo": r, "pushed_at": pushed_at, "archived": True,
+                         "verdict": "BLOCK", "reason": "archived upstream", "checked_at": _now_iso}
+                block("GHACTIVE", f"{r}: archived=true (formally retired upstream — tombstone the row)")
+            else:
+                try:
+                    pushed_dt = datetime.datetime.strptime(pushed_at[:10], "%Y-%m-%d")
+                    months_old = (_now_ts - pushed_dt).days / 30.44
+                except Exception:
+                    months_old = 0
+                if months_old > GHACTIVE_STALE_MONTHS:
+                    entry = {"repo": r, "pushed_at": pushed_at, "archived": False, "verdict": "WARN",
+                             "reason": f"pushed_at {pushed_at[:10]} is ~{int(months_old)}mo old",
+                             "checked_at": _now_iso}
+                    warn("GHACTIVE", f"{r}: last push {pushed_at[:10]} (~{int(months_old)}mo ago, "
+                                     f">{GHACTIVE_STALE_MONTHS}mo) — re-verify still maintained")
+                else:
+                    entry = {"repo": r, "pushed_at": pushed_at, "archived": False, "verdict": "PASS",
+                             "reason": f"pushed_at {pushed_at[:10]} within {GHACTIVE_STALE_MONTHS}mo",
+                             "checked_at": _now_iso}
+            ghactive_results.append(entry)
+            gh_cache[r] = entry
+        try:
+            os.makedirs(os.path.dirname(GH_CACHE), exist_ok=True)
+            with open(GH_CACHE, "w", encoding="utf-8") as f:
+                json.dump(gh_cache, f, ensure_ascii=False, indent=2, sort_keys=True)
+        except Exception:
+            pass
+        if ghactive_results:
+            _v = {v: 0 for v in ("PASS", "WARN", "BLOCK", "RATE_LIMITED")}
+            for e in ghactive_results:
+                _v[e["verdict"]] = _v.get(e["verdict"], 0) + 1
+            print(f"GHACTIVE summary: {_v['PASS']} PASS, {_v['WARN']} WARN, {_v['BLOCK']} BLOCK, "
+                  f"{_v['RATE_LIMITED']} RATE_LIMITED (of {len(ghactive_results)} repos)")
+
+    # ---- FRESH-future + STALE on tool docs (date semantics ported from market-intel) ----
+    today = datetime.date.today()
+    this_month = today.strftime("%Y-%m")
+
+    def _ym_to_months(ym):
+        return int(ym[:4]) * 12 + int(ym[5:7])
+
+    this_m = _ym_to_months(this_month)
+    # any future-dated `last_verified:` anywhere is a lie -> BLOCK
+    for m in re.finditer(r"last_verified:\s*(\d{4})-(\d{2})", all_text, re.IGNORECASE):
+        ym = f"{m.group(1)}-{m.group(2)}"
+        if ym > this_month:
+            block("FRESH", f"last_verified {ym} is in the future")
+    # per-tool-doc staleness: >STALE_MONTHS -> WARN (anti-rot); future already handled above
+    stale_docs = []
+    for slug, txt in tool_docs_text.items():
+        fm = re.search(r"last[ _]verified:\s*(\d{4})-(\d{2})", txt, re.IGNORECASE)
+        if not fm:
+            continue
+        ym = f"{fm.group(1)}-{fm.group(2)}"
+        if ym <= this_month and this_m - _ym_to_months(ym) > STALE_MONTHS:
+            stale_docs.append((slug, ym))
+    if stale_docs:
+        worst = sorted(stale_docs, key=lambda x: x[1])
+        shown = ", ".join(f"{s}({y})" for s, y in worst[:10])
+        warn("STALE", f"{len(stale_docs)} tool doc(s) not re-verified in >{STALE_MONTHS}mo — re-check "
+                      f"repo/price + bump 'Last verified' when next sweeping: {shown}"
+                      f"{' …' if len(stale_docs) > 10 else ''}")
+
+    # ---- DOCCOVER (every repo in a LIVE shard row should have a per-tool doc) -> WARN ----
+    if tool_docs_text:
+        documented = {_strip_git(r).lower() for txt in tool_docs_text.values()
+                      for r in REPO_RE.findall(txt)}
+        # registry repos are also "documented" (their slug doc exists by THREEWAY)
+        for t in reg.get("tools", []):
+            if t.get("repo"):
+                documented.add(_strip_git(t["repo"]).lower())
+        TOMB = ("avoid", "dead", "d-404", "d-stale", "d-supersed", "~~", "deprecated", "(404)",
+                "✗", "tombstone")
+        undoc = {}
+        for d, txt in shard_text.items():
+            for ln in txt.splitlines():
+                s = ln.strip()
+                if not s.startswith("|") or "---" in s or any(t in s.lower() for t in TOMB):
+                    continue
+                for r in REPO_RE.findall(ln):
+                    r = _strip_git(r).lower()
+                    if r not in documented:
+                        undoc.setdefault(r, d)
+        if undoc:
+            items = ", ".join(f"{r}({d})" for r, d in list(undoc.items())[:10])
+            warn("DOCCOVER", f"{len(undoc)} live shard repo(s) have no per-tool doc — add tools/<slug>.md "
+                             f"+ an index/registry row (or tombstone the shard row): {items}")
+
+    # ---- COVER / CHURN / DELETE (vs git baseline) ----
+    have_git = git_available()
+    have_base = have_git and base_ref_exists()
+    if not have_base:
+        warn("COVER", f"git baseline '{BASE}' unavailable — skipped COVER/CHURN/DELETE diff gates")
+    else:
+        base_total = cur_total = 0
+        for d in sorted(fs_domains):
+            cur = count_table_rows(shard_text[d])
+            cur_total += cur
+            base_txt = git_show(BASE, f"{SHARD_GIT_PREFIX}/{d}.md")
+            base = count_table_rows(base_txt) if base_txt else cur
+            base_total += base
+            if base and (base - cur) / base > COVER_SHARD_DROP:
+                block("COVER", f"{d}: source rows dropped {base}->{cur} "
+                               f"(>{int(COVER_SHARD_DROP*100)}%) — possible mass deletion")
+        if base_total and (base_total - cur_total) / base_total > COVER_GLOBAL_DROP:
+            block("COVER", f"total source rows dropped {base_total}->{cur_total} "
+                           f"(>{int(COVER_GLOBAL_DROP*100)}%)")
+
+        DEATH_CODES = ("D-404", "D-STALE", "D-PRICE", "D-TOS", "D-SUPERSEDED")
+        changelog_added = "\n".join(
+            l[1:] for l in git_diff("CHANGELOG.md").splitlines()
+            if l.startswith("+") and not l.startswith("+++"))
+
+        def _row_name(line):
+            cells = [c.strip() for c in line.lstrip("+-").strip().strip("|").split("|")]
+            return re.sub(r"[*`]", "", cells[0]).strip().lower() if cells else ""
+
+        def _is_src_row(line):
+            s = line.lstrip("+-").strip()
+            return (s.startswith("|") and "---" not in s
+                    and not re.search(r"\|\s*(source|repo|tool|name)\s*\|", s, re.I))
+
+        for d in sorted(fs_domains):
+            rel = f"{SHARD_GIT_PREFIX}/{d}.md"
+            diff = git_diff(rel)
+            if not diff.strip():
+                continue
+            added = [l for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
+            removed = [l for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
+            base_lines = len(git_show(BASE, rel).splitlines()) or 1
+            churn = (len(added) + len(removed)) / base_lines
+            if churn > CHURN_MAX:
+                block("CHURN", f"{d}: {int(churn*100)}% of lines changed (>{int(CHURN_MAX*100)}%) — "
+                               f"looks like a rewrite, not an incremental edit; route to human review")
+            added_names = {_row_name(l) for l in added if _is_src_row(l)}
+            genuinely_removed = [l for l in removed if _is_src_row(l)
+                                 and _row_name(l) and _row_name(l) not in added_names]
+            if genuinely_removed:
+                added_text = "\n".join(added)
+                if not any(c in changelog_added or c in added_text for c in DEATH_CODES):
+                    block("DELETE", f"{d}: source row(s) removed without a death-code "
+                                    f"(D-404/D-STALE/D-PRICE/D-TOS/D-SUPERSEDED) in CHANGELOG or an "
+                                    f"Avoid(dead) line")
+
+    # ---- CONST (scope guard: an automated run must not modify CONSTITUTION.md) ----
+    if not os.path.exists(CONSTITUTION):
+        block("CONST", "CONSTITUTION.md missing")
+    elif have_base:
+        changed = subprocess.run(["git", "diff", "--name-only", BASE, "--", "CONSTITUTION.md"],
+                                 cwd=ROOT, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+        if changed:
+            block("CONST", "CONSTITUTION.md was modified — automation may not change the constitution")
+
+    # ---- METH (SKILL.md keeps the tier/grade legend + the numbered guardrails) ----
+    # L1/L5/E1/E3 seller-tier + evidence-grade legend lives in SKILL.md. The full ①②③④ channel-route
+    # legend is DEFINED in reference/sources-index.md (SKILL.md only references route ④ inline), so —
+    # exactly as market-intel checks ①②③④ against its index — we gate the route legend against the
+    # index file, not SKILL.md, to avoid a false BLOCK on a legitimate artifact layout.
+    if not os.path.exists(SKILLMD):
+        block("METH", "SKILL.md is missing")
+    else:
+        skill = read(SKILLMD)
+        for marker in ["L1", "L5", "E1", "E3"]:
+            if marker not in skill:
+                block("METH", f"SKILL.md lost tier/grade legend marker '{marker}'")
+        # numbered guardrails: lines like `1. **...` or `5b. **...`
+        guardrail_nums = len(re.findall(r"^\s*\d+[a-z]?\.\s+\*\*", skill, re.M))
+        if guardrail_nums < 10:
+            block("METH", f"SKILL.md numbered guardrails look reduced ({guardrail_nums} found, expect >=10)")
+    SOURCES_INDEX = os.path.join(REF, "sources-index.md")
+    if os.path.exists(SOURCES_INDEX):
+        sidx = read(SOURCES_INDEX)
+        for marker in ["①", "②", "③", "④"]:
+            if marker not in sidx:
+                block("METH", f"sources-index.md lost the ①②③④ route-legend marker '{marker}'")
+    else:
+        warn("METH", "reference/sources-index.md absent — cannot verify the ①②③④ route legend")
+
+    # ================================================================= ADDED CHECK (data integrity)
+    # ---- DATA: reference/data/*.json conform to the envelope + per-row provenance ----
+    # Envelope (owned by reference/data/README.md): {schema_version, last_verified, rows:[{...}]}
+    # Each row MUST carry source_url + verified_date. No data dir / no json => silent no-op so the
+    # baseline stays green until the parallel agent lands the directory.
+    if os.path.isdir(DATA_DIR):
+        data_files = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".json"))
+        for fn in data_files:
+            path = os.path.join(DATA_DIR, fn)
+            try:
+                obj = json.loads(read(path))
+            except Exception as e:
+                block("DATA", f"data/{fn} is not valid JSON: {e}")
+                continue
+            if not isinstance(obj, dict):
+                block("DATA", f"data/{fn} top-level is not a JSON object (expected envelope dict)")
+                continue
+            if "schema_version" not in obj:
+                block("DATA", f"data/{fn} missing envelope key 'schema_version'")
+            if "last_verified" not in obj:
+                block("DATA", f"data/{fn} missing envelope key 'last_verified'")
+            else:
+                lv = str(obj["last_verified"])
+                mlv = re.match(r"(\d{4})-(\d{2})", lv)
+                if mlv and f"{mlv.group(1)}-{mlv.group(2)}" > this_month:
+                    block("DATA", f"data/{fn} 'last_verified' {lv} is in the future")
+            rows = obj.get("rows")
+            if not isinstance(rows, list):
+                block("DATA", f"data/{fn} envelope 'rows' is missing or not a list")
+                continue
+            for i, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    block("DATA", f"data/{fn} rows[{i}] is not an object")
+                    continue
+                if not row.get("source_url"):
+                    block("DATA", f"data/{fn} rows[{i}] missing non-empty 'source_url'")
+                if not row.get("verified_date"):
+                    block("DATA", f"data/{fn} rows[{i}] missing non-empty 'verified_date'")
+                else:
+                    vd = str(row["verified_date"])
+                    mvd = re.match(r"(\d{4})-(\d{2})", vd)
+                    if mvd and f"{mvd.group(1)}-{mvd.group(2)}" > this_month:
+                        block("DATA", f"data/{fn} rows[{i}] 'verified_date' {vd} is in the future")
 
 
 def main():
