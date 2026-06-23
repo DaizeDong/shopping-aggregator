@@ -56,6 +56,18 @@ amazon.com vs amazon.ca vs amazon.de prices diverge significantly. Default to us
 region-localized Amazon (US user → amazon.com). For cross-border (US user wants amazon.co.jp
 price), state both + currency-convert + flag international shipping/duties.
 
+## Regional Amazon (EU / UK / JP) — same tools, wider locale
+
+Same three tools work on `amazon.de`/`amazon.co.uk`/`amazon.co.jp`; point them at the locale. Use for non-US Amazon or US-vs-EU/JP arbitrage. All verified 2026-06.
+
+- **Camelcamelcamel covers EU/UK/JP via per-locale subdomains** — locales US/UK/DE/FR/IT/ES/CA/JP; UK history at `uk.camelcamelcamel.com`, pick from `camelcamelcamel.com/locales` ([locales](https://camelcamelcamel.com/locales), [features](https://camelcamelcamel.com/features)). Caveat: the **Camelizer extension's** list lags the site (JP/CN newer/uneven) — for JP open the locale URL, don't rely on the extension.
+- **Keepa = one subscription, all marketplaces** — single account spans `.com/.co.uk/.de/.co.jp/.fr/.ca/.it/.es/.in/.mx` (~11–12 locales; AU dropped), no per-country fee — the reason to pay Keepa over CCC for multi-locale questions ([keepa.com](https://keepa.com/)).
+- **playwright ④** reads any regional Buy Box like `.com`; Firecrawl/WebFetch still 500 — same routing as US.
+
+### EU/UK VAT-inclusive trap (the #1 cross-region pricing error)
+
+A raw sticker compare of `amazon.de`/`amazon.co.uk` vs `amazon.com` is **wrong by construction**: EU/UK shows **VAT-inclusive** prices (DE ~19% / UK 20% / ES 21% baked in), `amazon.com` shows **tax-exclusive** (US sales tax at checkout). To compare: strip VAT from the EU/UK price (or add US destination tax), THEN convert currency ([amazon.co.uk VAT help](https://www.amazon.co.uk/gp/help/customer/display.html?nodeId=202133860)). Twist: on **intra-EU/UK cross-border** orders Amazon strips origin VAT and re-adds **destination** VAT at checkout — quote the **checkout total**, not the shelf price. For a US buyer importing, the duty border-layer (dutiable by default) is owned by [`cross-border.md`](./cross-border.md) + [`../data/cross-border-duty.json`](../data/cross-border-duty.json) — this section only fixes the VAT mismatch.
+
 ## When you'd switch off this domain
 
 If the product is obviously not on Amazon (private-label DTC, brand-direct only, used-only on
