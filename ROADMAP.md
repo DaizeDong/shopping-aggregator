@@ -1,6 +1,6 @@
 # Roadmap
 
-`shopping-aggregator` is at v0.3.2 — the v0.2.0 structural/framework batch landed the CONSTITUTION,
+`shopping-aggregator` is at v0.4.0 — the v0.2.0 structural/framework batch landed the CONSTITUTION,
 the demand-side channel-class primitive, the evidence-unit schema (`variant_key` /
 `seller_tier` / `evidence_grade`), the seller-identity gate, and the codex-crossval back-end
 on top of the v0.1.0 base (9 domain shards, 22 tool docs, the SKILL.md orchestration core, the
@@ -37,14 +37,15 @@ philosophy inherited from market-intel). This file tracks what's next.
 
 ## v0.4 — Domain expansion
 
-Three new domain shards that didn't make v0.1:
-- [ ] **`cross-border`** — explicit shard for US↔CN, US↔EU, etc. Currently scattered across
+Three new domain shards that didn't make v0.1 (all landed — matrix now 12 domains):
+- [x] **`cross-border`** — explicit shard for US↔CN, US↔EU, etc. Currently scattered across
       regional shards; a dedicated shard would handle duties, shipping aggregators, daigou
-      pricing, grey-market warranty rules.
-- [ ] **`grocery-cpg`** — Flipp is in here as a tool, but grocery has its own data sources
+      pricing, grey-market warranty rules. (duty figures source-of-record:
+      `reference/data/cross-border-duty.json`, CBP-primary.)
+- [x] **`grocery-cpg`** — Flipp is in here as a tool, but grocery has its own data sources
       (Instacart pricing, Walmart+ grocery, Kroger fuel points, NJ ShopRite digital coupons)
       that warrant a dedicated shard.
-- [ ] **`auction-resale`** — eBay sold listings (already noted as a gap), Mercari, Poshmark,
+- [x] **`auction-resale`** — eBay sold listings (already noted as a gap), Mercari, Poshmark,
       Whatnot, ThredUp. Different trust model from new-retail.
 
 ## v0.5 — Public packaging quality
