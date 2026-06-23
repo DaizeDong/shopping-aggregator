@@ -12,10 +12,13 @@ shard(s) in `domains/`. Do not read shards you didn't match.
 |---|---|---|---|
 | amazon-us | "Amazon", ASIN, US Amazon shopping, "Amazon 历史价" | playwright ④ live + Camelcamelcamel ① history (Keepa ① if subscribed) | `domains/amazon-us.md` |
 | ebay-walmart-target | eBay, Walmart, Target, Best Buy, Costco, multi-store US compare | eBay Browse API ① free + playwright ④ for others | `domains/ebay-walmart-target.md` |
+| auction-resale | resale/used value, eBay sold comps, "what's it worth", StockX/GOAT sneakers, Whatnot/Poshmark/Mercari/Depop/ThredUp | eBay Sold SERP ④ (`?LH_Sold=1`) free + StockX API ① (if approved) / playwright ④ for the rest | `domains/auction-resale.md` |
 | taobao-tmall | 淘宝, 天猫, taobao, tmall | 慢慢买 App ④ + 购物党扩展 ④ (Taobao MCP ④ for agent use) | `domains/taobao-tmall.md` |
 | jd-pdd | 京东, 拼多多, JD.com, Pinduoduo | 慢慢买 ④ + JD 自带价保 ① + 购物党 ④ (PDD coverage thin) | `domains/jd-pdd.md` |
+| **cross-border** | 海淘, 代购, daigou, parallel/grey import, package forwarder/转运, "ship to US from CN/KR", customs/duty on my order | Superbuy ④ (CN→US haul) · Stackry/MyUS ④ (US-addr reship) · YesStyle ④ (K-beauty, absorbs tariff) — **duty by default**, numbers from `data/cross-border-duty.json` | `domains/cross-border.md` |
 | browser-extensions | "Honey", coupon extension, cashback, 自动找券 | Capital One Shopping ① + Karma ① (⚠ Honey: 卸载推荐) | `domains/browser-extensions.md` |
 | mobile-apps-aggregators | ShopSavvy / Flipp / Slickdeals / 什么值得买 / DealNews | Slickdeals 社区 ① + Flipp 周报 ① + 什么值得买 ① | `domains/mobile-apps-aggregators.md` |
+| **grocery-cpg** | groceries/CPG/staples, Instacart markup, Kroger fuel points, Target Circle, ShopRite/Wegmans/Costco, Amazon Fresh/WFM, weekly circular | Flipp ① circular discovery + banner app ① loyalty truth (playwright ④ for live Instacart cart) — **hyper-regional, pin ZIP+banner** | `domains/grocery-cpg.md` |
 | ai-shopping-assistants | "Perplexity Shopping", "ChatGPT shopping", Rufus, Klarna AI | Perplexity Pro ① (in-app PayPal) | `domains/ai-shopping-assistants.md` |
 | **claude-mcps** | "want a Claude agent to compare for me", MCP-driven price compare | BigGo MCP ④ free · Apify price-intelligence MCP ② paid | `domains/claude-mcps.md` |
 | oss-self-host | "self-host", docker, "自己跑一个", privacy-first | pricebuddy ④ (US/EU) · PriceDive ④ (CN, only fresh multi-platform) | `domains/oss-self-host.md` |

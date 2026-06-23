@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "last_verified": "2026-06",
+  "domain": "duty",
+  "title": "Cross-border de-minimis thresholds + typical-category HTS duty rates (US <-> CN/EU). HIGHEST-VOLATILITY facts in repo: re-verify against primary gov sources (CBP / Federal Register / EU Council / GACC / USITC HTS) on EVERY refresh, never from memory.",
+  "rows": [
+    {
+      "key": "us_de_minimis_section321_status",
+      "value": "SUSPENDED (all countries)",
+      "unit": "bool/status",
+      "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Executive Order 14324 (signed 2025-07-30) suspends duty-free de minimis treatment under sec 321(a)(2)(C) of the Tariff Act of 1930 for ALL countries, regardless of origin, for goods valued <= $800. Effective 12:01am EDT 2025-08-29. Previously suspended for China/HK first (eff 2025-05-02). Low-value goods still importable but now require formal/informal ACE entry (Type 11 / Type 01) and pay duty. Corroborated by CBP CSMS #66065494 (https://content.govdelivery.com/accounts/USDHSCBP/bulletins/3f01456) and CBP newsroom (https://www.cbp.gov/newsroom/national-media-release/cbp-ready-enforce-end-de-minimis-loophole-securing-borders-and). Federal Register host blocks automated fetch (302 -> unblock.federalregister.gov); URL is canonical citable primary source."
+    },
+    {
+      "key": "us_de_minimis_threshold_legacy",
+      "value": 800,
+      "unit": "USD",
+      "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "The former Section 321 de-minimis value ($800, per 19 USC 1321(a)(2)(C)). NOW SUSPENDED for all countries as of 2025-08-29 -- this $800 no longer grants duty-free entry. Statutory repeal of Section 321 de minimis is also scheduled for 2027-07-01 under the One Big Beautiful Bill Act. Do NOT treat $800 as a live duty-free threshold."
+    },
+    {
+      "key": "us_de_minimis_repeal_date_statutory",
+      "value": "2027-07-01",
+      "unit": "date",
+      "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E2",
+      "note": "One Big Beautiful Bill Act (signed 2025-07-04) permanently repeals Section 321 de minimis effective 2027-07-01. Date reported in multiple summaries of the Act; not independently confirmed against the bill text in this pass -> graded E2. Practically moot since admin already suspended de minimis worldwide on 2025-08-29."
+    },
+    {
+      "key": "us_personal_gift_exemption",
+      "value": 100,
+      "unit": "USD",
+      "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E3",
+      "note": "Bona-fide gift exemption (~$100) reported as unaffected by the de-minimis suspension; long-standing CBP rule under 19 USC 1321(a)(2)(A). Value sourced from secondary summary only, not directly from the CBP regulation in this pass -> graded E3. UNVERIFIED against primary CBP gift-exemption text; confirm before relying."
+    },
+    {
+      "key": "eu_customs_duty_de_minimis_threshold",
+      "value": 150,
+      "unit": "EUR",
+      "source_url": "https://taxation-customs.ec.europa.eu/news/e-commerce-150-eur-customs-duty-exemption-threshold-be-removed-2026-2025-11-13_en",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Current EU customs-duty relief threshold: consignments of intrinsic value <= EUR 150 imported from a third country are exempt from customs duty (NOT from VAT). Per EU TAXUD. Being removed in 2026 (see eu_low_value_flat_duty)."
+    },
+    {
+      "key": "eu_import_vat_de_minimis_threshold",
+      "value": 0,
+      "unit": "EUR",
+      "source_url": "https://taxation-customs.ec.europa.eu/news/e-commerce-150-eur-customs-duty-exemption-threshold-be-removed-2026-2025-11-13_en",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "No VAT de-minimis since 2021-07-01 EU VAT e-commerce reform: import VAT due on ALL commercial goods from EUR 0. For B2C consignments <= EUR 150, VAT may be collected via IOSS (Import One-Stop Shop). The EUR 150 figure is the IOSS eligibility ceiling, NOT a VAT-free allowance. Source confirms parcels under EUR 150 are 'subject to VAT'."
+    },
+    {
+      "key": "eu_low_value_flat_duty",
+      "value": 3,
+      "unit": "EUR",
+      "source_url": "https://www.consilium.europa.eu/en/press/press-releases/2026/02/11/council-gives-final-green-light-to-new-customs-duty-rules-for-small-parcels/",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "EU Council (final green light 2026-02-11; initial agreement 2025-12-12) sets a flat EUR 3 interim customs duty on small parcels of intrinsic value < EUR 150 entering the EU, effective 2026-07-01 through 2026-07-28 [2028-07-01]. Charged PER item-category (per tariff sub-heading / HS6 line) in a parcel, not per parcel (e.g. silk blouse + 2 wool blouses = 2 categories = EUR 6). Interim until EU Customs Data Hub operational. Separate from a proposed ~EUR 2 per-parcel handling fee still under negotiation. NOTE: end-date is 2028-07-01 (typo guard)."
+    },
+    {
+      "key": "eu_low_value_flat_duty_effective_date",
+      "value": "2026-07-01",
+      "unit": "date",
+      "source_url": "https://www.consilium.europa.eu/en/press/press-releases/2025/12/12/customs-council-agrees-to-levy-customs-duty-on-small-parcels-as-of-1-july-2026/",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "EUR 3 flat duty on sub-EUR-150 small parcels applies from 2026-07-01. EU Council press release title states 'as of 1 July 2026'."
+    },
+    {
+      "key": "cn_personal_postal_value_limit_per_shipment",
+      "value": 1000,
+      "unit": "CNY",
+      "source_url": "http://english.customs.gov.cn/statics/097b86e8-14bc-470a-b20f-081b199cfaf7.html",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E2",
+      "note": "GACC (China Customs): personal articles mailed to/from areas outside HK/Macau/Taiwan limited to RMB 1000 value per shipment. GACC English page uses a self-signed TLS cert (automated fetch failed); value taken from search summary of that GACC page -> graded E2. UNVERIFIED via direct fetch; re-confirm at the GACC URL (cert-pinned)."
+    },
+    {
+      "key": "cn_personal_postal_duty_free_allowance",
+      "value": 500,
+      "unit": "CNY",
+      "source_url": "http://english.customs.gov.cn/statics/097b86e8-14bc-470a-b20f-081b199cfaf7.html",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E2",
+      "note": "GACC: duty-free allowance of RMB 500 per shipment for personal mailed articles; customs levies import duties on the portion exceeding RMB 500. Same GACC page (self-signed cert blocked direct fetch) -> E2. UNVERIFIED via direct fetch."
+    },
+    {
+      "key": "cn_parcel_tax_waiver_threshold",
+      "value": 50,
+      "unit": "CNY",
+      "source_url": "https://www.congress.gov/crs-product/R48380",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E2",
+      "note": "China waives the personal-postal-articles parcel tax (xing-you-shui) when the computed tax is < RMB 50 (de-minimis-equivalent ~ RMB 50, approx $7). US CRS report R48380 states China authorizes duty-free treatment for qualifying goods <= 50 RMB. CRS is an authoritative US gov secondary describing CN law -> E2 (not the GACC primary). China has NO de-minimis for cross-border e-commerce/courier channel (taxed from CNY 0); separate CBEC retail program allows preferential rates up to RMB 5000/order."
+    },
+    {
+      "key": "hts_electronics_smartphone_8517_13_00",
+      "value": "Free",
+      "unit": "% (ad valorem, General/Col-1)",
+      "source_url": "https://hts.usitc.gov/search?query=8517.13.00",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "USITC HTS 8517.13.00.00 (smartphones / telephones for cellular networks): General (Column 1) rate of duty = Free (0%). Confirmed via official hts.usitc.gov REST search endpoint. CAVEAT: base MFN rate only; additional Section 301 / IEEPA / origin-specific tariffs may stack on top depending on country of origin and current executive actions -- verify live for landed-cost. Column 2 (non-MFN) differs."
+    },
+    {
+      "key": "hts_apparel_cotton_tshirt_6109_10_00",
+      "value": 16.5,
+      "unit": "% (ad valorem, General/Col-1)",
+      "source_url": "https://hts.usitc.gov/search?query=6109.10.00",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "USITC HTS 6109.10.00 (T-shirts, singlets, tank tops, knitted/crocheted, of cotton): General (Column 1) rate = 16.5%. Confirmed via official hts.usitc.gov REST search endpoint. Fiber composition matters: man-made-fiber tees (6109.90.10) ~ 32%. CAVEAT: base MFN only; Section 301 / origin tariffs may stack."
+    },
+    {
+      "key": "hts_cosmetics_lipstick_3304_10_00",
+      "value": "Free",
+      "unit": "% (ad valorem, General/Col-1)",
+      "source_url": "https://hts.usitc.gov/search?query=3304.10.00",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "USITC HTS 3304.10.00.00 (lip make-up preparations: lipstick, lip gloss, lip liner, non-medicated lip balm): General (Column 1) rate = Free (0%). Confirmed via official hts.usitc.gov REST search endpoint. Column 2 (non-MFN) = 75c/kg + ... ; not relevant for MFN partners. CAVEAT: base MFN only; Section 301 / origin tariffs may stack."
+    },
+    {
+      "key": "worked_example_us_import_cotton_tshirt_from_cn",
+      "value": "20 cotton T-shirts at $8 = $160 intrinsic; de-minimis SUSPENDED so duty owed = $160 x 16.5% = $26.40 base MFN duty (before any Section 301/IEEPA China surtax + MPF + formal/informal entry); pre-2025-08-29 this $160 entered duty-free under Section 321 $800.",
+      "unit": "worked_example",
+      "source_url": "https://hts.usitc.gov/search?query=6109.10.00",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Illustrates the post-suspension swing: a $160 China-origin apparel parcel went from $0 (Section 321 de-minimis) to >= $26.40 base duty plus stacked China tariffs + Merchandise Processing Fee + entry filing. De-minimis suspension is the dominant landed-cost driver. Combines hts_apparel_cotton_tshirt_6109_10_00 (16.5%) + us_de_minimis_section321_status (suspended)."
+    },
+    {
+      "key": "worked_example_eu_import_smartphone_under_150",
+      "value": "1 smartphone, intrinsic value EUR 120 (< EUR 150) shipped to EU consumer from 2026-07-01: EUR 3 flat customs duty (1 HS6 category) + import VAT on EUR 120 at destination standard rate (e.g. DE 19% = EUR 22.80) collected via IOSS; pre-2026-07-01 the same parcel paid EUR 0 customs duty (under EUR 150 relief) but still owed the VAT.",
+      "unit": "worked_example",
+      "source_url": "https://www.consilium.europa.eu/en/press/press-releases/2026/02/11/council-gives-final-green-light-to-new-customs-duty-rules-for-small-parcels/",
+      "verified_date": "2026-06-22",
+      "evidence_grade": "E1",
+      "note": "Shows EU change: customs duty goes from EUR 0 to EUR 3 flat per HS6 category from 2026-07-01; VAT was always due (no VAT de-minimis since 2021). VAT rate is destination-member-state specific (DE 19% used illustratively). Combines eu_low_value_flat_duty + eu_import_vat_de_minimis_threshold."
+    }
+  ]
+}

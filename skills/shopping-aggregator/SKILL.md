@@ -55,7 +55,7 @@ authorized US seller" ≠ cheapest "any condition + any AliExpress seller."
 **Step 2 output you MUST produce: `[matched domains | in-scope channel classes | depth cap]`.**
 
 #### 2a — Triage to domains
-Read `reference/sources-index.md` (thin index); match the buy intent to 1–N of the 9 domains
+Read `reference/sources-index.md` (thin index); match the buy intent to 1–N of the 12 domains
 (full list there). **Do not read full domain shards yet.** US typically → `amazon-us`,
 `ebay-walmart-target`, `browser-extensions`, `mobile-apps-aggregators`, `ai-shopping-assistants`,
 `claude-mcps`; CN → `taobao-tmall`, `jd-pdd`, `claude-mcps`, maybe `oss-self-host`. Historical-low
