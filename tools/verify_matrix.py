@@ -573,7 +573,12 @@ def run_checks():
                 continue
             added = [l for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
             removed = [l for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
-            base_lines = len(git_show(BASE, rel).splitlines()) or 1
+            base_raw = git_show(BASE, rel)
+            # net-new shard (absent at baseline) is an ADDITION, not a rewrite — CHURN only
+            # judges edits to EXISTING files; new files are governed by COVER/THREEWAY/FRESH.
+            if not base_raw.strip():
+                continue
+            base_lines = len(base_raw.splitlines()) or 1
             churn = (len(added) + len(removed)) / base_lines
             if churn > CHURN_MAX:
                 block("CHURN", f"{d}: {int(churn*100)}% of lines changed (>{int(CHURN_MAX*100)}%) — "
