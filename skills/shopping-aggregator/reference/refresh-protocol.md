@@ -68,6 +68,34 @@ Beyond the generic MCP-registry + GitHub + community surfaces in market-intel, a
 - For OSS repos, check both last commit AND issue tracker (lots of unresolved breakage issues =
   effectively abandoned even if last commit recent).
 
+### Data-table staleness hook (landed-cost figures in `reference/data/`)
+
+The four landed-cost tables (`reference/data/us-sales-tax.json`, `cross-border-duty.json`,
+`shipping-baselines.json`, `fx-source-of-record.md`) carry legal/regulatory numbers that move on
+their own clock, independent of any tool. They are gated for *shape* by `verify_matrix.py`'s **DATA**
+check (envelope + per-row `source_url`/`verified_date`), but a well-formed row can still be factually
+stale. **Every refresh sweep MUST re-confirm them against their cited primary source** and bump each
+table's `last_verified` (and the touched rows' `verified_date`) — a green DATA check is NOT permission
+to skip this.
+
+- **De-minimis / cross-border duty = mandatory re-check of the CBP primary source every sweep.**
+  This is the most volatile and highest-blast-radius figure in the whole matrix: the US de-minimis
+  ($800 §321) entry status changed in 2025–2026, and a wrong de-minimis assumption silently mis-prices
+  every cross-border landed-cost compute. So on EVERY refresh — not just the monthly cadence —
+  re-verify `cross-border-duty.json` against **CBP** (cbp.gov / 19 CFR §10.151 / the current Federal
+  Register / Executive Order on §321) as the source-of-record, plus the EU Council figure for EU rows.
+  If de-minimis is suspended/restored or a rate changed, update the row, its `verified_date`, the
+  table `last_verified`, and CHANGELOG it. Never carry a prior sweep's de-minimis status forward
+  unread.
+- **US sales tax** — re-confirm any state row a real run actually used against that state's DoR; bump
+  `verified_date`. Don't mass-re-verify all 50 states blindly — prioritize states surfaced in
+  `metrics/live-runs.jsonl`.
+- **FX source-of-record** — confirm the named rate source (`fx-source-of-record.md`) is still the
+  live, free, dated source the harness reads; FX *values* are fetched live at run time, not cached
+  here, so this is a source-liveness check, not a number re-type.
+- **Shipping baselines** — re-confirm carrier/forwarder baseline bands against the cited rate cards
+  when a run flags a shipping mismatch (`price_mismatch` on a shipping line).
+
 ### Shopping-specific shard updates
 
 For each domain, update changed rows in `domains/<domain>.md`; move/refresh price+install lines

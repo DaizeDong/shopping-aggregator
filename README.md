@@ -8,7 +8,8 @@ reinventing it.
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Domains](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
-[![Tool docs](https://img.shields.io/badge/Tool%20docs-per--tool%20how--to-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
+[![Tool docs](https://img.shields.io/badge/Tool%20docs-~32%20per--tool-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
+[![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-teal?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Version](https://img.shields.io/badge/version-0.4.0-purple?style=flat)](CHANGELOG.md)
 [![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
 
@@ -212,12 +213,17 @@ the v0.4 domain expansion (auction-resale, grocery-cpg, cross-border → 12 doma
 the demand-side **channel-class** primitive (tool-less authorized retailers stay visible), a split
 evidence model (**`seller_tier`** = who sold it + **`evidence_grade`** E1/E2/E3 = how the price was
 obtained, only a live read can win), mandatory **`variant_key`** SKU pinning, a coverage floor, the
-**CONSTITUTION** hard-constraint layer, the **codex-crossval** cross-model back-end, and the skill's
-**first executable gate** (`tools/verify_matrix.py` + CI). Remaining gaps:
+**CONSTITUTION** hard-constraint layer, the **codex-crossval** cross-model back-end, **~32 per-tool
+docs**, the four **landed-cost data tables** (`reference/data/`: US sales tax · cross-border duty ·
+FX source-of-record · shipping baselines — every figure source-cited, CBP/Federal-Register primary),
+and the skill's **executable gate** (`tools/verify_matrix.py` + CI). The v0.4.0 self-evolve round
+also **ported market-intel's richer judgement gate checks** (REPO / STAR / GHACTIVE / DOCCOVER /
+STALE / COVER / CHURN / DELETE / CONST / METH) into the gate, added a **DATA** envelope check + a
+**NOHARDCODE** provenance lint, automated the **refresh-priority** ranking (`tools/refresh_priority.py`)
+and the **scenario-eval** harness (`tools/scenario_eval.py`). Remaining gaps:
 
-- market-intel's richer judgement gate checks (REPO / STAR / GHACTIVE / COVER / CHURN / DELETE) — not yet ported.
-- More tool docs (currently 22; ~30-40 target for parity).
-- Per-region tax/shipping-cost auto-computation tables.
+- Demo conversations + comparison-vs-alternatives docs (v0.5 packaging).
+- Heartbeat issue auto-close + discovery-state log (v0.3 loop-closing).
 
 See [ROADMAP.md](ROADMAP.md).
 

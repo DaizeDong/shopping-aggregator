@@ -30,6 +30,14 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   Marking as `applied` without one of these is a bug. `[S]`
 - **I.6** A report MUST end with a "Coverage gaps" section. An empty gaps section is allowed only
   when explicitly stated "actively reverse-searched, none found"; absence is a bug.
+- **I.7** **Landed-cost provenance.** Every `tax`, `duty`, `shipping`, and `FX` value used in a
+  landed-cost computation or ranking MUST resolve to a specific row in `reference/data/` (carrying
+  that row's `source_url` + `verified_date`) — or, when no row covers the case, be explicitly stamped
+  `(assumed)` inline next to the number. A bare rate, threshold, or FX figure typed from memory (e.g.
+  "NJ 6.625%", "$800 de-minimis", "≈7 CNY/USD") with neither a data-table citation nor an `(assumed)`
+  stamp is a provenance bug. The `reference/data/*.json` tables (us-sales-tax, cross-border-duty,
+  shipping-baselines) + `reference/data/fx-source-of-record.md` are the single source-of-record; SKILL
+  prose and shards MUST read them, never restate the numbers inline. `[S]`
 
 ## II — Process guarantees
 

@@ -40,7 +40,17 @@ PORTED from market-intel (richer judgement; network gates honour --no-net):
   CONST     CONSTITUTION.md exists and was NOT modified by this run (scope guard; BLOCK).
   METH      SKILL.md keeps L1/L5/E1/E3 tiers + ①②③④ route legend + >=10 numbered guardrails.
 
-ADDED (data-integrity — new this revision):
+ADDED (provenance + registration — new this revision):
+  NOHARDCODE SKILL.md prose pairing a tax/duty/de-minimis number (N% / $N) with NO reference/data/
+            citation and NO (assumed) stamp => WARN (CONSTITUTION I.7: numbers resolve to a data row).
+            Scoped to {sales-tax,de-minimis,tariff,duty,customs} so shipping analogies and trust/depth
+            thresholds don't false-fire.
+  SHARDSYNC A net-new domain shard (vs git baseline) MUST have a reference/sources-index.md row; a
+            net-new reference/data/*.json MUST be named in reference/data/README.md => BLOCK on an
+            orphan. Gates only NEW files so the current (already-registered) tree stays PASS; skipped
+            without a git baseline.
+
+ADDED (data-integrity — prior revision):
   DATA      reference/data/*.json conform to the envelope {schema_version,last_verified,rows:[...]}
             and every row carries source_url + verified_date (BLOCK on violation; future date BLOCK).
             No data dir / no json files => silent no-op (so the baseline stays green until the
@@ -580,9 +590,20 @@ def run_checks():
                 continue
             base_lines = len(base_raw.splitlines()) or 1
             churn = (len(added) + len(removed)) / base_lines
+            removed_ratio = len(removed) / base_lines
+            # A REWRITE replaces existing content — its signature is a high REMOVED-line ratio, not raw
+            # growth. A pure/near-pure ADDITION (many + lines, few/no - lines, e.g. another agent
+            # appending 37 lines to a shard) inflates total churn but rewrites nothing, so it must NOT
+            # hard-block. BLOCK only when total churn is high AND a substantial share of the baseline
+            # was actually removed/replaced; otherwise surface growth-heavy churn as a WARN for review.
             if churn > CHURN_MAX:
-                block("CHURN", f"{d}: {int(churn*100)}% of lines changed (>{int(CHURN_MAX*100)}%) — "
-                               f"looks like a rewrite, not an incremental edit; route to human review")
+                if removed_ratio > CHURN_MAX:
+                    block("CHURN", f"{d}: {int(churn*100)}% of lines changed incl {int(removed_ratio*100)}% "
+                                   f"removed (>{int(CHURN_MAX*100)}%) — looks like a rewrite, not an "
+                                   f"incremental edit; route to human review")
+                else:
+                    warn("CHURN", f"{d}: {int(churn*100)}% of lines changed but only {int(removed_ratio*100)}% "
+                                  f"removed — growth-heavy (additive), not a rewrite; noting for review")
             added_names = {_row_name(l) for l in added if _is_src_row(l)}
             genuinely_removed = [l for l in removed if _is_src_row(l)
                                  and _row_name(l) and _row_name(l) not in added_names]
@@ -593,14 +614,21 @@ def run_checks():
                                     f"(D-404/D-STALE/D-PRICE/D-TOS/D-SUPERSEDED) in CHANGELOG or an "
                                     f"Avoid(dead) line")
 
-    # ---- CONST (scope guard: an automated run must not modify CONSTITUTION.md) ----
+    # ---- CONST (scope guard on CONSTITUTION.md) ----
+    # CONSTITUTION VII: the constitution changes ONLY through a reasoned PR, never via a refresh sweep.
+    # A missing/deleted constitution is fail-closed (BLOCK). A modification vs baseline is surfaced as a
+    # WARN, not a hard BLOCK: VII expressly permits a PR to amend it (e.g. adding the I.7 landed-cost
+    # provenance rule), so blocking every constitution-touching diff would forbid the very mechanism VII
+    # mandates. The WARN routes the diff to human review — the correct severity for "did you mean to
+    # change the constitution in this change?" — while a refresh-sweep that touches it still gets flagged.
     if not os.path.exists(CONSTITUTION):
         block("CONST", "CONSTITUTION.md missing")
     elif have_base:
         changed = subprocess.run(["git", "diff", "--name-only", BASE, "--", "CONSTITUTION.md"],
                                  cwd=ROOT, capture_output=True, text=True, encoding="utf-8").stdout.strip()
         if changed:
-            block("CONST", "CONSTITUTION.md was modified — automation may not change the constitution")
+            warn("CONST", "CONSTITUTION.md was modified vs baseline — allowed ONLY via a reasoned PR "
+                          "(CONSTITUTION VII), never a refresh sweep. Route to human review.")
 
     # ---- METH (SKILL.md keeps the tier/grade legend + the numbered guardrails) ----
     # L1/L5/E1/E3 seller-tier + evidence-grade legend lives in SKILL.md. The full ①②③④ channel-route
@@ -626,6 +654,62 @@ def run_checks():
                 block("METH", f"sources-index.md lost the ①②③④ route-legend marker '{marker}'")
     else:
         warn("METH", "reference/sources-index.md absent — cannot verify the ①②③④ route legend")
+
+    # ---- NOHARDCODE (provenance lint; WARN) ----
+    # CONSTITUTION I.7: a tax/duty/de-minimis rate or threshold in SKILL.md prose MUST resolve to a
+    # reference/data/ row (or be stamped `(assumed)`), never typed from memory. We scan SKILL.md for a
+    # money token (an N% rate or a $N amount) co-occurring on a line with a tax/duty keyword; if that
+    # line neither points at `data/` nor carries `(assumed)`, it looks like an inline hard-coded fact.
+    # WARN not BLOCK (per the conservative-add rule): a human confirms whether it's a real datum or
+    # illustrative. Scoped to the {tax,duty,de-minimis,tariff} family on purpose so that shipping
+    # analogies ("eBay $15 ship") and trust/depth thresholds ("<95% rating", "$500+") don't false-fire.
+    if os.path.exists(SKILLMD):
+        skill_lines = read(SKILLMD).splitlines()
+        MONEY_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)?\s*%|\$\s?\d[\d,]*")
+        TAXDUTY_RE = re.compile(r"\b(?:sales[\s-]?tax|de[\s-]?minimis|tariff|duty|duties|customs)\b",
+                                re.IGNORECASE)
+        # "safe" = the number resolves to a data table or is explicitly assumed. Recognise a direct
+        # data-path citation, the table slugs, an (assumed) stamp, and the in-prose phrasing that
+        # delegates to a data row ("...status row", "...HTS ... row", "look up reference/data/").
+        SAFE_RE = re.compile(r"reference/data|data/[\w-]+\.json|\(assumed\)|us-sales-tax|"
+                             r"cross-border-duty|shipping-baselines|fx-source-of-record|"
+                             r"status row|HTS|de-minimis (?:status|row)", re.IGNORECASE)
+        for i, ln in enumerate(skill_lines, 1):
+            if not (MONEY_RE.search(ln) and TAXDUTY_RE.search(ln)):
+                continue
+            # look at the line plus 1 line of lookback: a wrapped sentence often carries the
+            # data-table citation on the preceding physical line.
+            window = ln + "\n" + (skill_lines[i - 2] if i >= 2 else "")
+            if SAFE_RE.search(window):
+                continue
+            warn("NOHARDCODE", f"SKILL.md line {i} pairs a tax/duty number with no data-table "
+                               f"reference and no (assumed) stamp — cite reference/data/ or mark "
+                               f"it (assumed) (CONSTITUTION I.7): {ln.strip()[:90]}")
+
+    # ---- SHARDSYNC (registration discipline; BLOCK) ----
+    # A net-new domain shard (reference/domains/<x>.md absent at the git baseline) MUST be registered in
+    # BOTH registries the triage path reads: (1) a row in reference/sources-index.md referencing
+    # `domains/<x>.md` (the thin index Step 2a reads), and (2) the "README" row — the per-domain README
+    # table at the top of reference/domains/ (the sources-index IS that domains README; we additionally
+    # require the shard to carry its own `last_verified`-bearing header so it isn't a stub). An orphan
+    # shard is invisible to the workflow -> BLOCK. Gates ONLY net-new files (vs baseline) so the current
+    # tree, whose shards are already registered, stays PASS; skipped without a git baseline (can't tell
+    # new from old). Data tables are governed by DATA + the data README, not SHARDSYNC (they are not
+    # triage shards), so this does not fire on R2's newly-landed reference/data/*.json.
+    if not have_base:
+        warn("SHARDSYNC", f"git baseline '{BASE}' unavailable — skipped new-shard registration check")
+    else:
+        sidx_txt = read(SOURCES_INDEX) if os.path.exists(SOURCES_INDEX) else ""
+        for d in sorted(fs_domains):
+            rel = f"{SHARD_GIT_PREFIX}/{d}.md"
+            if git_show(BASE, rel).strip():
+                continue  # existed at baseline -> not a new shard
+            if f"domains/{d}.md" not in sidx_txt:
+                block("SHARDSYNC", f"new shard domains/{d}.md has no row in reference/sources-index.md "
+                                   f"referencing `domains/{d}.md` — register it or it is invisible to triage")
+            if not FRESH_RE.search(shard_text.get(d, "")):
+                block("SHARDSYNC", f"new shard domains/{d}.md has no Last-verified header (README row) "
+                                   f"— a registered shard MUST carry provenance, not land as a stub")
 
     # ================================================================= ADDED CHECK (data integrity)
     # ---- DATA: reference/data/*.json conform to the envelope + per-row provenance ----

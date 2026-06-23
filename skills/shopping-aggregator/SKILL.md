@@ -138,12 +138,28 @@ not a snippet). Same-subagent self-verification is a bug.
 
 ### Step 6 — Normalize and rank by LANDED COST
 
-The most-skipped step and the most decision-relevant.
-- **Currency**: convert all to the user's region currency; cite the FX rate + timestamp, never round
-  silently.
-- **Landed cost = sticker + shipping + tax + (− coupon) + (− cashback).** Sticker alone is a ranking
-  trap (Prime free-ship vs eBay $15 ship flips winners). Tax: user's state % for US (e.g. NJ 6.625%);
-  cross-border → duty estimate or flag "unknown duties — confirm at checkout."
+The most-skipped step and the most decision-relevant. **Every tax / duty / shipping / FX number used
+here MUST resolve to a row in `reference/data/` (carrying `source_url` + `verified_date`) or be stamped
+`(assumed)` inline — CONSTITUTION I.7. Do NOT hard-code a rate or threshold from memory.**
+- **Currency**: convert all to the user's region currency using the provider precedence + provenance
+  schema in `reference/data/fx-source-of-record.md` (Frankfurter primary → ExchangeRate-API fallback).
+  Cite the FX rate + provider + the rate's effective timestamp (not fetch time); never round silently,
+  never invent a rate — if neither provider answers, leave the price in its source currency and mark
+  the conversion `UNVERIFIED`.
+- **Landed cost = sticker + shipping + tax + duty + (− coupon) + (− cashback).** Sticker alone is a
+  ranking trap (Prime free-ship vs eBay $15 ship flips winners).
+  - **Tax (US):** look up the buyer's state in `reference/data/us-sales-tax.json` (do NOT type a rate
+    from memory — e.g. NJ resolves to the `NJ` row, 6.625%). Cite the row's `source_url` +
+    `verified_date`. If the state is unknown, compute with the row anyway once region is confirmed at
+    Step 1, or stamp the tax line `(assumed)`.
+  - **Shipping:** check the retailer's free-ship baseline in `reference/data/shipping-baselines.json`
+    (Amazon/Walmart/Target/Best Buy $35 non-member; eBay/AliExpress = seller-set, no platform
+    baseline) before assuming "free" — sub-threshold carts add a real fee that flips rankings.
+  - **Cross-border duty:** look up `reference/data/cross-border-duty.json`. **The legacy $800 US
+    Section 321 de-minimis is SUSPENDED for ALL origins (EO 14324, eff 2025-08-29) — do NOT treat any
+    sub-$800 cross-border parcel as duty-free.** Read the de-minimis status row + the relevant HTS
+    category rate, estimate duty, and cite both rows; where no category row fits, flag `duty likely
+    owed — confirm exact HTS rate at checkout` rather than assuming $0.
 - **Coupons**: verify by **playwright cart test** (badges lie); mark each `code, applied?, $`.
 - **Trust-adjust**: drop marketplace listings < 95% rating or < 500 ratings unless user OK'd it
   (AliExpress especially).
@@ -168,7 +184,9 @@ rationale + war-stories for #5/#5b/#7/#8/#9/#10: `reference/evidence-schema.md`.
    report top.
 2. **Stock state is part of the price.** Rank in-stock first; OOS / preorder = footnote, not top pick.
 3. **Landed cost, not sticker.** See Step 6. Sticker-only with no computable landed cost → label
-   `⚠ sticker only — actual landed cost may be higher.`
+   `⚠ sticker only — actual landed cost may be higher.` Every tax/duty/shipping/FX value MUST resolve
+   to a `reference/data/` row (with `source_url` + `verified_date`) or be stamped `(assumed)` — a bare
+   rate or threshold typed from memory is a provenance bug (CONSTITUTION I.7).
 4. **Coupon verification gate.** Don't trust "coupons available!" badges — verify via playwright cart
    test or label `coupon claims unverified` (Honey-style false positives are real; Honey 2026 status in
    `reference/domains/browser-extensions.md`).
@@ -241,8 +259,10 @@ SKILL.md (this file) is always loaded — keep it the only frequently-loaded con
 **never a whole directory**: `reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
 `reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
 `reference/tools/<slug>.md`; `reference/install-guide.md` when setting up a source;
-`reference/evidence-schema.md` at Step 5; `reference/volatile/pricing-install.md` only when guiding an
-install (time-stamped — verify against the official site first).
+`reference/evidence-schema.md` at Step 5; the relevant `reference/data/*.json` table(s) at Step 6
+landed-cost (us-sales-tax / cross-border-duty / shipping-baselines) + `reference/data/fx-source-of-record.md`
+for FX; `reference/volatile/pricing-install.md` only when guiding an install (time-stamped — verify
+against the official site first).
 
 ## Maintenance
 
