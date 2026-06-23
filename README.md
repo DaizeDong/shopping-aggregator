@@ -7,9 +7,9 @@ reinventing it.
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Domains](https://img.shields.io/badge/Source%20Matrix-9%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![Domains](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Tool docs](https://img.shields.io/badge/Tool%20docs-per--tool%20how--to-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Version](https://img.shields.io/badge/version-0.3.3-purple?style=flat)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-purple?style=flat)](CHANGELOG.md)
 [![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
 
 [English](README.md) | [中文版](README_CN.md)
@@ -66,7 +66,7 @@ rotates hourly).
 things nothing else does**, and delegates everything else:
 
 1. **Parse the buy intent** — product + region + budget + urgency + sensitivity → triage to 1–N
-   of 9 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
+   of 12 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
    retailer — e.g. Micro Center — stays visible instead of being structurally invisible).
 2. **Detect + guide install** — check which specialized shopping MCP/extension/OSS tool is
    connected (via `claude mcp list`, not unreliable tool-name guessing), and if a key source is
@@ -135,7 +135,7 @@ What runs:
 
 ---
 
-## The source matrix (9 domains)
+## The source matrix (12 domains)
 
 The knowledge asset. Each domain shard names the best tool, its **barrier route**, how to detect
 it, and what to install.
@@ -144,6 +144,7 @@ it, and what to install.
 |---|---|
 | [amazon-us](skills/shopping-aggregator/reference/domains/amazon-us.md) | playwright ④ + Camelcamelcamel ① free (+ Keepa ① paid for history) |
 | [ebay-walmart-target](skills/shopping-aggregator/reference/domains/ebay-walmart-target.md) | eBay Browse API ① free + playwright ④ |
+| [auction-resale](skills/shopping-aggregator/reference/domains/auction-resale.md) | eBay Sold SERP ④ free (`LH_Sold=1`) + StockX API ① (approved) / playwright ④ for GOAT/Whatnot/Poshmark/Mercari/Depop/ThredUp |
 | [taobao-tmall](skills/shopping-aggregator/reference/domains/taobao-tmall.md) | 慢慢买 ④ + 购物党 ④ |
 | [jd-pdd](skills/shopping-aggregator/reference/domains/jd-pdd.md) | 慢慢买 ④ + 京东价保 ① + 购物党 ④ |
 | [browser-extensions](skills/shopping-aggregator/reference/domains/browser-extensions.md) | Capital One Shopping ① + Karma ① (⚠ AVOID Honey 2026) |
@@ -151,6 +152,8 @@ it, and what to install.
 | [ai-shopping-assistants](skills/shopping-aggregator/reference/domains/ai-shopping-assistants.md) | Perplexity Shopping Pro |
 | [claude-mcps](skills/shopping-aggregator/reference/domains/claude-mcps.md) | BigGo MCP ④ free + Apify price-intelligence ② paid |
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy (US/EU) + PriceDive (CN, only fresh multi-platform) |
+| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① circular + banner app ① loyalty (playwright ④ Instacart cart) — hyper-regional, pin ZIP+banner |
+| [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④ (duty per `data/cross-border-duty.json`, CBP-primary) |
 
 **Barrier routes:** ① official · ② resale · ③ self-host scrape · ④ **browser automation /
 act-like-human** (first-class for live consumer prices).
@@ -204,7 +207,8 @@ research); weekly for browser-extensions and AI-shopping-assistants. Trigger man
 
 ## Status / roadmap
 
-v0.3.3. The v0.1.0 hand-curated matrix (5-subagent landscape survey, 2026-06-15) has since gained:
+v0.4.0. The v0.1.0 hand-curated matrix (5-subagent landscape survey, 2026-06-15) has since gained
+the v0.4 domain expansion (auction-resale, grocery-cpg, cross-border → 12 domains) plus:
 the demand-side **channel-class** primitive (tool-less authorized retailers stay visible), a split
 evidence model (**`seller_tier`** = who sold it + **`evidence_grade`** E1/E2/E3 = how the price was
 obtained, only a live read can win), mandatory **`variant_key`** SKU pinning, a coverage floor, the

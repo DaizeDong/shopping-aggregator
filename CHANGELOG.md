@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0] — 2026-06-22
+
+v0.4 domain expansion — **3 new domain shards landed, matrix 9 → 12 domains.** The shard bodies + the cross-border duty data source-of-record were authored in a prior round; this round wires them into the discovery surfaces and bumps every count.
+- **`reference/domains/auction-resale.md`** — resale/used value: eBay Sold SERP ④ free (`LH_Sold=1`), StockX Public API v2 ① (approval-gated), playwright ④ for GOAT/Whatnot/Poshmark/Mercari/Depop/ThredUp. Different trust model from new-retail.
+- **`reference/domains/grocery-cpg.md`** — groceries/CPG: Flipp ① circular discovery + banner-app ① loyalty truth (Kroger fuel points, Target Circle, ShopRite Price Plus, Wegmans, Costco Executive), playwright ④ for live Instacart cart. Hyper-regional — pin ZIP→banner first.
+- **`reference/domains/cross-border.md`** — 海淘/代购/forwarders: Superbuy/Stackry/MyUS/YesStyle ④. **Duty by default** — de-minimis suspended; all figures live in `reference/data/cross-border-duty.json` (CBP / Federal Register / EU Council primary, E1).
+- **Wiring:** added 3 rows to `reference/sources-index.md`, 3 rows to the `README.md` + `README_CN.md` source matrices; Domains badge **9 → 12**; spliced a **Flipp grocery hand-off** note into `mobile-apps-aggregators.md` (Flipp stays discoverable there, grocery mechanics route to `grocery-cpg.md`); ticked the 3 v0.4 ROADMAP boxes; bumped the `12 domains` count across README/README_CN/SKILL.md.
+- bump 0.3.3 → 0.4.0. Gate: PASS (`--no-net`).
+
 ## [0.3.3] — 2026-06-17
 
 Documentation-consistency sweep (no skill-logic change). Grep-audited the whole repo for stale version strings, wrong counts, broken links, and pre-0.2.0 feature descriptions; only the two READMEs were stale.
