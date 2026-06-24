@@ -1,22 +1,19 @@
-# shopping-aggregator (购物比价聚合 skill)
+# shopping-aggregator
 
-为**消费级购物比价**设计的轻量编排 skill。把你的购买意图（商品 + 地区 + 预算 + 紧迫度）分流到正确的
-比价数据源（并指导你安装），然后把比价的"重活"——多源同时抓价、历史核查、对抗式校验——交给你
-已有的 research harness 去做，而**不重复造轮子**。
+把任意购买意图分流到 12 个购物 domain，按到手价（而非标价）排序，再把多源同时抓价的重活交给你已有的 research harness。
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Domains](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
-[![Tool docs](https://img.shields.io/badge/Tool%20docs-~32%20per--tool-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-teal?style=flat)](skills/shopping-aggregator/reference/data/README.md)
-[![Version](https://img.shields.io/badge/version-0.4.0-purple?style=flat)](CHANGELOG.md)
-[![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
+[![数据源矩阵](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90%E7%9F%A9%E9%98%B5-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![数据表](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E8%A1%A8-%E7%A8%8E%20%7C%20%E5%85%B3%E7%A8%8E%20%7C%20FX%20%7C%20%E8%BF%90%E8%B4%B9-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
+[![语言](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-EN%20%2F%20CN-blue?style=flat)](#语言)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
 ---
 
-## ⭐ 设计理念
+## ⭐ 先读这里 — 设计理念
 
 shopping-aggregator 继承 market-intel 的统领原则——**从根本进行设计，而非小修小补**：出问题
 就改它底下的假设，而不是补它表面的症状。把这个原则套到「消费购物」场景上，催生了下面这些
@@ -32,9 +29,7 @@ shopping-specific 决定：
 
 📜 **[完整设计理念 → PHILOSOPHY.md](PHILOSOPHY.md)**。
 
----
-
-## 姊妹 skill — 何时用谁
+### 姊妹 skill — 何时用谁
 
 `shopping-aggregator` 是更广义 market-research 工具集
 [`market-intel`](https://github.com/DaizeDong/market-intel) 的**消费购物特化分支**。
@@ -52,6 +47,10 @@ shopping-specific 决定：
 ---
 
 ## 它是什么（和不是什么）
+
+为**消费级购物比价**设计的轻量编排 skill。把你的购买意图（商品 + 地区 + 预算 + 紧迫度）分流到正确的
+比价数据源（并指导你安装），然后把比价的"重活"——多源同时抓价、历史核查、对抗式校验——交给你
+已有的 research harness 去做，而**不重复造轮子**。
 
 Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献，以及 `market-intel`
 通用商业调研。但当问题变成「我要买 X — 帮我找最优价」时——这是消费工作流，有自己的数据源
@@ -86,11 +85,6 @@ Keepa MCP / `deep-research` / `market-intel`。无重复造轮。
 git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
 ```
 
-它在如下短语下自动激活：`比价`、`查历史价`、`全网最低价`、`X 在哪里买便宜`、`凑单`、
-`compare prices for X`、`cheapest place to buy`、`is this a good deal`、`should I wait for a sale`。
-广义商业调研让位给 [`market-intel`](https://github.com/DaizeDong/market-intel)，单事实查询直接
-打开页面就好。
-
 ---
 
 ## 60 秒上手
@@ -119,9 +113,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 7. **报告** → 按到手价排名表 + 历史备注（"距 90 天低 $X，黑五历史平均跌 25%"）+ 优惠码列表
    （✓/⚠/✗）+ 风险与反向证据 + 覆盖空白（Costco 需登录跳过）+ 完整出处。
 
----
-
-## 数据源矩阵（12 个 domain）
+### 数据源矩阵（12 个 domain）
 
 知识资产。每个 domain shard 写明最佳工具、它的**信息壁垒路线**、如何检测、如何安装。
 
@@ -150,9 +142,23 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 
 ---
 
-## 质量护栏（购物特有）
+## 如何触发
 
-继承 market-intel 通用护栏 + 购物特有规则。合成时强制执行（详见
+它在如下短语下自动激活：`比价`、`查历史价`、`全网最低价`、`X 在哪里买便宜`、`凑单`、
+`compare prices for X`、`cheapest place to buy`、`is this a good deal`、`should I wait for a sale`。
+广义商业调研让位给 [`market-intel`](https://github.com/DaizeDong/market-intel)，单事实查询直接
+打开页面就好。
+
+手动重扫矩阵（扩展失联盟网、API 死亡、OSS 仓库停更）：触发 `刷新比价工具库` /
+`refresh the shopping-aggregator source matrix`。[refresh 协议](skills/shopping-aggregator/reference/refresh-protocol.md)
+每月扫一遍（每域一个 subagent → 结构化 diff → 增量编辑 shard → `CHANGELOG.md` + 版本号）。默认**每月**；
+浏览器扩展和 AI 助手 domain 周级。
+
+---
+
+## 示例输出
+
+一次运行最终产出一张按到手价排名的报告。塑造它的质量护栏（购物特有，合成时强制执行，详见
 [`SKILL.md`](skills/shopping-aggregator/SKILL.md)）：
 
 - **快照时间戳必填** — 每条价格挂 `[fetched YYYY-MM-DD HH:MM TZ]`。
@@ -173,38 +179,32 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 
 ---
 
-## 保持新鲜
+## 限制
 
-矩阵会腐烂——扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS 仓库
-停更。[refresh 协议](skills/shopping-aggregator/reference/refresh-protocol.md) 每月扫一遍
-（每域一个 subagent → 结构化 diff → 增量编辑 shard → `CHANGELOG.md` + 版本号）。默认**每月**
-（比 market-intel 季度更频）；浏览器扩展和 AI 助手 domain 周级。手动触发：`刷新比价工具库` /
-`refresh the shopping-aggregator source matrix`。
+`shopping-aggregator` 是薄编排层，不是价格引擎——它在设计上就有结构性边界：
 
----
+- **不重复造抓取引擎** — 多源实时抓价、历史查询、对抗校验都委托给 playwright / BigGo / Keepa /
+  `deep-research` / `market-intel`。若都没连上，skill 引导安装而不自己抓。
+- **矩阵会腐烂** — 扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS
+  仓库停更。新鲜度由 refresh 协议维护，并非时时保证。
+- **登录墙零售商**（如 Costco）报为显式覆盖空白，不静默遗漏，但不自动抓取。
+- **非卖家侧/搬砖工具** — FBA / 批发 / 市场调研请用
+  [`market-intel`](https://github.com/DaizeDong/market-intel)。
+- **不自动下单** — skill 产出推荐，下单由你点。
 
-## 状态 / 路线
-
-v0.4.0。v0.1.0 的手动策展矩阵（2026-06-15 一次 5-subagent 调研）之后长出 v0.4 域扩展
-（auction-resale、grocery-cpg、cross-border → 12 域），以及：需求侧
-**channel-class** 原语（无工具的授权零售商不再隐形）、拆分的证据模型（**`seller_tier`** 谁卖 +
-**`evidence_grade`** E1/E2/E3 怎么拿到，只有实读能当冠军）、强制 **`variant_key`** SKU 钉死、
-覆盖地板、**CONSTITUTION** 硬约束层、**codex-crossval** 跨模型后端、**~32 个 per-tool 文档**、
-四张**到手价数据表**（`reference/data/`：美国销售税 · 跨境关税 · FX source-of-record · 运费基线
-——每个数字都带来源引用，CBP / Federal Register 为权威源），以及本 skill 的**可执行闸门**
-（`tools/verify_matrix.py` + CI）。v0.4.0 自进化轮还**移植了 market-intel 更丰富的判断型闸门检查**
-（REPO / STAR / GHACTIVE / DOCCOVER / STALE / COVER / CHURN / DELETE / CONST / METH）、新增
-**DATA** 信封检查 + **NOHARDCODE** 出处 lint，并把 **refresh-priority** 排序
-（`tools/refresh_priority.py`）和 **scenario-eval** 评测（`tools/scenario_eval.py`）自动化。剩余缺口：
-
-- demo 对话 + 与替代品对比文档（v0.5 打包质量）。
-- heartbeat issue 自动关闭 + discovery-state 日志（v0.3 闭环）。
-
-详见 [ROADMAP.md](ROADMAP.md)。
+剩余路线缺口：demo 对话 + 与替代品对比文档（v0.5 打包质量），heartbeat issue 自动关闭 +
+discovery-state 日志（v0.3 闭环）。详见 [ROADMAP.md](ROADMAP.md)。
 
 ---
 
-## 相关
+## 语言
 
-- [market-intel](https://github.com/DaizeDong/market-intel) — 姊妹 skill，广义商业研究 / 卖家
-  侧情报。
+English ([`README.md`](README.md)) · 中文 (`README_CN.md`)
+
+---
+
+## Roadmap · 贡献 · 许可
+
+见 [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE)（MIT）。
+
+姊妹 skill：[market-intel](https://github.com/DaizeDong/market-intel) — 广义商业研究 / 卖家侧情报。
