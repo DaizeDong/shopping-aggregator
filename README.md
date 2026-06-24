@@ -1,23 +1,19 @@
 # shopping-aggregator
 
-A thin orchestration skill for **consumer shopping price comparison**. Triages your buy intent
-(product + region + budget + urgency), finds the right specialized shopping source (and helps you
-install it), then hands the heavy lifting to your existing research harness — instead of
-reinventing it.
+Triage any buy intent across 12 shopping domains, rank by landed cost (not sticker), and delegate the live-price fan-out to your existing research harness.
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Domains](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
-[![Tool docs](https://img.shields.io/badge/Tool%20docs-~32%20per--tool-blue?style=flat)](skills/shopping-aggregator/reference/tools/index.md)
-[![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-teal?style=flat)](skills/shopping-aggregator/reference/data/README.md)
-[![Version](https://img.shields.io/badge/version-0.4.0-purple?style=flat)](CHANGELOG.md)
-[![Sister skill](https://img.shields.io/badge/sister-market--intel-yellow?style=flat)](https://github.com/DaizeDong/market-intel)
+[![Source Matrix](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
+[![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
 ---
 
-## ⭐ Read this first: the design philosophy
+## ⭐ Read this first — the design philosophy
 
 shopping-aggregator inherits market-intel's organizing principle — **root-cause design, not
 incremental patching.** When something is wrong, change the assumption underneath it, not the
@@ -35,9 +31,7 @@ decision in this skill:
 
 📜 **[Read the full design philosophy → PHILOSOPHY.md](PHILOSOPHY.md)**.
 
----
-
-## Sister skill — when to use which
+### Sister skill — when to use which
 
 `shopping-aggregator` is the **consumer-purchase specialization** of the broader market-research
 toolkit at [`market-intel`](https://github.com/DaizeDong/market-intel).
@@ -55,6 +49,11 @@ Both skills can coexist — install both, the orchestration logic in each handle
 ---
 
 ## What it is (and isn't)
+
+A thin orchestration skill for **consumer shopping price comparison**. Triages your buy intent
+(product + region + budget + urgency), finds the right specialized shopping source (and helps you
+install it), then hands the heavy lifting to your existing research harness — instead of
+reinventing it.
 
 Claude Code already has a `deep-research` harness, a `research-lit` skill, and `market-intel` for
 broad commercial research. Those fall short the moment a question is **"I'm about to buy X — find
@@ -96,12 +95,6 @@ Or clone manually:
 git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
 ```
 
-It auto-activates on phrases like `compare prices for X`, `cheapest place to buy`,
-`is this a good deal`, `should I wait for a sale`, `比价`, `查历史价`, `全网最低价`,
-`X 在哪里买便宜`, `凑单`. For broad market research it deliberately steps aside (use
-[`market-intel`](https://github.com/DaizeDong/market-intel)); for single-fact lookups it steps
-aside (just open the page).
-
 ---
 
 ## 60-second tour
@@ -134,9 +127,7 @@ What runs:
    around Black Friday by ~25%"), coupon-applied list (✓/⚠/✗), risks section, coverage gaps
    (Costco needs login → skipped), full source list.
 
----
-
-## The source matrix (12 domains)
+### The source matrix (12 domains)
 
 The knowledge asset. Each domain shard names the best tool, its **barrier route**, how to detect
 it, and what to install.
@@ -167,11 +158,27 @@ per-domain) →
 
 ---
 
-## Quality guardrails (price-data-specific)
+## How to invoke
 
-These extend market-intel's general guardrails with shopping-specific rules. Hard rules applied
-during synthesis (full list in
-[`SKILL.md`](skills/shopping-aggregator/SKILL.md)):
+It auto-activates on phrases like `compare prices for X`, `cheapest place to buy`,
+`is this a good deal`, `should I wait for a sale`, `比价`, `查历史价`, `全网最低价`,
+`X 在哪里买便宜`, `凑单`. For broad market research it deliberately steps aside (use
+[`market-intel`](https://github.com/DaizeDong/market-intel)); for single-fact lookups it steps
+aside (just open the page).
+
+To re-sweep the matrix manually (extensions lose affiliate networks, APIs die, OSS repos go
+silent), trigger `刷新比价工具库` / `refresh the shopping-aggregator source matrix`. The
+[refresh protocol](skills/shopping-aggregator/reference/refresh-protocol.md) re-sweeps each domain
+(one subagent per domain → structured diff → incremental shard edits → `CHANGELOG.md` + version
+bump). Default cadence **monthly**; weekly for browser-extensions and AI-shopping-assistants.
+
+---
+
+## Example output
+
+A run ends in a landed-cost-ranked report. Quality guardrails (price-data-specific) that shape it —
+hard rules applied during synthesis, full list in
+[`SKILL.md`](skills/shopping-aggregator/SKILL.md):
 
 - **Snapshot timestamp is MANDATORY** — every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`.
 - **Stock state is part of the price** — OOS at $X ≠ in-stock at $X+5.
@@ -194,42 +201,37 @@ during synthesis (full list in
 
 ---
 
-## Keeping it current
+## Limitations
 
-The matrix decays — extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die (PA-API
-2026-05-15), OSS repos go silent. The
-[refresh protocol](skills/shopping-aggregator/reference/refresh-protocol.md) re-sweeps each
-domain (one subagent per domain → structured diff → incremental shard edits → `CHANGELOG.md` +
-version bump). Default cadence **monthly** (consumer shopping moves faster than commercial
-research); weekly for browser-extensions and AI-shopping-assistants. Trigger manually with
-`刷新比价工具库` / `refresh the shopping-aggregator source matrix`.
+`shopping-aggregator` is a thin orchestration layer, not a price engine — it has structural limits
+by design:
 
----
+- **No reinvented fetch engine** — the live-price fan-out, history lookup, and adversarial
+  verification are delegated to playwright / BigGo / Keepa / `deep-research` / `market-intel`. If
+  none is connected, the skill guides install rather than fetching itself.
+- **The matrix decays** — extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
+  (PA-API 2026-05-15), OSS repos go silent. Freshness is maintained by the refresh protocol, not
+  guaranteed at every moment.
+- **Login-walled retailers** (e.g. Costco) are reported as explicit coverage gaps, not silently
+  omitted, but are not auto-fetched.
+- **Not a seller-side / arbitrage tool** — for FBA / wholesale / market research, use
+  [`market-intel`](https://github.com/DaizeDong/market-intel).
+- **No auto-purchase** — the skill produces a recommendation; you click buy.
 
-## Status / roadmap
-
-v0.4.0. The v0.1.0 hand-curated matrix (5-subagent landscape survey, 2026-06-15) has since gained
-the v0.4 domain expansion (auction-resale, grocery-cpg, cross-border → 12 domains) plus:
-the demand-side **channel-class** primitive (tool-less authorized retailers stay visible), a split
-evidence model (**`seller_tier`** = who sold it + **`evidence_grade`** E1/E2/E3 = how the price was
-obtained, only a live read can win), mandatory **`variant_key`** SKU pinning, a coverage floor, the
-**CONSTITUTION** hard-constraint layer, the **codex-crossval** cross-model back-end, **~32 per-tool
-docs**, the four **landed-cost data tables** (`reference/data/`: US sales tax · cross-border duty ·
-FX source-of-record · shipping baselines — every figure source-cited, CBP/Federal-Register primary),
-and the skill's **executable gate** (`tools/verify_matrix.py` + CI). The v0.4.0 self-evolve round
-also **ported market-intel's richer judgement gate checks** (REPO / STAR / GHACTIVE / DOCCOVER /
-STALE / COVER / CHURN / DELETE / CONST / METH) into the gate, added a **DATA** envelope check + a
-**NOHARDCODE** provenance lint, automated the **refresh-priority** ranking (`tools/refresh_priority.py`)
-and the **scenario-eval** harness (`tools/scenario_eval.py`). Remaining gaps:
-
-- Demo conversations + comparison-vs-alternatives docs (v0.5 packaging).
-- Heartbeat issue auto-close + discovery-state log (v0.3 loop-closing).
-
-See [ROADMAP.md](ROADMAP.md).
+Remaining roadmap gaps: demo conversations + comparison-vs-alternatives docs (v0.5 packaging),
+heartbeat issue auto-close + discovery-state log (v0.3 loop-closing). See [ROADMAP.md](ROADMAP.md).
 
 ---
 
-## Related
+## Languages
 
-- [market-intel](https://github.com/DaizeDong/market-intel) — sister skill, broad commercial
-  research / seller-side intel.
+English (`README.md`) · 中文 ([`README_CN.md`](README_CN.md))
+
+---
+
+## Roadmap · Contributing · License
+
+See [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE) (MIT).
+
+Sister skill: [market-intel](https://github.com/DaizeDong/market-intel) — broad commercial
+research / seller-side intel.
