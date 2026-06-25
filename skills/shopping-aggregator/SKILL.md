@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: Use when the user wants to compare prices for a SPECIFIC product they're about to buy across multiple retailers — Amazon / eBay / Walmart / Target / Best Buy / Taobao / Tmall / JD / Pinduoduo — plus price-history sources (Keepa / Camelcamelcamel / 慢慢买) and coupon/cashback layers (Capital One Shopping / Karma / Coupert / 购物党). Triages buy intent (product + region + budget + urgency), detects available shopping MCP/extension/tool, delegates live-price fan-out to playwright/BigGo-MCP/Keepa, enforces price-specific quality guardrails (timestamp + stock + landed cost + coupon-cart verification + retailer trust tiers). Sister skill to market-intel — that one handles broad commercial / seller-side research; THIS one handles consumer-purchase price comparison. Trigger phrases: "compare prices for X", "what's the cheapest place to buy", "is this a good deal", "should I wait for a sale", "比价", "查历史价", "全网最低价", "X 在哪里买便宜", "凑单"。
+description: "Use to compare a product's price across retailers (Amazon/eBay/Taobao) + price-history/coupons. Triggers: compare prices, cheapest to buy, good deal, 比价, 查历史价, 全网最低价, 凑单."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
