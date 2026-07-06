@@ -1,10 +1,10 @@
 # shopping-aggregator
 
-Triage any buy intent across 12 shopping domains, rank by landed cost (not sticker), and delegate the live-price fan-out to your existing research harness.
+Triage any buy intent across 13 shopping domains, rank by landed cost (not sticker), and delegate the live-price fan-out to your existing research harness.
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Source Matrix](https://img.shields.io/badge/Source%20Matrix-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![Source Matrix](https://img.shields.io/badge/Source%20Matrix-13%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
 [![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
@@ -66,7 +66,7 @@ rotates hourly).
 things nothing else does**, and delegates everything else:
 
 1. **Parse the buy intent** — product + region + budget + urgency + sensitivity → triage to 1–N
-   of 12 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
+   of 13 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
    retailer — e.g. Micro Center — stays visible instead of being structurally invisible).
 2. **Detect + guide install** — check which specialized shopping MCP/extension/OSS tool is
    connected (via `claude mcp list`, not unreliable tool-name guessing), and if a key source is
@@ -127,7 +127,7 @@ What runs:
    around Black Friday by ~25%"), coupon-applied list (✓/⚠/✗), risks section, coverage gaps
    (Costco needs login → skipped), full source list.
 
-### The source matrix (12 domains)
+### The source matrix (13 domains)
 
 The knowledge asset. Each domain shard names the best tool, its **barrier route**, how to detect
 it, and what to install.
@@ -146,6 +146,7 @@ it, and what to install.
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy (US/EU) + PriceDive (CN, only fresh multi-platform) |
 | [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① circular + banner app ① loyalty (playwright ④ Instacart cart) — hyper-regional, pin ZIP+banner |
 | [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④ (duty per `data/cross-border-duty.json`, CBP-primary) |
+| [hotel-travel](skills/shopping-aggregator/reference/domains/hotel-travel.md) | Booking.com ④ (Genius often lowest public) → drive to Your-Details, then hand off payment; Google Hotels ④ discovery-only (date-lock); flights/cars/trains OUT of scope |
 
 **Barrier routes:** ① official · ② resale · ③ self-host scrape · ④ **browser automation /
 act-like-human** (first-class for live consumer prices).
