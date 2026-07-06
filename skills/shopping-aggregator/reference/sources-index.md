@@ -22,6 +22,7 @@ shard(s) in `domains/`. Do not read shards you didn't match.
 | ai-shopping-assistants | "Perplexity Shopping", "ChatGPT shopping", Rufus, Klarna AI | Perplexity Pro ① (in-app PayPal) | `domains/ai-shopping-assistants.md` |
 | **claude-mcps** | "want a Claude agent to compare for me", MCP-driven price compare | BigGo MCP ④ free · Apify price-intelligence MCP ② paid | `domains/claude-mcps.md` |
 | oss-self-host | "self-host", docker, "自己跑一个", privacy-first | pricebuddy ④ (US/EU) · PriceDive ④ (CN, only fresh multi-platform) | `domains/oss-self-host.md` |
+| hotel-travel | "book a hotel", "cheapest hotel near", lodging price compare, hotel + dates, 订酒店, 差旅住宿, 酒店比价 (flights/cars/trains OUT) | Booking.com playwright ④ (Genius often lowest public; drive to Your-Details, then hand off pay) | `domains/hotel-travel.md` |
 
 Barrier-route legend (same scheme as `market-intel`):
 ① official API / official site — compliant, often paid/limited, no ban risk
