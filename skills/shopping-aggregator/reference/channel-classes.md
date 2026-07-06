@@ -32,6 +32,7 @@ not actually take to a real read becomes a `not-attempted` coverage gap (guardra
 | cross-border / import | overseas authorized or grey | YesStyle, Stylevana, AliExpress, Olive Young (US→CN: 海淘) | browser; flag customs + slow ship + authenticity |
 | refurb / open-box | manufacturer / authorized refurbished | Amazon WHD, Best Buy Open-Box, brand-refurb | only if user said refurb-OK |
 | price-comparison engine | meta-aggregators that index many merchants' offers for one product (esp. **EU**, where this is the dominant discovery layer) | **EU: Idealo (pan-EU: DE/AT/FR/ES/IT/UK), Geizhals (DACH, electronics/specs), PriceRunner (UK + Scandinavia)** · pan-region: Google Shopping (free listings) · (US analogue: BigGo / Google Shopping) | browser ④ (none expose a consumer price API); read the engine, then E1-confirm the winning merchant's own PDP |
+| travel-booking / OTA | booking intermediaries + brand-direct for **lodging** (a distinct buyer-channel TYPE, not a store) | Booking, Expedia, Hotels.com, Priceline · brand.com (Hilton/Marriott/IHG) · Google Hotels (discovery only) | browser ④ (rate/availability live; **verify dates on the actual channel** — Google Hotels locks dates) |
 
 > **price-comparison-engine is a DISCOVERY layer, not a price of record.** An engine's listed price is
 > an indexed/cached offer — it can be stale, exclude shipping, or point at an unauthorized merchant.
@@ -66,6 +67,7 @@ as a `not-attempted` gap if skipped). Use it to confirm an in-scope class is not
 | cross-border / import | `cross-border` (border layer) + origin shard (`taobao-tmall`/`jd-pdd`/`amazon-us`) | ④ + duty JSON | well-owned; dutiable by default |
 | refurb / open-box | `amazon-us` (WHD), `ebay-walmart-target` | ④ | only if refurb-OK |
 | **price-comparison engine** | `claude-mcps` (BigGo, US), `oss-self-host` (pricebuddy EU) partial; **EU Idealo/Geizhals/PriceRunner have NO dedicated shard** | ④ | **shard-thin for EU** — read the engine via browser, then E1 the merchant PDP. Non-US/CN regional routing → [`../sources-index.md`](../sources-index.md) regional note |
+| **travel-booking / OTA** | `hotel-travel` | ④ | Booking.com is the spine; total-stay cost READ off the Your-Details `(NN% Tax)` line (never hard-coded) + separate parking research; Google Hotels discovery-only (date-lock). Flights/cars/trains OUT of scope |
 
 ## What this is NOT
 
@@ -74,4 +76,4 @@ as a `not-attempted` gap if skipped). Use it to confirm an in-scope class is not
   (mixing them re-introduces the supply-side rigidity that hid Micro Center).
 - NOT a refactor of the domain shards — this sits ABOVE them; shards stay access-method-oriented.
 
-## Last verified: 2026-06
+## Last verified: 2026-07

@@ -1,10 +1,10 @@
 # shopping-aggregator
 
-把任意购买意图分流到 12 个购物 domain，按到手价（而非标价）排序，再把多源同时抓价的重活交给你已有的 research harness。
+把任意购买意图分流到 13 个购物 domain，按到手价（而非标价）排序，再把多源同时抓价的重活交给你已有的 research harness。
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![数据源矩阵](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90%E7%9F%A9%E9%98%B5-12%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
+[![数据源矩阵](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90%E7%9F%A9%E9%98%B5-13%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![数据表](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E8%A1%A8-%E7%A8%8E%20%7C%20%E5%85%B3%E7%A8%8E%20%7C%20FX%20%7C%20%E8%BF%90%E8%B4%B9-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![语言](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-EN%20%2F%20CN-blue?style=flat)](#语言)
 [![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
@@ -60,7 +60,7 @@ Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献
 
 `shopping-aggregator` 就是填这个空白的薄层。它**只做三件别人不做的事**，其它全部委托：
 
-1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 12 个购物 domain 的 1-N 个，
+1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 13 个购物 domain 的 1-N 个，
    **并映射到需求侧 channel class**（让无工具的授权零售商——如 Micro Center——不再结构性隐形）。
 2. **检测 + 引导安装** — `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
    出确切安装命令，并指向**每工具一文档**
@@ -113,7 +113,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 7. **报告** → 按到手价排名表 + 历史备注（"距 90 天低 $X，黑五历史平均跌 25%"）+ 优惠码列表
    （✓/⚠/✗）+ 风险与反向证据 + 覆盖空白（Costco 需登录跳过）+ 完整出处。
 
-### 数据源矩阵（12 个 domain）
+### 数据源矩阵（13 个 domain）
 
 知识资产。每个 domain shard 写明最佳工具、它的**信息壁垒路线**、如何检测、如何安装。
 
@@ -131,6 +131,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy（西方）+ PriceDive（中国唯一新鲜多平台） |
 | [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① 周报 circular + 商超会员 App ① 忠诚度（playwright ④ 跑 Instacart 实时购物车）——超本地化，先钉 ZIP+banner |
 | [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④（关税数字见 `data/cross-border-duty.json`，CBP 为准） |
+| [hotel-travel](skills/shopping-aggregator/reference/domains/hotel-travel.md) | Booking.com ④（Genius 常为最低公开价）→ 开到 Your-Details 页后把付款交给用户；Google Hotels ④ 仅做发现（锁日期）；机票/租车/火车不在范围 |
 
 **壁垒路线：** ① 官方 · ② 转售 · ③ 自托管爬虫 · ④ **浏览器自动化 / 模拟人**（消费实时价首选）。
 

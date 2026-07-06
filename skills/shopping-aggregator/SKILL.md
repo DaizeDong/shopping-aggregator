@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Use to compare a product's price across retailers (Amazon/eBay/Taobao) + price-history/coupons. Triggers: compare prices, cheapest to buy, good deal, 比价, 查历史价, 全网最低价, 凑单."
+description: "Use to compare a product's price across retailers (Amazon/eBay/Taobao) + price-history/coupons, or a hotel/lodging's total-stay cost across booking channels. Triggers: compare prices, cheapest to buy, good deal, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, 凑单, 订酒店, 差旅住宿, 酒店比价."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
@@ -33,6 +33,8 @@ otherwise — before doing anything, route away these non-buy-decision asks:
 If both apply ("buying X — also tell me what reviewers think / whether the category is declining"),
 own the buy decision here and **delegate the side-research to market-intel as a sub-task**.
 
+**Lodging (`hotel-travel`) is the one domain that intentionally goes past "read a PDP and stop":** it drives the browser to the Booking "Your Details" confirm page (total + tax + cancellation + parking surfaced) and then **stops at the payment/PII hand-off**. This is still the decision-layer identity above — it never enters card or personal info; the confirm-page URL + ranked total-stay table is the deliverable, not a completed booking. Flights / rental cars / trains stay OUT of scope.
+
 ## Workflow
 ### Step 1 — Parse the buy intent (BLOCKING)
 
@@ -55,11 +57,13 @@ authorized US seller" ≠ cheapest "any condition + any AliExpress seller."
 **Step 2 output you MUST produce: `[matched domains | in-scope channel classes | depth cap]`.**
 
 #### 2a — Triage to domains
-Read `reference/sources-index.md` (thin index); match the buy intent to 1–N of the 12 domains
+Read `reference/sources-index.md` (thin index); match the buy intent to 1–N of the 13 domains
 (full list there). **Do not read full domain shards yet.** US typically → `amazon-us`,
 `ebay-walmart-target`, `browser-extensions`, `mobile-apps-aggregators`, `ai-shopping-assistants`,
 `claude-mcps`; CN → `taobao-tmall`, `jd-pdd`, `claude-mcps`, maybe `oss-self-host`. Historical-low
 queries always add `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall` (慢慢买).
+
+**Hotel / lodging** intents ("book a hotel", "cheapest hotel near", 订酒店/差旅住宿/酒店比价) → `hotel-travel` (Booking.com ④ is the spine). For lodging the "landed cost" is **total-stay cost**; the shard owns the full formula — only remember here that the lodging tax is **READ off Booking's Your-Details page, never hard-coded**, and parking is separate (NOT in Booking's total) and materially reorders rankings. Flights / rental cars / trains stay OUT of scope.
 
 #### 2b — Map to channel classes
 Read `reference/channel-classes.md` and enumerate the authorized-retailer classes the product spans
