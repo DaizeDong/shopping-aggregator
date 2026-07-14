@@ -53,10 +53,19 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
   **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
   **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
-- **II.5** Live-run observations MUST be appended to `metrics/live-runs.jsonl` when the repo is
-  checked out and the file is writable. If the run cannot write the file (no repo checkout / not
-  writable), it MUST instead note the observations in its reply. Dropping the observations entirely —
-  neither appended nor reported — is a bug (refresh-protocol depends on them).
+- **II.5** Live-run observations MUST be appended to the **private** `live-runs.jsonl` — resolved by
+  `tools/datadir.py` to `~/.shopping-aggregator-config/data/metrics/live-runs.jsonl` (or
+  `$SHOPPING_AGGREGATOR_DATA_DIR`) — and **MUST NOT** be written into this repo, which is public.
+  If there is no data dir (the skill is uninitialized) or the file is not writable, the run MUST
+  instead note the observations in its reply. Dropping the observations entirely — neither appended
+  nor reported — is a bug (refresh-protocol depends on them). `[S]`
+- **II.5a** An observation is DATA: it records what a real person priced, which retailer they bought
+  from, and where it ships. It has **no in-repo fallback path**, by construction — a fallback into
+  the repo is not a convenience, it is the leak. The repo publishes only the shape
+  (`metrics/live-runs.jsonl.example`). The *generalizable* half of an observation — a property of a
+  SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what — MAY be distilled
+  into `reference/source-reliability.md`, stripped of product, price, and region. If the lesson
+  cannot be stated without naming what was bought, it is not yet a lesson and stays private. `[S]`
 
 ## III — Matrix integrity
 

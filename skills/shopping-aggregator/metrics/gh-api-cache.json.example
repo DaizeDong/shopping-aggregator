@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "Schema for metrics/gh-api-cache.json -- the GHACTIVE check's 7-day TTL cache of GitHub API reads.",
+    "The real file is DATA (a real run produced it) and resolves from the private data dir, never here.",
+    "Rebuildable from scratch: delete it and run `python tools/verify_matrix.py` authenticated.",
+    "Keyed by `owner/repo`. `checked_at` is when WE asked; `pushed_at` is what GitHub answered."
+  ],
+  "example-owner/example-repo": {
+    "repo": "example-owner/example-repo",
+    "archived": false,
+    "checked_at": "2026-01-15T00:00:00.000000",
+    "pushed_at": "2026-01-02T00:00:00Z",
+    "verdict": "PASS",
+    "reason": "pushed_at 2026-01-02 within 12mo"
+  },
+  "example-owner/abandoned-repo": {
+    "repo": "example-owner/abandoned-repo",
+    "archived": true,
+    "checked_at": "2026-01-15T00:00:00.000000",
+    "pushed_at": "2023-01-02T00:00:00Z",
+    "verdict": "BLOCK",
+    "reason": "archived upstream"
+  }
+}

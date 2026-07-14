@@ -24,7 +24,10 @@ ORIGINAL (durable-contract lint — unchanged behaviour):
   TEMPLATE  report-template.md has a "Coverage gaps" heading + an "Ev" column (BLOCK).
   VERSION   CHANGELOG.md top version == .claude-plugin/plugin.json version (BLOCK).
   RENAME    snake_case `source_tier` does not leak into any live skill file (BLOCK).
-  LIVERUNS  metrics/live-runs.jsonl is valid JSONL with the 6 required keys (BLOCK; enum WARN).
+  LIVERUNS  the PUBLISHED schema metrics/live-runs.jsonl.example is present and valid JSONL with the
+            6 required keys (BLOCK; enum WARN) — plus the operator's real file in the private data
+            dir, when this machine has one. The real file is DATA and is absent from the repo (see
+            .dataclass.json); a fresh clone therefore checks only the schema, and passes.
 
 PORTED from market-intel (richer judgement; network gates honour --no-net):
   REPO      documented github.com/<owner>/<repo> + registry `repo` slugs exist (gh api, fail-closed).
@@ -69,6 +72,9 @@ import os
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from datadir import resolve_data_dir  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, "skills")
@@ -283,26 +289,47 @@ def run_checks():
                 rel = os.path.relpath(fp, ROOT).replace("\\", "/")
                 block("RENAME", f"token `source_tier` leaked into {rel} — it was renamed to seller_tier + evidence_grade")
 
-    # ---- LIVERUNS: metrics/live-runs.jsonl is valid JSONL the refresh loop can consume ----
-    LIVERUNS = os.path.join(SKILL, "metrics", "live-runs.jsonl")
+    # ---- LIVERUNS: the live-runs JSONL the refresh loop consumes is valid ----
+    # The real file is DATA: every line is an observation from a REAL run (what got priced, which
+    # retailer, shipping where), so it lives in the PRIVATE data dir and is absent from this repo
+    # (.dataclass.json). What the repo publishes is the SHAPE — live-runs.jsonl.example — and that is
+    # the whole of what a fresh clone knows about the lines it is expected to produce. So the schema
+    # is now the BLOCKING half of this check: an uninitialized tool still has to be a usable one.
     REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
     OUTCOME_OK = {"created", "verified", "unverifiable", "dead", "fallback_used",
                   "price_mismatch", "coupon_fake", "coverage_gap"}
-    if os.path.exists(LIVERUNS):
-        for i, ln in enumerate(read(LIVERUNS).splitlines(), 1):
+
+    def _check_liveruns(path, label, required):
+        if not os.path.exists(path):
+            if required:
+                block("LIVERUNS", f"{label} is missing — the repo must publish the schema so the "
+                                  f"skill is usable uninitialized (.dataclass.json)")
+            return
+        for i, ln in enumerate(read(path).splitlines(), 1):
             ln = ln.strip()
             if not ln:
                 continue
             try:
                 rec = json.loads(ln)
             except Exception as e:
-                block("LIVERUNS", f"metrics/live-runs.jsonl line {i} is not valid JSON: {e}")
+                block("LIVERUNS", f"{label} line {i} is not valid JSON: {e}")
                 continue
             missing = REQUIRED_KEYS - set(rec)
             if missing:
-                block("LIVERUNS", f"metrics/live-runs.jsonl line {i} missing keys: {sorted(missing)}")
+                block("LIVERUNS", f"{label} line {i} missing keys: {sorted(missing)}")
             if rec.get("outcome") not in OUTCOME_OK:
-                warn("LIVERUNS", f"metrics/live-runs.jsonl line {i} outcome '{rec.get('outcome')}' not in the declared set")
+                warn("LIVERUNS", f"{label} line {i} outcome '{rec.get('outcome')}' not in the declared set")
+
+    _check_liveruns(os.path.join(SKILL, "metrics", "live-runs.jsonl.example"),
+                    "metrics/live-runs.jsonl.example", required=True)
+
+    # And the operator's REAL file, on a machine that has one. A corrupt private file breaks the
+    # refresh loop exactly as badly as a corrupt tracked one did — and it is now the only file that
+    # actually feeds it. No data dir (fresh clone, CI) = uninitialized = correct: nothing to check.
+    _data_dir = resolve_data_dir("shopping-aggregator")
+    if _data_dir is not None:
+        _check_liveruns(os.path.join(str(_data_dir), "metrics", "live-runs.jsonl"),
+                        "<private data dir>/metrics/live-runs.jsonl", required=False)
 
     # ================================================================= PORTED CHECKS (market-intel)
     # ---- gather domain shard text + the full corpus repos can hide in ----

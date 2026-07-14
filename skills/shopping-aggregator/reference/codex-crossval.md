@@ -93,9 +93,10 @@ loads it with `ToolSearch select:mcp__codex__codex` and calls it.
 ## Empirical note (2026-06-16 → 06-17)
 - 2026-06-16: `codex mcp-server` -> `✔ Connected`; `codex exec` via Bash -> cloud-config timeout
   (blocked). MCP route is the supported one. Tools exposed only after a full session restart.
-- 2026-06-17: first real `mcp__codex__codex` run (REDACTED-PRODUCT price, xhigh, MCP tools NOT disabled)
-  **hung ~10.5 h** — Codex drove its own playwright `browser_navigate` to Newegg (Cloudflare) with no
-  timeout. Re-run with `config.mcp_servers={}` + web_search-only returned in <1 min. **Lesson is now
-  the CRITICAL section above.** Cross-val data point: Codex web_search put the card at ~$1.0–1.3k,
-  *below* the actual live authorized listings ($1.20–1.45k, all OOS) — exactly why its prices are
-  L5 leads, not authoritative.
+- 2026-06-17: first real `mcp__codex__codex` run (a high-end GPU price check, xhigh, MCP tools NOT
+  disabled) **hung ~10.5 h** — Codex drove its own playwright `browser_navigate` to an anti-bot
+  retailer (Cloudflare) with no timeout. Re-run with `config.mcp_servers={}` + web_search-only
+  returned in <1 min. **Lesson is now the CRITICAL section above.** Cross-val data point: Codex
+  web_search quoted the part roughly **15–30% BELOW** the live authorized listings (which were also
+  out of stock) — exactly why its prices are L5 leads, not authoritative. Direction matters: a
+  model-summarized price errs *low*, which is precisely the direction that wins a naive ranking.

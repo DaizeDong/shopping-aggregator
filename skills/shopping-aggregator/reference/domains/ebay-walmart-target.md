@@ -40,8 +40,9 @@ DataDome (Walmart) / PerimeterX (Target) — Bright Data Web Unlocker if you nee
 - **Best Buy**: open-box deals are a separate page (bestbuy.com/site/open-box) — often the best
   price for a specific store's stock; geo-restricted (only the store with the unit ships). **Best Buy
   Marketplace 3P**: a listing under bestbuy.com can be "Sold & shipped by <third party>" (a low-rated
-  reseller), NOT Best Buy first-party — read the Sold-by field and tier per guardrail #5 (Run B: a
-  "REDACTED-PRICE" REDACTED-PRODUCT was a 3.74★ marketplace seller, not Best Buy).
+  reseller), NOT Best Buy first-party — read the Sold-by field and tier per guardrail #5 (observed: a
+  conspicuously cheap listing turned out to be a 3.7★ marketplace seller, not Best Buy first-party;
+  price alone would have ranked it #1).
 - **Costco**: requires membership; member-only prices behind login. playwright with logged-in
   session or skip.
 - **Home Depot / Lowe's**: prices vary by zip code (regional pricing). Default to user's zip;
@@ -49,11 +50,13 @@ DataDome (Walmart) / PerimeterX (Target) — Bright Data Web Unlocker if you nee
 - **Newegg**: marketplace dropshippers same issue as Walmart; trust filter mandatory.
 - **Micro Center**: major US authorized PC-parts retailer, often the cheapest in-store on
   GPUs/CPUs/components. **PICKUP-ONLY (no shipping) + PER-STORE stock** — the chain-level page lies
-  about local availability; query the SPECIFIC store page for the user's ZIP (storeid in the URL,
-  e.g. storeid resolved from the buyer ZIP). codex web_search and BigGo both MISS per-store stock — a store-specific
-  playwright / Bright Data scrape is the only reliable read. Landed cost has no shipping line but is
-  gated on the user being near a store — flag if they aren't. (Run B: the only in-stock authorized
-  REDACTED-PRODUCT was 2 units at a specific store branch, found only this way.)
+  about local availability; query the SPECIFIC store page for the user's ZIP (the `storeid` goes in
+  the URL — resolve it from the user's ZIP at run time, never assume a branch). codex web_search and
+  BigGo both MISS per-store stock — a store-specific playwright / Bright Data scrape is the only
+  reliable read. Landed cost has no shipping line but is gated on the user being near a store — flag
+  if they aren't. (Observed on a scarce, high-demand GPU: the chain page showed nothing, while the
+  store page for the buyer's own branch showed units on the shelf. "Not available" from the national
+  page is not a finding — it is a query you have not run yet.)
 
 ## Affiliate hijack alert
 
