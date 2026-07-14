@@ -19,12 +19,12 @@ Flights / rental cars / trains are **OUT of scope** (messier data sources) — f
 
 **Default pick:** **Booking.com ④** is typically the lowest legitimate channel **with no loyalty membership**
 (Genius > public OTA parity); confirm brand-direct only if the user has a loyalty account. Observed
-(illustrative single 2026-07 session, not a standing quote): Homewood Suites Booking **$152** < Hilton
+(an illustrative session, not a standing quote): Homewood Suites Booking **$152** < Hilton
 official ~$163 < Expedia/Hotels.com/Priceline ~$175. Re-price live every run — never carry these numbers forward.
 
 ## Booking.com route (tested selectors — the spine)
 
-Selectors below are from ONE real 2026-07 session; Booking churns its DOM. Treat as a starting map — if a
+Selectors below are from an illustrative session; Booking churns its DOM. Treat as a starting map — if a
 `data-testid` misses, **fall back to a `browser_snapshot` read** of the accessibility tree, and the refresh
 pass should re-confirm them live.
 1. **Search** — `booking.com/searchresults.html?ss=<place-or-venue>&checkin=YYYY-MM-DD&checkout=YYYY-MM-DD&group_adults=2&no_rooms=1&group_children=0&order=distance_from_search` (or `order=price`) `&nflt=review_score%3D70&selected_currency=USD`. Anchor `order=distance_from_search` on the venue for a drive-time sort.
