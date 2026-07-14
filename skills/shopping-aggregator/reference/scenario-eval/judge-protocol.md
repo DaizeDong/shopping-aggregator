@@ -98,6 +98,7 @@ JSON, e.g.:
   NOT on every commit. Prices are volatile, judges are non-deterministic, and live fetches cost real
   calls; wiring this into CI would make CI flaky and slow for no contract benefit. The deterministic
   contract gate (`verify_matrix.py`) is the one that belongs in CI.
-- Results are advisory input to the refresh loop and may be summarized into `metrics/` by a human, but
-  this harness does **not** itself write to `metrics/live-runs.jsonl` (that file is for live user runs;
-  keep eval noise out of it).
+- Results are advisory input to the refresh loop and may be summarized by a human, but this harness
+  does **not** itself write to `live-runs.jsonl` (that file is for live user runs; keep eval noise out
+  of it). Note that file is DATA and lives in the private data dir, never in this repo — see SKILL.md
+  Step 7. Eval output, being synthetic, is not bound by that: it just has no business in there.
