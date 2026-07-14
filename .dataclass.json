@@ -1,0 +1,37 @@
+{
+  "_comment": [
+    "Every path in a public skill repo belongs to exactly one class (Skill Repo Spec v1 s9).",
+    "TOOL    = code, SKILL.md, docs. Public, hand-written, contains no data.",
+    "FIXTURE = tests and examples. Public, but SYNTHETIC and produced by tools/make_fixtures.py.",
+    "DATA    = anything a real run produced. NEVER git-tracked; lives in the private companion",
+    "          config, resolved at runtime by tools/datadir.py. The repo ships only the schema.",
+    "Enforced by tools/data_boundary.py, in .githooks and in CI.",
+    "",
+    "metrics/live-runs.jsonl is DATA and always was: Step 7 tells a real run to append one line per",
+    "source touched, so the file accumulated which products the operator priced, which retailers they",
+    "bought from, and which region they ship to. pii_guard passed it clean every single time -- there",
+    "is no email or phone in a domain slug. The tool knowledge those runs produced (which source works",
+    "for which channel, which retailers block a scrape) is generalizable and belongs to the public",
+    "skill: it was distilled by hand into reference/source-reliability.md. The observations themselves",
+    "did not, and now resolve from outside the repo.",
+    "",
+    "metrics/gh-api-cache.json is DATA too -- a real run's cached GitHub API reads. It was already",
+    "gitignored before this manifest existed, so declaring it changes nothing on disk; it makes the",
+    "class explicit, and it earns its `.example` schema like any other DATA path. Its contents are",
+    "public GitHub facts rather than the operator's life, so it is a far milder case than live-runs --",
+    "but 'this particular cache happens to be harmless' is a judgement call, and the boundary is worth",
+    "more than the exception. It is rebuildable: delete it and re-run the gate authenticated.",
+    "",
+    "reference/scenario-eval/scenarios.jsonl is deliberately NOT a FIXTURE: it is a hand-authored eval",
+    "SPEC (invented buy-intents, reference SKUs, synthetic ZIP 10001), not a captured record, so it is",
+    "TOOL. Declaring it FIXTURE would demand a tools/make_fixtures.py whose only job is to re-emit its",
+    "own literal contents -- ceremony that proves nothing. If a real run's output is ever pasted into",
+    "it, that is a DATA violation to catch in review, not a generator to write."
+  ],
+  "data": [
+    "skills/shopping-aggregator/metrics/live-runs.jsonl",
+    "skills/shopping-aggregator/metrics/gh-api-cache.json"
+  ],
+  "fixture": [],
+  "_data_home": "~/.shopping-aggregator-config/data/   (override with $SHOPPING_AGGREGATOR_DATA_DIR)"
+}

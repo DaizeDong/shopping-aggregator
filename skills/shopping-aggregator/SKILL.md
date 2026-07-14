@@ -236,11 +236,19 @@ explicit coverage gaps + "configure source X for deeper data" lines, full source
 
 ## Close the feedback loop (Step 7 — write what you observed)
 
-At the end of a real run, append one line per source touched to `metrics/live-runs.jsonl` (reuses
-guardrail verdicts — tells the next refresh which matrix entries the world just proved right/wrong),
-plus one `coverage_gap` line per IN-SCOPE channel class (`reference/channel-classes.md`) NOT taken to
-E1 — this is how a missing CHANNEL (not just a dead tool) reaches the refresh loop
-(`reference/refresh-protocol.md`).
+At the end of a real run, append one line per source touched to the **private** `live-runs.jsonl`
+(reuses guardrail verdicts — tells the next refresh which matrix entries the world just proved
+right/wrong), plus one `coverage_gap` line per IN-SCOPE channel class
+(`reference/channel-classes.md`) NOT taken to E1 — this is how a missing CHANNEL (not just a dead
+tool) reaches the refresh loop (`reference/refresh-protocol.md`).
+
+**WHERE:** `~/.shopping-aggregator-config/data/metrics/live-runs.jsonl` (or
+`$SHOPPING_AGGREGATOR_DATA_DIR/metrics/live-runs.jsonl`). Resolve it with
+`tools/datadir.py`; if there is no data dir, the skill is UNINITIALIZED — report the observations in
+your reply and stop. **NEVER write it into the repo.** These lines record what a real person priced,
+which retailer they bought from, and where it ships; the repo is public, and no content scan can see
+the difference between that and a schema. The repo carries the shape only:
+`metrics/live-runs.jsonl.example`.
 
 ```jsonc
 { "ts":"<UTC>", "domain":"amazon-us", "source":"keepa",
@@ -248,8 +256,13 @@ E1 — this is how a missing CHANNEL (not just a dead tool) reaches the refresh 
   "detail":"<what diverged>", "user_correction": null }  // user_correction = highest-weight truth
 ```
 
-Per CONSTITUTION II.5: if you can't write the file (repo not checked out / not writable), note the
+Per CONSTITUTION II.5: if you can't write the file (no data dir / not writable), note the
 observations in your reply instead — dropping them entirely is a bug.
+
+**The generalizable half goes public.** When an observation is a fact about a SOURCE or a RETAILER
+CLASS rather than about this shopper (a scrape route that returns `$0`, a retailer that hides
+per-store stock), it also belongs in `reference/source-reliability.md` — stripped of the product,
+price, and region. That doc is how the tool gets smarter without the repo learning anyone's life.
 
 ## Recurring / monitoring use
 
@@ -262,7 +275,9 @@ user to `/schedule` (cron re-run) or a native Keepa / Camelcamelcamel / 慢慢�
 SKILL.md (this file) is always loaded — keep it the only frequently-loaded content. Read on-demand,
 **never a whole directory**: `reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
 `reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
-`reference/tools/<slug>.md`; `reference/install-guide.md` when setting up a source;
+`reference/tools/<slug>.md`; `reference/source-reliability.md` at Step 3/4 when choosing a route and
+again at Step 7 before writing a `coverage_gap` (which sources hold up, which fail and how to detect
+it); `reference/install-guide.md` when setting up a source;
 `reference/evidence-schema.md` at Step 5; the relevant `reference/data/*.json` table(s) at Step 6
 landed-cost (us-sales-tax / cross-border-duty / shipping-baselines) + `reference/data/fx-source-of-record.md`
 for FX; `reference/volatile/pricing-install.md` only when guiding an install (time-stamped — verify

@@ -32,8 +32,8 @@ next; completed work is in **Shipped**.
       envelope check and a **NOHARDCODE** provenance lint. `--no-net` skips the network gates for
       offline CI. **Closes the only remaining v0.2 gate gap** (the original 6 deterministic checks
       shipped in 0.3.0).
-- [x] **Refresh automation** — `tools/refresh_priority.py` ranks `metrics/live-runs.jsonl` sources
-      by weighted problem events (`user_correction` 100 / `dead` 10 / `price_mismatch` 5 /
+- [x] **Refresh automation** — `tools/refresh_priority.py` ranks the private `live-runs.jsonl`
+      sources by weighted problem events (`user_correction` 100 / `dead` 10 / `price_mismatch` 5 /
       `coverage_gap` 3) for the next sweep; one shared definition used by protocol + gate.
       **Closes the v0.3 "live-runs → refresh prioritization" bullet.**
 - [x] **Scenario-eval harness** — `tools/scenario_eval.py` for fixture-driven evaluation of the

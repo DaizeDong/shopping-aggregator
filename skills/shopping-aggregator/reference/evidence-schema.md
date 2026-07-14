@@ -55,8 +55,9 @@ required on every L1–L4 retailer live-fetch unit — but a **missing seller_na
 L3, it does NOT reject the unit** (L5 leads legitimately lack a seller field). Don't rank L4/L5 as
 winners without explicit user override. Mark every retailer's tier in the output.
 
-> **Run B war-story:** a Best Buy "REDACTED-PRICE" listing was actually a 3.74★ Marketplace 3P — caught
-> only by reading the Sold-by field. Domain alone would have mis-stamped it L1.
+> **War-story:** a conspicuously cheap listing on a big-box retailer's own domain was actually a
+> 3.7★ Marketplace 3P seller — caught only by reading the Sold-by field. Domain alone would have
+> mis-stamped it L1, and price alone would have ranked it #1.
 
 ## #5b — Evidence grade (E1/E2/E3): HOW the price was obtained — gates ranking FIRST
 

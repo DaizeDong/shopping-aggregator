@@ -1,6 +1,6 @@
 {
   "name": "shopping-aggregator",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Thin orchestration skill for CONSUMER shopping price comparison. Triages a buy intent (product + region + budget + urgency) across 13 commercial-shopping domains (Amazon US, eBay/Walmart/Target, auction-resale, Taobao/Tmall, JD/Pinduoduo, cross-border/海淘, browser-extensions + coupons, mobile apps + deal aggregators, grocery-CPG, AI shopping assistants, Claude MCPs, OSS self-host trackers, hotel-travel lodging price compare), detects which specialized shopping MCP/extension/tool is connected, guides installing missing ones, and delegates the heavy live-price fetch + history lookup + adversarial verification to playwright MCP, BigGo MCP, Keepa, deep-research, or market-intel's research harness. Ships a curated source matrix for each domain, per-tool how-to docs (install + auth + usage + gotchas), and price-specific quality guardrails (snapshot timestamp + stock state + landed cost normalization + coupon-cart verification + trust tiers per retailer). Sister skill to market-intel: market-intel handles broad commercial research / seller-side intel, shopping-aggregator handles consumer-purchase price comparison.",
   "author": {
     "name": "DaizeDong"

@@ -19,7 +19,7 @@ to keep `domains/`, `volatile/pricing-install.md`, and `sources-index.md` accura
 - **Slower (quarterly) for stable domains**: `claude-mcps` (small project ecosystem, low churn
   by volume), `oss-self-host` (repos either active or stale, easy to spot).
 - **Opportunistic**: whenever you hit a dead tool / changed price in a real run, fix that shard
-  immediately + append to `metrics/live-runs.jsonl`.
+  immediately + append to the private `live-runs.jsonl` (SKILL.md Step 7 — never the repo).
 
 ## Procedure (full monthly sweep)
 
@@ -54,8 +54,10 @@ Beyond the generic MCP-registry + GitHub + community surfaces in market-intel, a
    for exactly this reason). So ALSO audit `reference/channel-classes.md` against reality: for each
    major product category + region, list the authorized retailers a knowledgeable buyer would check,
    and flag any channel CLASS or canonical retailer missing from the shards. A missing channel is a
-   coverage gap even when no tool exists for it. `coverage_gap` events in `metrics/live-runs.jsonl`
-   (emitted by real runs per SKILL.md guardrail #9 / Step 7) feed this audit directly.
+   coverage gap even when no tool exists for it. `coverage_gap` events in the private
+   `live-runs.jsonl` (emitted by real runs per SKILL.md guardrail #9 / Step 7) feed this audit
+   directly. Known STRUCTURAL gaps (login-walled channels, quote-only brands) are already written up
+   in `source-reliability.md` — check there before re-litigating one as a new finding.
 
 ### Apply the same quality guardrails
 
@@ -88,8 +90,9 @@ to skip this.
   table `last_verified`, and CHANGELOG it. Never carry a prior sweep's de-minimis status forward
   unread.
 - **US sales tax** — re-confirm any state row a real run actually used against that state's DoR; bump
-  `verified_date`. Don't mass-re-verify all 50 states blindly — prioritize states surfaced in
-  `metrics/live-runs.jsonl`.
+  `verified_date`. Don't mass-re-verify all 50 states blindly — prioritize states surfaced in the
+  private `live-runs.jsonl`. (Which states those are is itself private: it is where someone lives.
+  Prioritize with it; never write the list into the repo.)
 - **FX source-of-record** — confirm the named rate source (`fx-source-of-record.md`) is still the
   live, free, dated source the harness reads; FX *values* are fetched live at run time, not cached
   here, so this is a source-liveness check, not a number re-type.
@@ -152,16 +155,30 @@ activity — see `.github/workflows/heartbeat.yml`.
 
 ## Feedback loop
 
-The skill writes one line per source touched to `metrics/live-runs.jsonl` during real runs (see
-SKILL.md Step 7). The refresh-protocol **must** read this file as a prioritization input. Run the
-ranking tool (replaces the old hand-run `jq | sort | uniq -c` one-liner — one deterministic,
-weighted definition shared by the protocol and the gate):
+The skill writes one line per source touched to the **private** `live-runs.jsonl` during real runs
+(see SKILL.md Step 7). That file is DATA — it lives in `~/.shopping-aggregator-config/data/metrics/`
+(or `$SHOPPING_AGGREGATOR_DATA_DIR`), never in this public repo, because its lines record what a real
+person priced and where it shipped. The repo ships the shape only (`metrics/live-runs.jsonl.example`).
+
+The refresh-protocol **must** read this file as a prioritization input. Run the ranking tool (replaces
+the old hand-run `jq | sort | uniq -c` one-liner — one deterministic, weighted definition shared by
+the protocol and the gate); it resolves the private path for you:
 
 ```bash
 python tools/refresh_priority.py            # ranked source table (default)
 python tools/refresh_priority.py --by domain   # aggregate by domain
 python tools/refresh_priority.py --json        # machine-readable, for scripted sweeps
 ```
+
+Exit code 2 means there is no data dir: the skill is uninitialized (a fresh clone is *supposed* to
+look like this) and there is nothing to prioritize. That is a state, not a failure.
+
+**Then distil.** A sweep is where an observation becomes tool knowledge. When the SAME failure
+signature recurs across unrelated products — a route that returns `$0`, an aggregator that answers
+empty for niche SKUs, a retailer that hides per-store stock — promote it to
+`reference/source-reliability.md` as a property of the SOURCE or the RETAILER CLASS, with the
+product, price, and region stripped out. One run is an anecdote; a repeat is a fact about the tool.
+The private file keeps the life; the public repo gets the lesson.
 
 Work top-down through the ranking in the next sweep. The tool scores each `(domain, source)` by a
 weighted sum of its problem events, **highest weight first**:
