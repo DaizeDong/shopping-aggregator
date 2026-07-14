@@ -3,6 +3,13 @@
 > Grades orchestration quality (Signal C) on a real run over `scenarios.jsonl` against `rubric.md`.
 > **Non-deterministic by design, never in CI, never blocking.** A FAIL here is a signal to a human, not
 > a gate that stops a commit. (The committable gate is `tools/verify_matrix.py`.)
+>
+> **`scenarios.jsonl` is GENERATED — never hand-edit it.** To add or change a scenario, add a case to
+> `tools/make_fixtures.py` and re-run it. The reason is not tidiness: a scenario is a realistic
+> `buy_intent`, and the most convenient realistic buy intent available to an agent is always *what the
+> operator actually bought*. Building every intent from the generator's reference-SKU table makes that
+> paste impossible to commit — a real purchase cannot be regenerated, so `tools/data_boundary.py`
+> BLOCKS on any row the case table could not have produced.
 
 ## Core principles
 
