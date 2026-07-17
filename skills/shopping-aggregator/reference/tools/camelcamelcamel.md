@@ -15,17 +15,17 @@ Web: just `camelcamelcamel.com/product/<ASIN>` (or paste URL on the site). Brows
 ## Auth / keys
 None. Free, anonymous. Optional account for email price-drop alerts.
 
-## Usage — call examples
+## Usage, call examples
 - **From the skill**: instruct a playwright subagent to fetch `https://camelcamelcamel.com/product/<ASIN>` and extract the 90d/365d/all-time low spans + the in-line price-history chart. The page renders server-side; rate-limit politely (don't smash with concurrent fan-out).
 - **From the user**: install Camelizer; on any Amazon PDP a small icon shows the price chart inline.
 
 ## General experience & gotchas (踩坑)
 - **Data update lag**: history typically refreshes daily, not real-time. For "right now" use playwright on amazon.com; use Camel for context.
-- **3P-seller listings** sometimes have sparse data — main coverage is amazon-direct + warehouse + major sellers.
-- **No public API** — the company has not offered one historically. If you need batch, use Keepa.
+- **3P-seller listings** sometimes have sparse data, main coverage is amazon-direct + warehouse + major sellers.
+- **No public API**, the company has not offered one historically. If you need batch, use Keepa.
 - **Price-drop email alerts** are free and reliable; recommend to user as "watch this product" alternative to a paid Keepa subscription.
 - **Coverage on lightly-trafficked SKUs** can be patchy (few datapoints).
-- **The site uses cloudfront + may rate-limit aggressively from datacenter IPs** — use playwright with residential / consumer-tier proxy if hitting it from a server. For ad-hoc consumer queries, fine.
+- **The site uses cloudfront + may rate-limit aggressively from datacenter IPs**, use playwright with residential / consumer-tier proxy if hitting it from a server. For ad-hoc consumer queries, fine.
 
 ## Failure signals & fallback
 404 / "we don't have this product" → either Amazon de-listed the ASIN or Camel hasn't indexed it. **Fallback:** Keepa for deeper coverage (paid), or accept "no history available" and flag the gap.

@@ -40,7 +40,7 @@
   }
   ```
 - Restart session.
-- Cost: $0.008–$0.15 per product per retailer; budget 3-10x for heavy fan-out.
+- Cost: $0.008,$0.15 per product per retailer; budget 3-10x for heavy fan-out.
 - `last_verified: 2026-06`
 
 ### Amazon PA-API 5.0
@@ -105,7 +105,7 @@
 
 - 慢慢买 / 购物党 / SMZDM 安装同上。
 - 京东价保: 登录 京东 App / 网页 → 我的订单 → 价保（下单后启用）；无独立安装步骤。
-- PDD: **无第三方比价工具支持** — 用户在 App 内手动核。
+- PDD: **无第三方比价工具支持**, 用户在 App 内手动核。
 - `last_verified: 2026-06`
 
 ## browser-extensions
@@ -126,7 +126,7 @@
 - `last_verified: 2026-06`
 
 ### ⚠ Honey
-- **AVOID 2026** — see `tools/honey.md`. If installed: Chrome → Extensions → Honey → Remove.
+- **AVOID 2026**, see `tools/honey.md`. If installed: Chrome → Extensions → Honey → Remove.
 - `last_verified: 2026-06`
 
 ## mobile-apps-aggregators
@@ -151,7 +151,7 @@
 ### Perplexity Shopping
 - perplexity.ai → 注册账号。
 - Pro 升级 $20/mo（含 in-app PayPal checkout，US-only）。
-- 无 MCP — 浏览器中使用。
+- 无 MCP, 浏览器中使用。
 - `last_verified: 2026-06`
 
 ## oss-self-host

@@ -8,11 +8,11 @@ no third party", "company-internal dashboard".
 | **jez500/pricebuddy** ([pricebuddy.md](../tools/pricebuddy.md)) | 962 | 2026-06-13 | PHP/Laravel | Amazon, eBay, Best Buy + custom selectors; **BYO-LLM** (OpenAI/Anthropic/Gemini/Ollama) for scrape repair | docker-compose, plug-and-play |
 | **clucraft/PriceGhost** ([priceghost.md](../tools/priceghost.md)) | 641 | 2026-02-03 | TypeScript | Amazon US/UK/DE, Best Buy, Walmart, Target, Costco, eBay, Newegg, Home Depot, AliExpress; multi-strategy scrape (JSON-LD → meta → CSS → headless → LLM fallback) | docker-compose + BYO LLM key |
 | **Cybrarist/Discount-Bandit** ([discount-bandit.md](../tools/discount-bandit.md)) | 704 | 2026-06-01 | PHP | Amazon + AliExpress + eBay + custom; multi-region | docker-compose |
-| **DAILtech/PriceDive** ([pricedive.md](../tools/pricedive.md)) | 53 | 2025-10-08 | Python | **Taobao + JD + PDD** — only fresh CN multi-platform; tracks 先涨后降 fake-sale | pip + SQLite |
+| **DAILtech/PriceDive** ([pricedive.md](../tools/pricedive.md)) | 53 | 2025-10-08 | Python | **Taobao + JD + PDD**, only fresh CN multi-platform; tracks 先涨后降 fake-sale | pip + SQLite |
 | SpikeHD/AmazonMonitor | 290 | 2026-05-08 | TypeScript | Amazon, multi-region, Discord bot front-end | npm + Puppeteer |
 | omkarcloud/amazon-scraper | 221 | 2026-06-15 | Python | Amazon 24 markets, REST API | pip + Puppeteer |
 | Crinibus/scraper | 238 | 2025-01-29 | Python | Amazon 6 markets, eBay, Newegg, Shein; CLI + history viz | pip + cron |
-| **gokborayilmaz/browseruse-price-tracker-agent** | 13 | recent | Python | LLM agent **live-scrapes** retailers — only credible OSS "AI cheapest finder" | pip + playwright + LLM key (demo-grade) |
+| **gokborayilmaz/browseruse-price-tracker-agent** | 13 | recent | Python | LLM agent **live-scrapes** retailers, only credible OSS "AI cheapest finder" | pip + playwright + LLM key (demo-grade) |
 
 **Default pick (West):** **pricebuddy** (most stars, most active, plug-and-play, multi-store).
 **Default pick (CN):** **PriceDive** (only fresh multi-platform). Discount-Bandit if user
@@ -31,20 +31,20 @@ which is enough to know if the current price is below your-personal-window low.
 ## What OSS WON'T do for you
 
 - **Coupon application** (most OSS trackers just monitor sticker price; coupon stacking is the
-  retailer's frontend) — use a browser extension or playwright cart test.
-- **Anti-bot at scale** — when Amazon ratchets up DataDome, your self-host scraper fails first.
+  retailer's frontend), use a browser extension or playwright cart test.
+- **Anti-bot at scale**, when Amazon ratchets up DataDome, your self-host scraper fails first.
   Mitigation: pin to recent commits, watch for repo issues about anti-bot breaks, swap to
   PriceGhost's LLM-fallback strategy.
-- **Mobile App-only prices** (Taobao App "猜你喜欢" prices, JD Plus members-only) — same web-only
+- **Mobile App-only prices** (Taobao App "猜你喜欢" prices, JD Plus members-only), same web-only
   limitation as commercial trackers.
-- **Cross-currency / cross-region intelligence** (best price across amazon.com vs amazon.de) —
+- **Cross-currency / cross-region intelligence** (best price across amazon.com vs amazon.de) ,
   you'd have to wire that yourself.
 
 ## OSS gap: browser-extension space
 
 There is **no OSS Honey-equivalent with >200★ still maintained**. The Honey/Capital One
 Shopping/Karma category is closed-source by economic structure (affiliate revenue hard to share
-when open-source). Don't recommend the user "find an open-source Honey" — it doesn't really exist.
+when open-source). Don't recommend the user "find an open-source Honey", it doesn't really exist.
 
 ## OSS gap: Pinduoduo
 

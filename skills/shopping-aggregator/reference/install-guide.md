@@ -1,4 +1,4 @@
-# Install guide — shopping-aggregator (Level 0 / overview)
+# Install guide, shopping-aggregator (Level 0 / overview)
 
 This is the **top of a three-level install system** for `shopping-aggregator`'s tool stack.
 
@@ -12,7 +12,7 @@ This is the **top of a three-level install system** for `shopping-aggregator`'s 
 > Read that FIRST. This document only records the **delta** that's specific to
 > shopping-aggregator's tool stack.
 
-## The three levels — where to look
+## The three levels, where to look
 
 Same scheme as market-intel:
 
@@ -28,15 +28,15 @@ Same scheme as market-intel:
 The four install categories users will hit when configuring shopping-aggregator (different
 from market-intel's mix because consumer shopping has more retail-specific tooling):
 
-1. **MCP servers** (BigGo, Apify price-intelligence, Keepa, Taobao, Oxylabs) — same
+1. **MCP servers** (BigGo, Apify price-intelligence, Keepa, Taobao, Oxylabs), same
    `claude mcp add` / `~/.claude.json` edit mechanics as market-intel; see market-intel's
    "Adding an MCP" section.
-2. **Browser extensions** (Capital One Shopping, Karma, Coupert, 购物党, 慢慢买扩展) — user
+2. **Browser extensions** (Capital One Shopping, Karma, Coupert, 购物党, 慢慢买扩展), user
    installs from Chrome/Edge/Firefox web store. The skill **recommends** them in its output
    but never auto-installs.
-3. **Mobile apps** (慢慢买 App, ShopSavvy, Flipp, Slickdeals, SMZDM) — user installs from
+3. **Mobile apps** (慢慢买 App, ShopSavvy, Flipp, Slickdeals, SMZDM), user installs from
    App Store / Google Play. Same recommendation-only flow.
-4. **Self-host OSS** (pricebuddy, PriceGhost, PriceDive, Discount-Bandit) — `git clone` +
+4. **Self-host OSS** (pricebuddy, PriceGhost, PriceDive, Discount-Bandit), `git clone` +
    `docker compose up -d` or `pip install`; see per-tool docs.
 
 ## User-side tool detection (no automation)
@@ -64,7 +64,7 @@ coverage-gaps section, not as a mid-flow blocker.
 
 ## What `shopping-aggregator` deviates from market-intel on
 
-Almost nothing — secret-handling, MCP transport choice, `claude mcp list` health states,
+Almost nothing, secret-handling, MCP transport choice, `claude mcp list` health states,
 Windows notes are all identical. The few differences:
 
 - **`firecrawl` skill is NOT enough for Amazon/Taobao** (anti-bot / login-wall). Always route

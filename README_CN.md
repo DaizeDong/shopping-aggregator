@@ -13,23 +13,23 @@
 
 ---
 
-## ⭐ 先读这里 — 设计理念
+## ⭐ 先读这里, 设计理念
 
-shopping-aggregator 继承 market-intel 的统领原则——**从根本进行设计，而非小修小补**：出问题
+shopping-aggregator 继承 market-intel 的统领原则,**从根本进行设计，而非小修小补**：出问题
 就改它底下的假设，而不是补它表面的症状。把这个原则套到「消费购物」场景上，催生了下面这些
 shopping-specific 决定：
 
-- **Landed cost（到手价）而非标价**——标价排序是陷阱（Amazon Prime 包邮 vs eBay $15 运费会
+- **Landed cost（到手价）而非标价**,标价排序是陷阱（Amazon Prime 包邮 vs eBay $15 运费会
   翻盘冠军）。我们把"到手价"作为排序原语。
-- **快照时间戳必填**——价格按小时变（Amazon Buy Box）。没时间戳的价 = unverified。
-- **优惠码必须走购物车实测**——扩展的"已节省 $X"是有名的造假面（Honey 案）。我们用 playwright
+- **快照时间戳必填**,价格按小时变（Amazon Buy Box）。没时间戳的价 = unverified。
+- **优惠码必须走购物车实测**,扩展的"已节省 $X"是有名的造假面（Honey 案）。我们用 playwright
   实测购物车，或标 ⚠ 未核实。
-- **2026 Honey ≠ 默认推荐**——2026 年 1 月 Rakuten/Impact/Awin 接连切断 Honey 联盟网，
+- **2026 Honey ≠ 默认推荐**,2026 年 1 月 Rakuten/Impact/Awin 接连切断 Honey 联盟网，
   信任格局已变。skill 主动 surface 这点。
 
 📜 **[完整设计理念 → PHILOSOPHY.md](PHILOSOPHY.md)**。
 
-### 姊妹 skill — 何时用谁
+### 姊妹 skill, 何时用谁
 
 `shopping-aggregator` 是更广义 market-research 工具集
 [`market-intel`](https://github.com/DaizeDong/market-intel) 的**消费购物特化分支**。
@@ -49,23 +49,23 @@ shopping-specific 决定：
 ## 它是什么（和不是什么）
 
 为**消费级购物比价**设计的轻量编排 skill。把你的购买意图（商品 + 地区 + 预算 + 紧迫度）分流到正确的
-比价数据源（并指导你安装），然后把比价的"重活"——多源同时抓价、历史核查、对抗式校验——交给你
+比价数据源（并指导你安装），然后把比价的"重活",多源同时抓价、历史核查、对抗式校验,交给你
 已有的 research harness 去做，而**不重复造轮子**。
 
 Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献，以及 `market-intel`
-通用商业调研。但当问题变成「我要买 X — 帮我找最优价」时——这是消费工作流，有自己的数据源
+通用商业调研。但当问题变成「我要买 X, 帮我找最优价」时,这是消费工作流，有自己的数据源
 （Keepa、Camelcamelcamel、慢慢买）、自己的标准化（到手价、汇率、税费、运费、优惠码）、自己
-的信任模型（每家零售商内部的店铺/卖家分层）、自己的时间轴（Buy Box 按小时轮换）——前面那些
+的信任模型（每家零售商内部的店铺/卖家分层）、自己的时间轴（Buy Box 按小时轮换）,前面那些
 都不够用。
 
 `shopping-aggregator` 就是填这个空白的薄层。它**只做三件别人不做的事**，其它全部委托：
 
-1. **解析购买意图** — 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 13 个购物 domain 的 1-N 个，
-   **并映射到需求侧 channel class**（让无工具的授权零售商——如 Micro Center——不再结构性隐形）。
-2. **检测 + 引导安装** — `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
+1. **解析购买意图**, 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 13 个购物 domain 的 1-N 个，
+   **并映射到需求侧 channel class**（让无工具的授权零售商,如 Micro Center,不再结构性隐形）。
+2. **检测 + 引导安装**, `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
    出确切安装命令，并指向**每工具一文档**
    ([`reference/tools/`](skills/shopping-aggregator/reference/tools/index.md))。
-3. **质量护栏** — 时间戳、库存状态、到手价（非标价）、优惠码购物车实测、零售商信任分层、
+3. **质量护栏**, 时间戳、库存状态、到手价（非标价）、优惠码购物车实测、零售商信任分层、
    不准默默降级、强制反向搜索、surface 分歧、明确空白。
 
 实际的多源 fan-out、历史查询、对抗校验、引用合成都**委托给** playwright MCP / BigGo MCP /
@@ -129,7 +129,7 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 | [ai-shopping-assistants](skills/shopping-aggregator/reference/domains/ai-shopping-assistants.md) | Perplexity Shopping Pro |
 | [claude-mcps](skills/shopping-aggregator/reference/domains/claude-mcps.md) | BigGo MCP ④ 免费 + Apify price-intelligence ② 付费 |
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy（西方）+ PriceDive（中国唯一新鲜多平台） |
-| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① 周报 circular + 商超会员 App ① 忠诚度（playwright ④ 跑 Instacart 实时购物车）——超本地化，先钉 ZIP+banner |
+| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① 周报 circular + 商超会员 App ① 忠诚度（playwright ④ 跑 Instacart 实时购物车）,超本地化，先钉 ZIP+banner |
 | [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④（关税数字见 `data/cross-border-duty.json`，CBP 为准） |
 | [hotel-travel](skills/shopping-aggregator/reference/domains/hotel-travel.md) | Booking.com ④（Genius 常为最低公开价）→ 开到 Your-Details 页后把付款交给用户；Google Hotels ④ 仅做发现（锁日期）；机票/租车/火车不在范围 |
 
@@ -162,36 +162,36 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
 一次运行最终产出一张按到手价排名的报告。塑造它的质量护栏（购物特有，合成时强制执行，详见
 [`SKILL.md`](skills/shopping-aggregator/SKILL.md)）：
 
-- **快照时间戳必填** — 每条价格挂 `[fetched YYYY-MM-DD HH:MM TZ]`。
-- **库存状态是价格的一部分** — 缺货 $X ≠ 现货 $X+5。
-- **到手价，不是标价** — 运费 + 税 + 券 - 返利。
-- **优惠码购物车实测** — 实测，不信扩展的"已节省"徽章。
+- **快照时间戳必填**, 每条价格挂 `[fetched YYYY-MM-DD HH:MM TZ]`。
+- **库存状态是价格的一部分**, 缺货 $X ≠ 现货 $X+5。
+- **到手价，不是标价**, 运费 + 税 + 券 - 返利。
+- **优惠码购物车实测**, 实测，不信扩展的"已节省"徽章。
 - **零售商信任分层** `seller_tier` L1 first-party → L5 不可验证；L4/L5 不能排冠军。
-- **证据等级先于卖家层级闸门排名** — `evidence_grade` E1（实读 PDP/API）· E2（聚合器）· E3（片段/跨模型线索）；
+- **证据等级先于卖家层级闸门排名**, `evidence_grade` E1（实读 PDP/API）· E2（聚合器）· E3（片段/跨模型线索）；
   只有 E1 实读能当排名冠军，干净域名也不能把片段升级。
-- **卖家身份而非域名** — 零售商域名下挂着第三方市场卖家；盖 first-party(L1) 前必须读 `Sold by` / `Shipped by`。
-- **变体钉死** — `variant_key`（品牌|型号|配色|捆绑|成色）；不同变体 = 不同 SKU，绝不当一个比。
-- **覆盖地板** — 在场却从未查的渠道类 = 显式 `coverage_gap`，不许静默遗漏；确定性不变量由 `tools/verify_matrix.py` CI 强制。
-- **不准默默降级** — Keepa 没用时回退 playwright 要明确告知"历史数据缺失"。
-- **跨快照分歧不平均，重抓** — Buy Box 会换。
-- **反向搜索强制** — 假冒/DOA/欺诈关键词。
-- **失败必须列空白** — 不许藏漏掉的零售商。
-- **联盟链接披露追踪** — 扩展的"savings"不入排名权重。
+- **卖家身份而非域名**, 零售商域名下挂着第三方市场卖家；盖 first-party(L1) 前必须读 `Sold by` / `Shipped by`。
+- **变体钉死**, `variant_key`（品牌|型号|配色|捆绑|成色）；不同变体 = 不同 SKU，绝不当一个比。
+- **覆盖地板**, 在场却从未查的渠道类 = 显式 `coverage_gap`，不许静默遗漏；确定性不变量由 `tools/verify_matrix.py` CI 强制。
+- **不准默默降级**, Keepa 没用时回退 playwright 要明确告知"历史数据缺失"。
+- **跨快照分歧不平均，重抓**, Buy Box 会换。
+- **反向搜索强制**, 假冒/DOA/欺诈关键词。
+- **失败必须列空白**, 不许藏漏掉的零售商。
+- **联盟链接披露追踪**, 扩展的"savings"不入排名权重。
 
 ---
 
 ## 限制
 
-`shopping-aggregator` 是薄编排层，不是价格引擎——它在设计上就有结构性边界：
+`shopping-aggregator` 是薄编排层，不是价格引擎,它在设计上就有结构性边界：
 
-- **不重复造抓取引擎** — 多源实时抓价、历史查询、对抗校验都委托给 playwright / BigGo / Keepa /
+- **不重复造抓取引擎**, 多源实时抓价、历史查询、对抗校验都委托给 playwright / BigGo / Keepa /
   `deep-research` / `market-intel`。若都没连上，skill 引导安装而不自己抓。
-- **矩阵会腐烂** — 扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS
+- **矩阵会腐烂**, 扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS
   仓库停更。新鲜度由 refresh 协议维护，并非时时保证。
 - **登录墙零售商**（如 Costco）报为显式覆盖空白，不静默遗漏，但不自动抓取。
-- **非卖家侧/搬砖工具** — FBA / 批发 / 市场调研请用
+- **非卖家侧/搬砖工具**, FBA / 批发 / 市场调研请用
   [`market-intel`](https://github.com/DaizeDong/market-intel)。
-- **不自动下单** — skill 产出推荐，下单由你点。
+- **不自动下单**, skill 产出推荐，下单由你点。
 
 剩余路线缺口：demo 对话 + 与替代品对比文档（v0.5 打包质量），heartbeat issue 自动关闭 +
 discovery-state 日志（v0.3 闭环）。详见 [ROADMAP.md](ROADMAP.md)。
@@ -208,4 +208,4 @@ English ([`README.md`](README.md)) · 中文 (`README_CN.md`)
 
 见 [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE)（MIT）。
 
-姊妹 skill：[market-intel](https://github.com/DaizeDong/market-intel) — 广义商业研究 / 卖家侧情报。
+姊妹 skill：[market-intel](https://github.com/DaizeDong/market-intel), 广义商业研究 / 卖家侧情报。
