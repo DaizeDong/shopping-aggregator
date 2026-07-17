@@ -158,7 +158,7 @@ def base_ref_exists():
 
 
 REPO_RE = re.compile(r"github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)")
-# repo token immediately before an (NNk★) annotation (only **/spaces between) — STAR pairing.
+# repo token immediately before an (NNk★) annotation (only **/spaces between), STAR pairing.
 STAR_LINE_RE = re.compile(r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\*{0,2}\s*\((\d+(?:\.\d+)?)k★\)")
 
 
@@ -292,7 +292,7 @@ def run_checks():
     # ---- LIVERUNS: the live-runs JSONL the refresh loop consumes is valid ----
     # The real file is DATA: every line is an observation from a REAL run (what got priced, which
     # retailer, shipping where), so it lives in the PRIVATE data dir and is absent from this repo
-    # (.dataclass.json). What the repo publishes is the SHAPE — live-runs.jsonl.example — and that is
+    # (.dataclass.json). What the repo publishes is the SHAPE, live-runs.jsonl.example, and that is
     # the whole of what a fresh clone knows about the lines it is expected to produce. So the schema
     # is now the BLOCKING half of this check: an uninitialized tool still has to be a usable one.
     REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
@@ -324,7 +324,7 @@ def run_checks():
                     "metrics/live-runs.jsonl.example", required=True)
 
     # And the operator's REAL file, on a machine that has one. A corrupt private file breaks the
-    # refresh loop exactly as badly as a corrupt tracked one did — and it is now the only file that
+    # refresh loop exactly as badly as a corrupt tracked one did, and it is now the only file that
     # actually feeds it. No data dir (fresh clone, CI) = uninitialized = correct: nothing to check.
     _data_dir = resolve_data_dir("shopping-aggregator")
     if _data_dir is not None:
@@ -611,14 +611,14 @@ def run_checks():
             added = [l for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
             removed = [l for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
             base_raw = git_show(BASE, rel)
-            # net-new shard (absent at baseline) is an ADDITION, not a rewrite — CHURN only
+            # net-new shard (absent at baseline) is an ADDITION, not a rewrite, CHURN only
             # judges edits to EXISTING files; new files are governed by COVER/THREEWAY/FRESH.
             if not base_raw.strip():
                 continue
             base_lines = len(base_raw.splitlines()) or 1
             churn = (len(added) + len(removed)) / base_lines
             removed_ratio = len(removed) / base_lines
-            # A REWRITE replaces existing content — its signature is a high REMOVED-line ratio, not raw
+            # A REWRITE replaces existing content, its signature is a high REMOVED-line ratio, not raw
             # growth. A pure/near-pure ADDITION (many + lines, few/no - lines, e.g. another agent
             # appending 37 lines to a shard) inflates total churn but rewrites nothing, so it must NOT
             # hard-block. BLOCK only when total churn is high AND a substantial share of the baseline
@@ -646,8 +646,8 @@ def run_checks():
     # A missing/deleted constitution is fail-closed (BLOCK). A modification vs baseline is surfaced as a
     # WARN, not a hard BLOCK: VII expressly permits a PR to amend it (e.g. adding the I.7 landed-cost
     # provenance rule), so blocking every constitution-touching diff would forbid the very mechanism VII
-    # mandates. The WARN routes the diff to human review — the correct severity for "did you mean to
-    # change the constitution in this change?" — while a refresh-sweep that touches it still gets flagged.
+    # mandates. The WARN routes the diff to human review, the correct severity for "did you mean to
+    # change the constitution in this change?", while a refresh-sweep that touches it still gets flagged.
     if not os.path.exists(CONSTITUTION):
         block("CONST", "CONSTITUTION.md missing")
     elif have_base:
@@ -659,8 +659,8 @@ def run_checks():
 
     # ---- METH (SKILL.md keeps the tier/grade legend + the numbered guardrails) ----
     # L1/L5/E1/E3 seller-tier + evidence-grade legend lives in SKILL.md. The full ①②③④ channel-route
-    # legend is DEFINED in reference/sources-index.md (SKILL.md only references route ④ inline), so —
-    # exactly as market-intel checks ①②③④ against its index — we gate the route legend against the
+    # legend is DEFINED in reference/sources-index.md (SKILL.md only references route ④ inline), so ,
+    # exactly as market-intel checks ①②③④ against its index, we gate the route legend against the
     # index file, not SKILL.md, to avoid a false BLOCK on a legitimate artifact layout.
     if not os.path.exists(SKILLMD):
         block("METH", "SKILL.md is missing")
@@ -716,7 +716,7 @@ def run_checks():
     # ---- SHARDSYNC (registration discipline; BLOCK) ----
     # A net-new domain shard (reference/domains/<x>.md absent at the git baseline) MUST be registered in
     # BOTH registries the triage path reads: (1) a row in reference/sources-index.md referencing
-    # `domains/<x>.md` (the thin index Step 2a reads), and (2) the "README" row — the per-domain README
+    # `domains/<x>.md` (the thin index Step 2a reads), and (2) the "README" row, the per-domain README
     # table at the top of reference/domains/ (the sources-index IS that domains README; we additionally
     # require the shard to carry its own `last_verified`-bearing header so it isn't a stub). An orphan
     # shard is invisible to the workflow -> BLOCK. Gates ONLY net-new files (vs baseline) so the current

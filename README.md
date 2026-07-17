@@ -13,25 +13,25 @@ Triage any buy intent across 13 shopping domains, rank by landed cost (not stick
 
 ---
 
-## ⭐ Read this first — the design philosophy
+## ⭐ Read this first, the design philosophy
 
-shopping-aggregator inherits market-intel's organizing principle — **root-cause design, not
+shopping-aggregator inherits market-intel's organizing principle, **root-cause design, not
 incremental patching.** When something is wrong, change the assumption underneath it, not the
 symptom on top. That principle, applied to *consumer shopping*, produced every shopping-specific
 decision in this skill:
 
-- **Landed cost, not sticker price** — sticker rankings are a trap (Amazon Prime free-ship vs
+- **Landed cost, not sticker price**, sticker rankings are a trap (Amazon Prime free-ship vs
   eBay $15 ship flips winners). We made landed cost the ranking primitive.
-- **Snapshot timestamp is mandatory** — prices change hourly (Buy Box). An undated price is
+- **Snapshot timestamp is mandatory**, prices change hourly (Buy Box). An undated price is
   unverified by default.
-- **Coupon-cart verification** — extension "savings" badges are a known fraud surface (the
+- **Coupon-cart verification**, extension "savings" badges are a known fraud surface (the
   Honey lawsuit). We verify via playwright cart test or label as ⚠ claim.
-- **Honey ≠ default-good in 2026** — the Rakuten/Impact/Awin terminations of Jan 2026 changed
+- **Honey ≠ default-good in 2026**, the Rakuten/Impact/Awin terminations of Jan 2026 changed
   the trust landscape. The skill carries this forward proactively.
 
 📜 **[Read the full design philosophy → PHILOSOPHY.md](PHILOSOPHY.md)**.
 
-### Sister skill — when to use which
+### Sister skill, when to use which
 
 `shopping-aggregator` is the **consumer-purchase specialization** of the broader market-research
 toolkit at [`market-intel`](https://github.com/DaizeDong/market-intel).
@@ -44,7 +44,7 @@ toolkit at [`market-intel`](https://github.com/DaizeDong/market-intel).
 | "Find arbitrage / FBA / wholesale opportunities (seller side)" | [**market-intel**](https://github.com/DaizeDong/market-intel) → `ecommerce-arbitrage` shard |
 | "X/Twitter sentiment / competitor SEO / lead generation" | [**market-intel**](https://github.com/DaizeDong/market-intel) |
 
-Both skills can coexist — install both, the orchestration logic in each handles its own scope.
+Both skills can coexist, install both, the orchestration logic in each handles its own scope.
 
 ---
 
@@ -52,11 +52,11 @@ Both skills can coexist — install both, the orchestration logic in each handle
 
 A thin orchestration skill for **consumer shopping price comparison**. Triages your buy intent
 (product + region + budget + urgency), finds the right specialized shopping source (and helps you
-install it), then hands the heavy lifting to your existing research harness — instead of
+install it), then hands the heavy lifting to your existing research harness, instead of
 reinventing it.
 
 Claude Code already has a `deep-research` harness, a `research-lit` skill, and `market-intel` for
-broad commercial research. Those fall short the moment a question is **"I'm about to buy X — find
+broad commercial research. Those fall short the moment a question is **"I'm about to buy X, find
 me the best price"**: that's a specialized consumer workflow with its own data sources (Keepa,
 Camelcamelcamel, 慢慢买), its own normalization (landed cost, currency, tax, shipping, coupons),
 its own trust model (per-retailer marketplace seller tiers), and its own time-axis (Buy Box
@@ -65,15 +65,15 @@ rotates hourly).
 `shopping-aggregator` is the **thin layer** that fills exactly that gap. It does **only three
 things nothing else does**, and delegates everything else:
 
-1. **Parse the buy intent** — product + region + budget + urgency + sensitivity → triage to 1–N
+1. **Parse the buy intent**, product + region + budget + urgency + sensitivity → triage to 1 to N
    of 13 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
-   retailer — e.g. Micro Center — stays visible instead of being structurally invisible).
-2. **Detect + guide install** — check which specialized shopping MCP/extension/OSS tool is
+   retailer, e.g. Micro Center, stays visible instead of being structurally invisible).
+2. **Detect + guide install**, check which specialized shopping MCP/extension/OSS tool is
    connected (via `claude mcp list`, not unreliable tool-name guessing), and if a key source is
-   missing, hand you the exact install command — or open its **per-tool how-to doc**
+   missing, hand you the exact install command, or open its **per-tool how-to doc**
    ([`reference/tools/`](skills/shopping-aggregator/reference/tools/index.md)) for install + auth
    + usage + gotchas.
-3. **Quality guardrails** — snapshot timestamp, stock state, landed cost (not sticker),
+3. **Quality guardrails**, snapshot timestamp, stock state, landed cost (not sticker),
    coupon-cart verification, retailer trust tiers, no silent degradation, disconfirmation
    mandate, surfaced disagreements, explicit gaps.
 
@@ -122,7 +122,7 @@ What runs:
 6. **Guardrails** → independent verifier re-fetches prices; landed cost computed with NJ sales
    tax + Prime ship vs flat ship; coupon-cart-test verifies "$10 off" code claim; surfaces
    disagreement between snapshot times if Buy Box rotated; reverse-search yields "BoseRefurb on
-   eBay had several DOA reports last 90 days — recommend skipping."
+   eBay had several DOA reports last 90 days, recommend skipping."
 7. **Report** → landed-cost ranked table, history note ("$X above 90-day low, drops historically
    around Black Friday by ~25%"), coupon-applied list (✓/⚠/✗), risks section, coverage gaps
    (Costco needs login → skipped), full source list.
@@ -144,7 +144,7 @@ it, and what to install.
 | [ai-shopping-assistants](skills/shopping-aggregator/reference/domains/ai-shopping-assistants.md) | Perplexity Shopping Pro |
 | [claude-mcps](skills/shopping-aggregator/reference/domains/claude-mcps.md) | BigGo MCP ④ free + Apify price-intelligence ② paid |
 | [oss-self-host](skills/shopping-aggregator/reference/domains/oss-self-host.md) | pricebuddy (US/EU) + PriceDive (CN, only fresh multi-platform) |
-| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① circular + banner app ① loyalty (playwright ④ Instacart cart) — hyper-regional, pin ZIP+banner |
+| [grocery-cpg](skills/shopping-aggregator/reference/domains/grocery-cpg.md) | Flipp ① circular + banner app ① loyalty (playwright ④ Instacart cart), hyper-regional, pin ZIP+banner |
 | [cross-border](skills/shopping-aggregator/reference/domains/cross-border.md) | Superbuy ④ + Stackry/MyUS ④ + YesStyle ④ (duty per `data/cross-border-duty.json`, CBP-primary) |
 | [hotel-travel](skills/shopping-aggregator/reference/domains/hotel-travel.md) | Booking.com ④ (Genius often lowest public) → drive to Your-Details, then hand off payment; Google Hotels ④ discovery-only (date-lock); flights/cars/trains OUT of scope |
 
@@ -177,47 +177,47 @@ bump). Default cadence **monthly**; weekly for browser-extensions and AI-shoppin
 
 ## Example output
 
-A run ends in a landed-cost-ranked report. Quality guardrails (price-data-specific) that shape it —
+A run ends in a landed-cost-ranked report. Quality guardrails (price-data-specific) that shape it ,
 hard rules applied during synthesis, full list in
 [`SKILL.md`](skills/shopping-aggregator/SKILL.md):
 
-- **Snapshot timestamp is MANDATORY** — every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`.
-- **Stock state is part of the price** — OOS at $X ≠ in-stock at $X+5.
-- **Landed cost, not sticker price** — ship + tax + coupon - cashback.
-- **Coupon verification gate** — playwright cart test, not extension badge.
+- **Snapshot timestamp is MANDATORY**, every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`.
+- **Stock state is part of the price**, OOS at $X ≠ in-stock at $X+5.
+- **Landed cost, not sticker price**, ship + tax + coupon - cashback.
+- **Coupon verification gate**, playwright cart test, not extension badge.
 - **Retailer trust tiers** `seller_tier` L1 first-party → L5 unverifiable; don't rank L4/L5 as winners.
-- **Evidence grade gates ranking first** — `evidence_grade` E1 (live PDP/API) · E2 (aggregator) · E3
+- **Evidence grade gates ranking first**, `evidence_grade` E1 (live PDP/API) · E2 (aggregator) · E3
   (snippet/cross-model lead); only an E1 read can be the ranked winner, a domain never upgrades a snippet.
-- **Seller identity, not domain** — a retailer domain hosts 3P marketplace sellers; read `Sold by` /
+- **Seller identity, not domain**, a retailer domain hosts 3P marketplace sellers; read `Sold by` /
   `Shipped by` before stamping first-party (L1).
-- **Variant pinning** — `variant_key` (brand|model|color|bundle|condition); different variant = different
+- **Variant pinning**, `variant_key` (brand|model|color|bundle|condition); different variant = different
   SKU, never compared as one.
-- **Coverage floor** — an in-scope channel class never checked is an explicit `coverage_gap`, not silent
+- **Coverage floor**, an in-scope channel class never checked is an explicit `coverage_gap`, not silent
   omission; deterministic invariants are CI-enforced by `tools/verify_matrix.py`.
-- **No silent degradation** — when Keepa is unavailable, fall-back-to-playwright is flagged.
-- **Cross-snapshot disagreement = re-fetch, don't average** — Buy Box rotates.
-- **Disconfirmation mandate** — counterfeit / DOA / fraud reverse-search.
-- **Failures become explicit gaps** — no hiding a missing retailer.
-- **Affiliate disclosure tracking** — extension "savings" don't bias the ranking.
+- **No silent degradation**, when Keepa is unavailable, fall-back-to-playwright is flagged.
+- **Cross-snapshot disagreement = re-fetch, don't average**, Buy Box rotates.
+- **Disconfirmation mandate**, counterfeit / DOA / fraud reverse-search.
+- **Failures become explicit gaps**, no hiding a missing retailer.
+- **Affiliate disclosure tracking**, extension "savings" don't bias the ranking.
 
 ---
 
 ## Limitations
 
-`shopping-aggregator` is a thin orchestration layer, not a price engine — it has structural limits
+`shopping-aggregator` is a thin orchestration layer, not a price engine, it has structural limits
 by design:
 
-- **No reinvented fetch engine** — the live-price fan-out, history lookup, and adversarial
+- **No reinvented fetch engine**, the live-price fan-out, history lookup, and adversarial
   verification are delegated to playwright / BigGo / Keepa / `deep-research` / `market-intel`. If
   none is connected, the skill guides install rather than fetching itself.
-- **The matrix decays** — extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
+- **The matrix decays**, extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
   (PA-API 2026-05-15), OSS repos go silent. Freshness is maintained by the refresh protocol, not
   guaranteed at every moment.
 - **Login-walled retailers** (e.g. Costco) are reported as explicit coverage gaps, not silently
   omitted, but are not auto-fetched.
-- **Not a seller-side / arbitrage tool** — for FBA / wholesale / market research, use
+- **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
-- **No auto-purchase** — the skill produces a recommendation; you click buy.
+- **No auto-purchase**, the skill produces a recommendation; you click buy.
 
 Remaining roadmap gaps: demo conversations + comparison-vs-alternatives docs (v0.5 packaging),
 heartbeat issue auto-close + discovery-state log (v0.3 loop-closing). See [ROADMAP.md](ROADMAP.md).
@@ -234,5 +234,5 @@ English (`README.md`) · 中文 ([`README_CN.md`](README_CN.md))
 
 See [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE) (MIT).
 
-Sister skill: [market-intel](https://github.com/DaizeDong/market-intel) — broad commercial
+Sister skill: [market-intel](https://github.com/DaizeDong/market-intel), broad commercial
 research / seller-side intel.

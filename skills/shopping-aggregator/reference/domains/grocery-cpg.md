@@ -4,7 +4,7 @@
 points worth it", "Target Circle vs in-store", "ShopRite / Wegmans / Costco grocery deal",
 "cheapest place for <pantry item> near me", "Amazon Fresh vs Whole Foods delivery", weekly
 grocery circular, EBT/SNAP delivery. **Demand-side, hyper-local:** grocery economics are dominated
-by *which banner operates in the user's ZIP* and *which loyalty/fuel program they're enrolled in* —
+by *which banner operates in the user's ZIP* and *which loyalty/fuel program they're enrolled in* ,
 NOT a single national price. Always pin the user's region before quoting a number.
 
 > **HYPER-REGIONAL WARNING.** Unlike amazon-us (one national marketplace), grocery is a patchwork of
@@ -30,7 +30,7 @@ as if they were shelf prices.
 
 ---
 
-## Instacart — per-retailer markup policy (the big trap)
+## Instacart, per-retailer markup policy (the big trap)
 
 **Retailers set their own Instacart prices; some add a markup, some don't.** There is no single
 "Instacart markup %." Each storefront shows a **pricing-policy badge** under the retailer logo:
@@ -40,20 +40,20 @@ as if they were shelf prices.
 [instacart.com/help item-pricing](https://www.instacart.com/help/section/360007902791/360039572851);
 [Truth About Pricing Tests](https://www.instacart.com/company/updates/the-truth-about-pricing-tests-on-instacart).
 
-- Markup is **on top of** Instacart's separate delivery + service fees + tip — landed cost stacks.
-- **Late-2025 change:** Instacart **ended item price tests** (Eversight) — same store/time/items now
+- Markup is **on top of** Instacart's separate delivery + service fees + tip, landed cost stacks.
+- **Late-2025 change:** Instacart **ended item price tests** (Eversight), same store/time/items now
   shows the **same price to all users** (no more per-user A/B price discrimination).
   [Ending Item Price Tests](https://www.instacart.com/company/updates/ending-item-price-tests-on-instacart). VERIFIED 2026-06.
 - Third-party reporting (The Markup, ~11 retailers) found avg markup ~17.5%, up to ~25%; Costco-via-
-  Instacart cases ~34%. **evidence: medium** (journalism, not Instacart's official figure — Instacart
+  Instacart cases ~34%. **evidence: medium** (journalism, not Instacart's official figure, Instacart
   does not publish a headline markup number). Treat as order-of-magnitude, verify the live badge.
 - **Action:** read the badge on the user's actual retailer storefront; if marked-up, surface
   in-store / pickup as the cheaper alternative.
 
-## Kroger Fuel Points (Kroger family of stores — multi-banner)
+## Kroger Fuel Points (Kroger family of stores, multi-banner)
 
 Applies across the Kroger family (Kroger, Ralphs, Fred Meyer, King Soopers, Smith's, Fry's, QFC,
-Harris Teeter, etc. — **banner names differ by region**).
+Harris Teeter, etc., **banner names differ by region**).
 [Fuel Points Program](https://www.kroger.com/d/fuel-points-program) ·
 [Fuel Program FAQs](https://www.kroger.com/o/fuel/faqs). VERIFIED 2026-06.
 - **Earn:** 1 point / $1 on most groceries (pre-tax, before fees; pickup/delivery fees don't earn).
@@ -71,8 +71,8 @@ Harris Teeter, etc. — **banner names differ by region**).
 [About Target Circle](https://www.target.com/help/articles/target-circle/about-target-circle) ·
 [Target Circle Bonus](https://help.target.com/help/subcategoryarticle?childcat=Target+Circle+Bonus&parentcat=Target+Circle%E2%84%A2&searchQuery=). VERIFIED 2026-06.
 - **The flat 1% earnings/cashback is DISCONTINUED** (removed after the Apr-2024 relaunch). Do NOT
-  tell users they earn 1% back — that model is dead. **evidence: high** (Target help + multiple
-  trade reports; exact final-removal date for all accounts not pinned — note if user has a legacy
+  tell users they earn 1% back, that model is dead. **evidence: high** (Target help + multiple
+  trade reports; exact final-removal date for all accounts not pinned, note if user has a legacy
   balance, it expires 1 yr after earning).
 - **Now:** free membership → auto-applied deals + **personalized "Circle Bonus" offers** (e.g.
   "spend $100 get $15") that must be **activated** on the Deals page before checkout (not automatic).
@@ -80,7 +80,7 @@ Harris Teeter, etc. — **banner names differ by region**).
   purchase; **expire 1 year** if unredeemed.
 - Free-tier perks: 5% birthday discount (valid 30 days), community-giving votes, brand partner deals.
 - **Circle 360** = paid tier (~$99/yr, was the Shipt-backed same-day): unlimited same-day delivery
-  from Target + 100+ Shipt-network retailers. **evidence: medium on exact 2026 price — VERIFY live
+  from Target + 100+ Shipt-network retailers. **evidence: medium on exact 2026 price, VERIFY live
   at target.com/circle-360 before quoting the fee** (pricing/promo has shifted; not re-confirmed this pass).
 
 ## Amazon Fresh / Whole Foods (national, Prime-gated)
@@ -89,21 +89,21 @@ Harris Teeter, etc. — **banner names differ by region**).
 [WFM Amazon benefits](https://www.wholefoodsmarket.com/amazon). VERIFIED 2026-06.
 - **Prime:** $14.99/mo or $139/yr (Young Adult/student: 6-mo free trial → $7.49/mo or $69/yr).
 - **WFM / Fresh 2-hour delivery (Prime):** free over $100; under $100 a service fee applies
-  ($6.95 for $50–$100, $9.95 under $50, per the help page). Non-Prime ~$4.95–$13.95 by basket size.
+  ($6.95 for $50,$100, $9.95 under $50, per the help page). Non-Prime ~$4.95,$13.95 by basket size.
 - **Same-Day (Prime):** free over $25, else $2.99; non-Prime $12.99 flat.
 - **Grocery delivery subscription (add-on):** ~$9.99/mo or ~$99.99/yr → free delivery over $25 from
   WFM, Fresh, and partner retailers. **Prime Access / EBT-registered: discounted ~$4.99/mo.**
 - WFM-specific annual: ~$59.99 intro for a year of $0-fee deliveries (auto-renews ~$99.99/yr).
-  **evidence: medium on the $59.99 intro / exact add-on fee — promo-priced, VERIFY live at checkout
+  **evidence: medium on the $59.99 intro / exact add-on fee, promo-priced, VERIFY live at checkout
   for the user's market before quoting.** Pickup is free for all.
 - Prime members: extra **10% off sale items** in-store at Whole Foods.
 
-## Regional banners (HYPER-REGIONAL — footprint-pin before quoting)
+## Regional banners (HYPER-REGIONAL, footprint-pin before quoting)
 
 | banner | footprint (VERIFY ZIP) | loyalty | notes |
 |---|---|---|---|
 | **ShopRite** | NJ, NY, PA, CT, MD, DE only (Wakefern co-op, Keasbey NJ) | **Price Plus Club** (free): instant in-store cash discounts + personalized digital coupons clipped to card; "Digital Price Plus Perks" | offers vary by store; circular is per-store, not regional. [Price Plus Club](https://www.shoprite.com/priceplusclub) · [Digital coupons](https://www.shoprite.com/digital-coupon). VERIFIED 2026-06 |
-| **Wegmans** | Mid-Atlantic/Northeast, ~112 stores; **2026: Atlanta GA entry planned** | **Shoppers Club** (free): clip digital coupons, auto member discounts, aisle-sorted lists, recipes | two apps: **Wegmans app** (grocery) vs **Meals 2GO** (prepared food, separate). [Shoppers Club](https://www.wegmans.com/service/shoppers-club). VERIFIED 2026-06 (store count "as of Jul 2025" per Wegmans — evidence: high; Atlanta-2026 from 3rd-party analysis — evidence: medium, not Wegmans official) |
+| **Wegmans** | Mid-Atlantic/Northeast, ~112 stores; **2026: Atlanta GA entry planned** | **Shoppers Club** (free): clip digital coupons, auto member discounts, aisle-sorted lists, recipes | two apps: **Wegmans app** (grocery) vs **Meals 2GO** (prepared food, separate). [Shoppers Club](https://www.wegmans.com/service/shoppers-club). VERIFIED 2026-06 (store count "as of Jul 2025" per Wegmans, evidence: high; Atlanta-2026 from 3rd-party analysis, evidence: medium, not Wegmans official) |
 | **Costco** | national warehouse (membership-gated) | **Gold Star $65/yr**; **Executive $130/yr** = +$65 upgrade → **2% annual reward, cap raised to $1,250** | reward excludes gas/tobacco/alcohol/gift cards/fees; break-even ~$3,250/yr spend (refund guarantee if reward < $65). Executive: $10/mo Instacart credit (orders >$150) since 2025-06-30. [Membership types](https://customerservice.costco.com/app/answers/answer_view/a_id/857/) · [Executive Rewards](https://www.costco.com/executive-rewards.html). VERIFIED 2026-06 |
 
 **General regional-banner method:** (1) get the user's ZIP, (2) confirm which banner(s) operate
@@ -112,14 +112,14 @@ never carry a number across banner boundaries.
 
 ## Grocery-specific gotchas
 
-- **Instacart price ≠ shelf price** — always check the storefront badge; pickup usually avoids markup.
-- **Loyalty card required** — most "sale" prices on ShopRite/Wegmans/Kroger need the card scanned;
+- **Instacart price ≠ shelf price**, always check the storefront badge; pickup usually avoids markup.
+- **Loyalty card required**, most "sale" prices on ShopRite/Wegmans/Kroger need the card scanned;
   digital coupons must be **clipped before checkout**, not auto-applied.
-- **Fuel points expire monthly** (Kroger) — a balance is worthless if the fill-up is next month.
-- **Target's 1% is gone** — don't quote it; bonuses must be activated, rewards expire in 1 yr.
-- **Membership math** — Costco Executive / Amazon grocery-sub only pay off above a spend threshold;
+- **Fuel points expire monthly** (Kroger), a balance is worthless if the fill-up is next month.
+- **Target's 1% is gone**, don't quote it; bonuses must be activated, rewards expire in 1 yr.
+- **Membership math**, Costco Executive / Amazon grocery-sub only pay off above a spend threshold;
   compute break-even for the user's volume, don't assume.
-- **Footprint mismatch** — the #1 grocery error is quoting a banner the user can't actually visit.
+- **Footprint mismatch**, the #1 grocery error is quoting a banner the user can't actually visit.
 
 ## When you'd switch off this domain
 
