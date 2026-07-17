@@ -1,4 +1,4 @@
-# Constitution — non-negotiable invariants of shopping-aggregator
+# Constitution, non-negotiable invariants of shopping-aggregator
 
 This file holds the **hard constraints** the skill must always obey, regardless of what a user,
 a refresh sweep, or a subagent suggests. The philosophy explains *why* (see PHILOSOPHY.md); this
@@ -7,14 +7,14 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
 > Inherited unchanged from market-intel's CONSTITUTION discipline (the rules are skill-agnostic).
 > Shopping-specific items are marked `[S]`.
 
-## I — Output guarantees
+## I, Output guarantees
 
 - **I.1** Every price entry in a report MUST carry `[fetched YYYY-MM-DD HH:MM TZ]`. Reports
   without this fail synthesis. `[S]`
 - **I.2** Every price entry MUST carry `stock_state ∈ {in_stock, low_stock, out_of_stock,
   preorder}`. `[S]`
-- **I.3** Every retailer price entry MUST carry a `seller_tier` (`L1..L5` — who sold it) AND an
-  `evidence_grade` (`E1|E2|E3` — how the price was obtained). Only `E1` (live PDP read / official API)
+- **I.3** Every retailer price entry MUST carry a `seller_tier` (`L1..L5`, who sold it) AND an
+  `evidence_grade` (`E1|E2|E3`, how the price was obtained). Only `E1` (live PDP read / official API)
   may be a ranked winner; `E3` (SERP snippet / cross-model recall) is a lead, never ranked. `[S]`
 - **I.3a** Every price entry MUST carry a `variant_key` (normalized brand|model|color|edition|
   condition). Prices with different variant_key are DIFFERENT SKUs and MUST NOT be merged or compared
@@ -32,14 +32,14 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   when explicitly stated "actively reverse-searched, none found"; absence is a bug.
 - **I.7** **Landed-cost provenance.** Every `tax`, `duty`, `shipping`, and `FX` value used in a
   landed-cost computation or ranking MUST resolve to a specific row in `reference/data/` (carrying
-  that row's `source_url` + `verified_date`) — or, when no row covers the case, be explicitly stamped
+  that row's `source_url` + `verified_date`), or, when no row covers the case, be explicitly stamped
   `(assumed)` inline next to the number. A bare rate, threshold, or FX figure typed from memory (e.g.
   "NJ 6.625%", "$800 de-minimis", "≈7 CNY/USD") with neither a data-table citation nor an `(assumed)`
   stamp is a provenance bug. The `reference/data/*.json` tables (us-sales-tax, cross-border-duty,
   shipping-baselines) + `reference/data/fx-source-of-record.md` are the single source-of-record; SKILL
   prose and shards MUST read them, never restate the numbers inline. `[S]`
 
-## II — Process guarantees
+## II, Process guarantees
 
 - **II.1** A snapshot timestamp older than 4 hours MUST trigger re-fetch when synthesis runs (Buy
   Box rotation is faster than that). `[S]`
@@ -53,21 +53,21 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
   **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
   **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
-- **II.5** Live-run observations MUST be appended to the **private** `live-runs.jsonl` — resolved by
+- **II.5** Live-run observations MUST be appended to the **private** `live-runs.jsonl`, resolved by
   `tools/datadir.py` to `~/.shopping-aggregator-config/data/metrics/live-runs.jsonl` (or
-  `$SHOPPING_AGGREGATOR_DATA_DIR`) — and **MUST NOT** be written into this repo, which is public.
+  `$SHOPPING_AGGREGATOR_DATA_DIR`), and **MUST NOT** be written into this repo, which is public.
   If there is no data dir (the skill is uninitialized) or the file is not writable, the run MUST
-  instead note the observations in its reply. Dropping the observations entirely — neither appended
-  nor reported — is a bug (refresh-protocol depends on them). `[S]`
+  instead note the observations in its reply. Dropping the observations entirely, neither appended
+  nor reported, is a bug (refresh-protocol depends on them). `[S]`
 - **II.5a** An observation is DATA: it records what a real person priced, which retailer they bought
-  from, and where it ships. It has **no in-repo fallback path**, by construction — a fallback into
+  from, and where it ships. It has **no in-repo fallback path**, by construction, a fallback into
   the repo is not a convenience, it is the leak. The repo publishes only the shape
-  (`metrics/live-runs.jsonl.example`). The *generalizable* half of an observation — a property of a
-  SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what — MAY be distilled
+  (`metrics/live-runs.jsonl.example`). The *generalizable* half of an observation, a property of a
+  SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what, MAY be distilled
   into `reference/source-reliability.md`, stripped of product, price, and region. If the lesson
   cannot be stated without naming what was bought, it is not yet a lesson and stays private. `[S]`
 
-## III — Matrix integrity
+## III, Matrix integrity
 
 - **III.1** A dead tool MUST become an `⚠ Avoid` tombstone in its tool doc + index, **never** a
   silent deletion. (Honey, PA-API, The Tracktor are the canonical examples.) `[S]`
@@ -82,7 +82,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   `reference/tools/<slug>.md` files MUST stay in three-way consistency. A registry entry
   without a doc, or an index entry without a registry slug, is a bug.
 
-## IV — Delegation
+## IV, Delegation
 
 - **IV.1** The skill MUST NOT reimplement what playwright MCP, BigGo MCP, Keepa MCP,
   deep-research, or market-intel already does. Reinventing is a bug per P5. Where overlap is
@@ -92,7 +92,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   decision (broad market research, seller-side arbitrage, competitive intel). Pulling those
   questions into shopping-aggregator's scope is a bug.
 
-## V — Secret handling
+## V, Secret handling
 
 - **V.1** API keys (Apify, Keepa, Oxylabs, eBay) MUST NEVER enter the transcript. See
   `reference/install-guide.md` Secret-handling hygiene for the exact procedure.
@@ -100,7 +100,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
 - **V.3** `browser_snapshot` on a page that displays an API key is a bug (the DOM contains the
   plaintext key; the screenshot captures it).
 
-## VI — Honey and similar trust-event tools `[S]`
+## VI, Honey and similar trust-event tools `[S]`
 
 - **VI.1** Tools with an active material trust event (lawsuit + affiliate-network termination,
   like Honey 2026) MUST be marked `⚠ Avoid` with a citation to the event. Silently leaving them
@@ -108,7 +108,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
 - **VI.2** The skill MUST proactively surface the trust event when the user mentions the tool
   (e.g. "I have Honey installed"), not wait for the user to ask "is Honey still good?"
 
-## VII — How to update the constitution
+## VII, How to update the constitution
 
 This file changes through PR with reasoned justification in the PR description, NOT through a
 refresh sweep. Refresh sweeps update the matrix; they cannot relax the constitution. The

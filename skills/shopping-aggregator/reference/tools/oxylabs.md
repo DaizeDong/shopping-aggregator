@@ -16,9 +16,9 @@ Hosted scrape API that handles anti-bot (Cloudflare/PerimeterX/DataDome) for Wal
 4. (Optional) Wire as a custom MCP via `~/.claude.json` (Oxylabs publishes their own MCP wrapper in preview; check status).
 
 ## Auth / keys
-Username + password from Oxylabs dashboard. **Treat as secret** — pass via env var.
+Username + password from Oxylabs dashboard. **Treat as secret**, pass via env var.
 
-## Usage — call examples
+## Usage, call examples
 ```
 curl -u 'USERNAME:PASSWORD' \
   'https://realtime.oxylabs.io/v1/queries' \
@@ -28,11 +28,11 @@ curl -u 'USERNAME:PASSWORD' \
 Returns rendered HTML + structured fields (price, title, availability).
 
 ## General experience & gotchas (踩坑)
-- **Cost adds up with JS render** — +$1.25/1K. Walmart's product page is JS-heavy, so plan for JS-render-budget.
-- **The free trial credits go fast** — $49 / ~24.5K requests at base price; ~10-15K at JS-render. For testing OK; for production budget upward.
-- **Their MCP wrapper is newer** than Apify's — verify it's connected via `claude mcp list` before fan-out.
+- **Cost adds up with JS render**, +$1.25/1K. Walmart's product page is JS-heavy, so plan for JS-render-budget.
+- **The free trial credits go fast**, $49 / ~24.5K requests at base price; ~10-15K at JS-render. For testing OK; for production budget upward.
+- **Their MCP wrapper is newer** than Apify's, verify it's connected via `claude mcp list` before fan-out.
 - **Geo-IP**: requests come from Oxylabs proxies (datacenter + residential pools); some retailers (Costco) require member login that proxies don't fix.
-- **Scraping at scale is ToS-violating** for most retailers — Oxylabs absorbs the ban-risk on their proxy IPs but legal exposure shifts depending on user-agreement terms. Read the per-retailer ToS clauses before deploying for commercial work.
+- **Scraping at scale is ToS-violating** for most retailers, Oxylabs absorbs the ban-risk on their proxy IPs but legal exposure shifts depending on user-agreement terms. Read the per-retailer ToS clauses before deploying for commercial work.
 
 ## Failure signals & fallback
 HTTP 5xx on Oxylabs side (rare); 200 with `error: anti_bot_detected` payload; budget exhausted. **Fallback:** Apify price-intelligence MCP, Bright Data Web Unlocker, playwright MCP.

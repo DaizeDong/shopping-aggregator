@@ -227,7 +227,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     # Resolving the default reaches for the private data dir, which may not exist. That is a STATE
-    # (an uninitialized tool), not a crash — report it with instructions, don't dump a traceback.
+    # (an uninitialized tool), not a crash, report it with instructions, don't dump a traceback.
     try:
         path = os.fspath(args.file)
     except DataDirNotInitialized as e:
