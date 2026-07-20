@@ -48,8 +48,8 @@ Verified 2026-06-17: with `mcp_servers:{}` + web_search-only, the same query ret
 ```
 mcp__codex__codex({
   prompt: "Use ONLY web_search; no browser/playwright/shell. <buy-intent + ask for price+URL+date>",
-  model: "gpt-5.5",
-  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "xhigh" },
+  model: "gpt-5.6-sol",
+  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "max" },
   sandbox: "read-only",
   "approval-policy": "never"
 })
@@ -76,9 +76,9 @@ loads it with `ToolSearch select:mcp__codex__codex` and calls it.
 - `codex exec` does **not** accept `--search` (that flag exists only on the interactive top-level
   `codex`). For exec, web search is `-c tools.web_search=true`. The MCP server has web search via
   the native Responses tool.
-- Model: use the newest / best (2026-06 = `gpt-5.5`, reasoning effort `xhigh`). Auth is the user's
-  ChatGPT subscription, so cost is plan-rate, not per-token, no reason to downgrade. See user memory
-  `feedback_codex_best_model`.
+- Model: use the current strongest per `~/.codex/config.toml` / user memory `feedback_codex_best_model`
+  (2026-07 = `gpt-5.6-sol`, reasoning effort `max`). Auth is the user's ChatGPT subscription, so cost
+  is plan-rate, not per-token, no reason to downgrade.
 
 ## How to fold results
 1. Give Codex the parsed buy intent (product + specs + region/ZIP + authentic-channel rules).

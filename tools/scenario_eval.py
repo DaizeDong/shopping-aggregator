@@ -54,10 +54,10 @@ JUDGES = [
         "via": "in-session (this agent)",
     },
     {
-        "model": "gpt-5.5",
+        "model": "gpt-5.6-sol",
         "via": "mcp__codex__codex",
         "config": {"mcp_servers": {}, "tools": {"web_search": True},
-                   "model_reasoning_effort": "xhigh"},
+                   "model_reasoning_effort": "max"},
         "sandbox": "read-only",
         "approval-policy": "never",
         "prompt_guard": "Use ONLY web_search; no browser/playwright/shell.",

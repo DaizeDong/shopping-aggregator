@@ -74,7 +74,7 @@ JSON, e.g.:
 ```json
 {
   "scenario_id": "cross-border-tariff-04",
-  "judge_model": "gpt-5.5",
+  "judge_model": "gpt-5.6-sol",
   "criteria": [
     {"id": "U1", "verdict": "PASS", "evidence": "row shows [fetched 2026-06-22 14:03 EDT]"},
     {"id": "S10", "verdict": "FAIL", "evidence": "AliExpress row landed cost = sticker+ship only; no duty line"},
