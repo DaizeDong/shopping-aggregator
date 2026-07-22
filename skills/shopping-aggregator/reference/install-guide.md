@@ -72,8 +72,8 @@ Windows notes are all identical. The few differences:
   Depot) firecrawl handles fine.
 - **playwright MCP is the default for live e-commerce price reads**; market-intel's matrix
   also favors it but for different reasons (acting human / cookie state).
-- The **L3 companion repo** pattern works for shopping-aggregator too: replicate the
-  market-intel companion-repo layout with a `shopping-aggregator-config/` companion holding Keepa
+- The **L3 companion repo** pattern works for shopping-aggregator too: replicate the same
+  private-companion-repo layout with a `shopping-aggregator-config/` companion holding Keepa
   subscription, browser-extension install state, etc.
 
 Everything else: read market-intel's install-guide.
