@@ -5,7 +5,7 @@
 #
 # Scope: the whole git-tracked tree, under the full synthetic-namespace rule -- nothing that merely
 # LOOKS like a real-world identifier gets in, including a vendor nobody anticipated. That is stricter
-# than the machine-wide hook (the global pii-guard hook), which only checks the staged
+# than the machine-wide global hook, which only checks the staged
 # diff for breach classes because it also has to run in forks and research code without nagging.
 #
 # WHY THE OUTPUT IS CAPTURED INSTEAD OF PRINTED DIRECTLY (this bit is load-bearing):
@@ -35,7 +35,7 @@ fi
 #
 # pii_guard reads what you are about to publish and looks for things that SMELL private. That
 # accepts the premise that real data is flowing toward the exit at all, and it is why the 2026-07
-# audit found hundreds of real research verdicts in public repos: a ticker with
+# audit found real-run output from a private account in public repos: a ticker with
 # an entry price contains no email, no phone, no ZIP. Nothing to smell. The scanner was clean and
 # the repo was full of somebody's life.
 #
