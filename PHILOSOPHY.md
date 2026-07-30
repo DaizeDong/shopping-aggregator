@@ -55,7 +55,7 @@ every decision that follows.
 ## P3, Monotonic evolution against default decay · 对抗默认腐化的单调进化
 
 - **The patch:** schedule a "refresh" reminder and trust the matrix stays good.
-- **The root:** recognize that **the default trajectory of any source matrix is decay** ,
+- **The root:** recognize that **the default trajectory of any source matrix is decay**:
   extensions lose affiliate networks (Honey 2026-01), APIs die (PA-API 2026-05-15), OSS goes
   silent (any repo without a 6mo commit). Design the refresh so the system can *only move
   forward*: guardrails only accumulate, dead tools become `⚠ Avoid` tombstones (not silent
@@ -72,7 +72,7 @@ every decision that follows.
 ## P4, The editor is never its own verifier · 编辑者不能自审
 
 - **The patch:** "let the same subagent that fetched the price also verify it's accurate."
-- **The root:** **dispatch a fresh verifier subagent that does NOT see the original fetch** ,
+- **The root:** **dispatch a fresh verifier subagent that does NOT see the original fetch**;
   it independently re-fetches the cited URL, confirms the price + stock state + timestamp match
   the unit. Then the synthesis layer reconciles. Confirmation bias is structurally prevented
   by zero-context verification.
@@ -106,7 +106,7 @@ every decision that follows.
 
 - **The patch:** "if Honey breaks, the user will figure it out eventually."
 - **The root:** **flag it the moment it changes, in every recommendation surface**. When Rakuten
-  terminated Honey's affiliate network on 2026-01-12, the skill should already carry that ,
+  terminated Honey's affiliate network on 2026-01-12, the skill should already carry that:
   in the browser-extensions shard, in the Honey tool doc, in the recommendations.
 - **Why it matters:** silent degradation looks like a working skill until a user follows bad
   advice. Visible degradation gives them the option to choose.

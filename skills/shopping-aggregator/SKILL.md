@@ -68,7 +68,7 @@ queries always add `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall` (慢慢
 #### 2b, Map to channel classes
 Read `reference/channel-classes.md` and enumerate the authorized-retailer classes the product spans
 (mass-market · category-specialist · brand-direct · warehouse · local-pickup-only · cross-border ·
-refurb). This is the **demand-side** counterweight to 2a: a tool-less channel (e.g. Micro Center ,
+refurb). This is the **demand-side** counterweight to 2a: a tool-less channel (e.g. Micro Center,
 website only) is still in scope, routes to playwright / a store-specific scrape, **not skipped**. The
 in-scope classes are the **coverage floor**, each must reach a real read (E1) or be a `not-attempted`
 gap (guardrail #9).
@@ -216,7 +216,7 @@ here MUST resolve to a row in `reference/data/` (carrying `source_url` + `verifi
   returns / shipping-speed differentiators), and an explicit history note ("$X above 90-day low / at
   365-day low / NEW LOW"; cite the Camelcamelcamel/Keepa chart when recommending "wait for sale").
 
-**Before you emit the report, self-check** (cheap substitute for an executable gate) ,
+**Before you emit the report, self-check** (cheap substitute for an executable gate):
 - [ ] Every ranked row carries `variant_key` + `snapshot_ts` + `seller_tier` + `evidence_grade`?
 - [ ] The #1 recommendation rests on ≥2 `E1` reads of the **same `variant_key`** (not single-source)?
 - [ ] A "Coverage gaps" section is present, including every in-scope channel class `not-attempted`?

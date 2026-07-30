@@ -177,7 +177,7 @@ bump). Default cadence **monthly**; weekly for browser-extensions and AI-shoppin
 
 ## Example output
 
-A run ends in a landed-cost-ranked report. Quality guardrails (price-data-specific) that shape it ,
+A run ends in a landed-cost-ranked report. Quality guardrails (price-data-specific) that shape it:
 hard rules applied during synthesis, full list in
 [`SKILL.md`](skills/shopping-aggregator/SKILL.md):
 

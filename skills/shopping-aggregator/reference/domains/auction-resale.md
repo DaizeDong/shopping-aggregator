@@ -15,7 +15,7 @@ Mercari, Depop, ThredUp). Also: "should I buy used", "what's the going rate", "c
 | **eBay public Sold SERP** (`?LH_Sold=1&LH_Complete=1`) | ④ | the only **free, no-approval** path to realized eBay sale prices; 90-day window; same page markup as active search | append `&LH_Sold=1&LH_Complete=1` to any `ebay.com/sch/i.html?_nkw=` URL; playwright/scrape the SERP | low at consumer scale; **green price = sold, red = ended unsold**; ToS gray, anti-bot at scale (keep <20 req/min/IP) |
 | **eBay Marketplace Insights API** | ① | structured sold/realized-price comps via API | **Limited Release**, production access gated, per-vertical approval, frequently DENIED to independents | **✗ for most builds**, not generally available; default to the public Sold SERP instead |
 | **StockX Public API v2** | ① | catalog search + sell + product market data; OAuth2 + `x-api-key`; base `api.stockx.com/v2` | apply at developer.stockx.com, app review (can be declined for thin sites) | gated approval + browser-based auth (PerimeterX) makes token automation hard; **has an official API, contrary to common belief** |
-| **GOAT** | ① |, | no official public API (GitHub org is internal tooling only) | **✗ no official API**, only 3P scrapers (Retailed.io, Apify) or unofficial reverse-eng libs (Sneaks-API), all break-prone |
+| **GOAT** | ① | n/a | no official public API (GitHub org is internal tooling only) | **✗ no official API**, only 3P scrapers (Retailed.io, Apify) or unofficial reverse-eng libs (Sneaks-API), all break-prone |
 | **Whatnot Seller API** | ① | seller inventory mgmt + sale notifications | developers.whatnot.com, **Developer Preview, NOT accepting new applicants** | **✗ closed** + seller-only (no buyer/market-data scope); for market reads use playwright or 3P Apify scraper |
 | **Poshmark** | ④ | live listings + sold flag; brand/size/condition in unstructured seller text | no official API at all; playwright the marketplace | **✗ no official API**; sold shown but not a clean field; moderate anti-bot; condition free-text (NWT/EUC/"like new") |
 | **Mercari** | ④ | live US listings; client-side rendered + Cloudflare | **Mercari Shops API** is contract-only (assigned `API_CLIENT_NAME`); no public consumer API | **✗ no public consumer API**; needs browser automation (CSR + Cloudflare); unofficial libs get AWS IPs blacklisted |
@@ -49,7 +49,7 @@ deadstock comp with a beat-up one.
 ## Per-platform gotchas
 
 - **eBay Sold SERP**: 90-day window only, older sales vanish. ~10,000-result cap (~42 pages at
-  `_ipg=240`). `_sop=13` sorts newest. **Green = confirmed sale, red = ended without selling** ,
+  `_ipg=240`). `_sop=13` sorts newest. **Green = confirmed sale, red = ended without selling**,
   filter reds out or your "median" is fiction. The Marketplace Insights API would give this
   structured but production access is gated/denied to most, do **not** assume you can get it.
 - **StockX**: it genuinely has an official v2 API (many guides wrongly say "no public API"), but

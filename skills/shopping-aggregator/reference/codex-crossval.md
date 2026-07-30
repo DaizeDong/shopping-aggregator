@@ -39,7 +39,7 @@ browser profile).
 - `sandbox: "read-only"` + `approval-policy: "never"` (headless, nobody can answer an approval prompt).
 - In the **prompt** also say: *"Use ONLY web_search. Do NOT use any browser / playwright / navigate /
   page / shell tool."* (belt-and-suspenders.)
-- This reinforces the doctrine: Codex does **web_search soft cross-val**, NOT live-browser price fetch ,
+- This reinforces the doctrine: Codex does **web_search soft cross-val**, NOT live-browser price fetch;
   live fetch is THIS skill's Bright Data / playwright job.
 
 Verified 2026-06-17: with `mcp_servers:{}` + web_search-only, the same query returned in **<1 min**

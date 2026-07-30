@@ -98,7 +98,7 @@ Run a dedicated reverse-search subagent against the negative space of the cheape
 counterfeit / "X is a fake reseller" / refurb-not-as-advertised / shipping-from-China-charged-as-US /
 dead-on-arrival reviews. The report MUST include a "Risks & counter-evidence" section. An empty result
 is written as **"actively reverse-searched, none found, not proof of safety"**, never silence. If the
-Codex MCP is connected, also run this reverse-search through it as an independent cross-model check ,
+Codex MCP is connected, also run this reverse-search through it as an independent cross-model check,
 treat its findings as **L5 corroboration, not proof** (see `reference/codex-crossval.md`).
 
 ## #10, Affiliate disclosure tracking (read-only)
