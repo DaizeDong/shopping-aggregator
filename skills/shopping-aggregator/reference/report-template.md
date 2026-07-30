@@ -45,7 +45,7 @@
 |---|---|---|---|---|
 | <CODE1> | ✓ cart-tested | $X | <where it came from> | <e.g. "stacks with Prime"> |
 | <CODE2> | ⚠ unverified | claimed $Y | <extension showed it but not tested> | confirm at checkout |
-| <CODE3> | ✗ expired / failed |, |, | dropped from analysis |
+| <CODE3> | ✗ expired / failed | n/a | n/a | dropped from analysis |
 
 If Honey was the source of any claimed coupon, demote and re-verify, see
 `domains/browser-extensions.md` for the 2026 status.

@@ -37,7 +37,7 @@ which is enough to know if the current price is below your-personal-window low.
   PriceGhost's LLM-fallback strategy.
 - **Mobile App-only prices** (Taobao App "猜你喜欢" prices, JD Plus members-only), same web-only
   limitation as commercial trackers.
-- **Cross-currency / cross-region intelligence** (best price across amazon.com vs amazon.de) ,
+- **Cross-currency / cross-region intelligence** (best price across amazon.com vs amazon.de),
   you'd have to wire that yourself.
 
 ## OSS gap: browser-extension space

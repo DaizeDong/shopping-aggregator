@@ -55,7 +55,7 @@ other way, and never as a ranked winner** (trust tier too low).
    on Superbuy's big-4) + consolidation + int'l ship + **duty on entry** + (carrier handling fee if DDU) +
    add-ons. Quote the *stack*, timestamp it, and name the warehouse state for the sales-tax line (FL/NH = 0).
 3. **Carrier handling fee is a hidden tax on cheap parcels.** On a small order the fee to *collect* the duty
-   can dwarf the duty. DDP (prepaid at checkout) usually beats DDU (pay-on-delivery) for small US orders ,
+   can dwarf the duty. DDP (prepaid at checkout) usually beats DDU (pay-on-delivery) for small US orders,
    flag it.
 4. **Grey-market / parallel-import = genuine goods, but warranty generally void.** Products are authentic
    (first-sale doctrine), but manufacturers typically **refuse warranty service outside the authorized
