@@ -4,7 +4,7 @@
 points worth it", "Target Circle vs in-store", "ShopRite / Wegmans / Costco grocery deal",
 "cheapest place for <pantry item> near me", "Amazon Fresh vs Whole Foods delivery", weekly
 grocery circular, EBT/SNAP delivery. **Demand-side, hyper-local:** grocery economics are dominated
-by *which banner operates in the user's ZIP* and *which loyalty/fuel program they're enrolled in* ,
+by *which banner operates in the user's ZIP* and *which loyalty/fuel program they're enrolled in*,
 NOT a single national price. Always pin the user's region before quoting a number.
 
 > **HYPER-REGIONAL WARNING.** Unlike amazon-us (one national marketplace), grocery is a patchwork of

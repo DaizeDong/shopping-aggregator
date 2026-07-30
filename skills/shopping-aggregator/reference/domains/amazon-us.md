@@ -11,7 +11,7 @@ deal good", "wait for Prime Day?", "should I get Amazon WHD vs new".
 | **BigGo MCP** ([biggo-mcp.md](../tools/biggo-mcp.md)) | ④ free | multi-platform incl Amazon w/ history, MCP-native | `claude mcp list` → `biggo ✓ Connected` | low; covers Amazon as one of many |
 | **Apify price-intelligence MCP** ([apify-price-intelligence.md](../tools/apify-price-intelligence.md)) | ② paid | broadest US-retailer coverage incl Amazon | `claude mcp list` + Apify token | low; pay-per-call $0.008,$0.15 |
 | Rainforest API | ② resale | real-time ASIN, Buy Box detection | trajectdata.com key | $23/mo Hobbyist; history weaker than Keepa |
-| Amazon PA-API 5.0 | ① |, |, | **✗ DEAD 2026-05-15**, replaced by Creators API (10 sales/30d gate); skip for new builds |
+| Amazon PA-API 5.0 | ① | n/a | n/a | **✗ DEAD 2026-05-15**, replaced by Creators API (10 sales/30d gate); skip for new builds |
 
 **Default pick:** **playwright MCP for live price** (one-shot Amazon read) + **Camelcamelcamel
 free** for history (decision-grade "is this a good deal"). Pay for Keepa only when the question
