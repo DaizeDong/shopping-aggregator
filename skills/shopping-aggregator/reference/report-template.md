@@ -79,7 +79,21 @@ If nothing found, state explicitly: "actively reverse-searched, none found, not 
 
 ## Coverage gaps
 
-- **Not covered / insufficient data**: <e.g. "Pinduoduo prices not retrieved, no MCP, anti-deep-link"; "Costco price needs membership login">.
+Every row carries a **typed reason** (CONSTITUTION II.8), because "one login away" and "no login
+helps" are different facts and the next run should treat them differently.
+
+| channel / dimension | gap reason | what it would have bought | retry next run? |
+|---|---|---|---|
+| <C2C secondhand> | `session-gated-declined` | <the going secondhand rate, the only channel carrying it> | **yes**, one operator login |
+| <marketplace X> | `session-gated-unattended` | <live listings> | **yes**, if run attended |
+| <region-locked store> | `structurally-unreachable` | <nothing a login fixes> | no |
+| <aggregator Y> | `tool-outage` | <cross-store sweep> | yes, when the MCP is back |
+| <class Z> | `not-attempted` | <in-scope class never queried, say why> | yes |
+
+- **Zeros are qualified**: any "no listings found" from a marketplace states its **control query** and
+  that query's result (guardrail #11). Without one, the zero is not reportable.
+- **No backfilling**: a gapped cell is left empty. Another channel's numbers do not answer a question
+  about this one; say the cell is empty and move on.
 - **Configure for deeper data**:
   - "<retailer/dimension> would be stronger with <source>, install via <command> (then reconnect)."
   - e.g. "Amazon history would be stronger with Keepa MCP, install via `~/.claude.json` edit (€49/mo)."

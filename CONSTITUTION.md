@@ -66,6 +66,23 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what, MAY be distilled
   into `reference/source-reliability.md`, stripped of product, price, and region. If the lesson
   cannot be stated without naming what was bought, it is not yet a lesson and stays private. `[S]`
+- **II.6** A channel that is **session-gated** (loads, but needs a login the operator could supply)
+  MUST NOT be recorded as unreachable until the operator has been asked and has declined or is
+  absent. The ask is a **blocking handoff**: open the login page, stop emitting tool calls against
+  that browser, state what it unlocks, give a resume signal, and end the turn. Polling in a loop
+  instead of ending the turn is a bug. Batch every gated channel into ONE ask, run it in the main
+  session with an exclusive browser (never inside a parallel subagent), and on resume prove the
+  session with a control query before trusting a read. Procedure:
+  `reference/login-handoff.md`. `[S]`
+- **II.7** A zero-result from a marketplace search MUST be accompanied by a **control query** for a
+  term that platform certainly stocks. If the control also returns zero, every zero from that
+  platform in that run is void and is an access-state signal, never a stock signal. Recording an
+  ungated zero as "nobody sells this" is a bug. `[S]`
+- **II.8** Every `coverage_gap` MUST carry a typed reason from `{session-gated-declined,
+  session-gated-unattended, structurally-unreachable, tool-outage, not-attempted}`. Collapsing
+  "one login away" and "no login helps" into one bucket is a bug: it makes a reachable channel look
+  permanently dead and misdirects the next refresh. A gapped cell MUST NOT be backfilled with a
+  different channel's numbers. `[S]`
 
 ## III, Matrix integrity
 
@@ -99,6 +116,14 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
 - **V.2** `~/.claude.json` MUST NEVER be committed or screenshotted. Keys land plaintext there.
 - **V.3** `browser_snapshot` on a page that displays an API key is a bug (the DOM contains the
   plaintext key; the screenshot captures it).
+- **V.4** The agent MUST NEVER authenticate on the operator's behalf: no usernames, passwords, SMS
+  or TOTP codes, QR scans, or account creation, even if the operator pastes a credential into the
+  transcript (tell them to type it into the browser instead). After an operator-performed login the
+  session is a **PII surface**: snapshots MUST be scoped to product content, never account, order
+  history, address book, saved payment, or messaging views. Post-login access is **read-only**, no
+  order, bid, offer, message, or settings change without a fresh per-action instruction; a cart used
+  to reveal a tax line MUST be emptied and re-read to confirm. A persisted session file is a bearer
+  credential and MUST live outside any tree that is committed or backed up. `[S]`
 
 ## VI, Honey and similar trust-event tools `[S]`
 
