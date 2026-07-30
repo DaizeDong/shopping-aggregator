@@ -213,8 +213,12 @@ by design:
 - **The matrix decays**, extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
   (PA-API 2026-05-15), OSS repos go silent. Freshness is maintained by the refresh protocol, not
   guaranteed at every moment.
-- **Login-walled retailers** (e.g. Costco) are reported as explicit coverage gaps, not silently
-  omitted, but are not auto-fetched.
+- **Login-walled channels are a handoff, not a gap.** A session-gated marketplace is `S2`: it becomes
+  fully readable the moment you sign in once. The skill finishes everything anonymous first, then
+  batches every gated channel into a single ask, opens the login page and **stops**, and resumes after
+  you confirm. **It never signs in for you** and never touches a credential. Decline, or run it
+  unattended, and it records a typed `session-gated-*` gap that says "one login away" rather than
+  "unreachable". See [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md).
 - **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
 - **No auto-purchase**, the skill produces a recommendation; you click buy.
