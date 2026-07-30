@@ -33,6 +33,7 @@ not actually take to a real read becomes a `not-attempted` coverage gap (guardra
 | refurb / open-box | manufacturer / authorized refurbished | Amazon WHD, Best Buy Open-Box, brand-refurb | only if user said refurb-OK |
 | price-comparison engine | meta-aggregators that index many merchants' offers for one product (esp. **EU**, where this is the dominant discovery layer) | **EU: Idealo (pan-EU: DE/AT/FR/ES/IT/UK), Geizhals (DACH, electronics/specs), PriceRunner (UK + Scandinavia)** · pan-region: Google Shopping (free listings) · (US analogue: BigGo / Google Shopping) | browser ④ (none expose a consumer price API); read the engine, then E1-confirm the winning merchant's own PDP |
 | travel-booking / OTA | booking intermediaries + brand-direct for **lodging** (a distinct buyer-channel TYPE, not a store) | Booking, Expedia, Hotels.com, Priceline · brand.com (Hilton/Marriott/IHG) · Google Hotels (discovery only) | browser ④ (rate/availability live; **verify dates on the actual channel**, Google Hotels locks dates) |
+| **C2C / social secondhand** | person-to-person resale apps, where the *seller is an individual*, distinct from auction-house and consignment resale. Often the only channel carrying a discontinued or region-exclusive item at all | Mercari, Poshmark, Depop, Facebook Marketplace, Craigslist · CN: 闲鱼/goofish, 转转, 得物, 微店 | **④ and almost always S2 session-gated**, see [`login-handoff.md`](./login-handoff.md). Search itself is walled and returns zero rather than an error; engines do not index these PDPs. Never file as unreachable before the operator has been offered the handoff |
 
 > **price-comparison-engine is a DISCOVERY layer, not a price of record.** An engine's listed price is
 > an indexed/cached offer, it can be stale, exclude shipping, or point at an unauthorized merchant.
@@ -49,6 +50,13 @@ floor**: every in-scope class must be queried to **E1** depth (a real PDP / stor
 listed as a `not-attempted` gap. "We checked Amazon + Newegg" is NOT complete if the product's
 category also spans a category-specialist or local-pickup class that was never queried. This is the
 structural fix for "completeness by omission."
+
+**Each in-scope class also carries an ACCESS STATE (S1/S2/S3, SKILL.md Step 3b).** The class being
+in scope says it must be covered; the access state says *how*, and whether the operator has to open
+a door first. A class that is **S2 session-gated** is NOT a gap until the operator has been offered
+the login handoff and declined ([`login-handoff.md`](./login-handoff.md)), and its gap reason is
+typed `session-gated-declined`, never `structurally-unreachable`. The C2C class above is the one
+that is S2 by default, which is exactly why it kept getting written off.
 
 ## X1, channel-class ↔ shard coverage map
 
