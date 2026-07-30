@@ -83,7 +83,7 @@ to skip this.
 - **De-minimis / cross-border duty = mandatory re-check of the CBP primary source every sweep.**
   This is the most volatile and highest-blast-radius figure in the whole matrix: the US de-minimis
   ($800 §321) entry status changed in 2025 to 2026, and a wrong de-minimis assumption silently mis-prices
-  every cross-border landed-cost compute. So on EVERY refresh, not just the monthly cadence ,
+  every cross-border landed-cost compute. So on EVERY refresh, not just the monthly cadence,
   re-verify `cross-border-duty.json` against **CBP** (cbp.gov / 19 CFR §10.151 / the current Federal
   Register / Executive Order on §321) as the source-of-record, plus the EU Council figure for EU rows.
   If de-minimis is suspended/restored or a rate changed, update the row, its `verified_date`, the

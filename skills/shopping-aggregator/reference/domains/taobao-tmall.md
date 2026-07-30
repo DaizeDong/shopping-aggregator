@@ -12,7 +12,7 @@
 | **Taobao MCP** ([taobao-mcp.md](../tools/taobao-mcp.md)) | ④ | LLM-native，cookie 注入即可，agent 自动比价 | `claude mcp list` → `taobao_mcp ✓` | 中；9★小项目，需手动注 cookie，反爬升级风险 |
 | **BigGo MCP** ([biggo-mcp.md](../tools/biggo-mcp.md)) | ④ 免费 | 也覆盖淘宝/天猫，海外友好 | `claude mcp list` → `biggo ✓` | 低；台湾出品，数据源覆盖有差异 |
 | 一淘 | ① | 阿里自家比价（仅淘/天） | etao.com / App | **价值有限**：不显示京东/拼多多更低价 |
-| 惠惠购物助手 |, |, |, | **✗ DEAD 2019-12-04** 停运（网易出品，被阿里诉流量劫持） |
+| 惠惠购物助手 | n/a | n/a | n/a | **✗ DEAD 2019-12-04** 停运（网易出品，被阿里诉流量劫持） |
 
 **Default pick:** **慢慢买 App + 购物党 Chrome 扩展**（两个一起装，扩展看实时+找券、App 看历史价）。
 **对接 agent → BigGo MCP**（海外可用）或 **Taobao MCP**（要注 cookie 但 LLM-native）。

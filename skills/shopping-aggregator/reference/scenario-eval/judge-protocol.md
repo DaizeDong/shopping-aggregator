@@ -27,7 +27,7 @@
 
 3. **No ground truth in the prompt.** The judge is **never** told the "right" price, the "right"
    retailer, or a scenario's `fact_anchor`. `fact_anchor` in `scenarios.jsonl` is *author provenance
-   only* (how the eval author justified the trap) and MUST be stripped before the judge prompt is built ,
+   only* (how the eval author justified the trap) and MUST be stripped before the judge prompt is built;
    see "Prompt construction" below. The judge grades **constitutional conformance and reasoning quality**
    (is the price E1-sourced, timestamped, caveated; is the #1 backed by >=2 E1 reads; was the tariff/Honey
    fact verified live and cited), NOT "did the number match a value I know". Grading against a remembered
@@ -101,7 +101,7 @@ JSON, e.g.:
 
 ## Cadence & non-CI posture
 
-- Run **manually / occasionally** (e.g. before a notable release, or when orchestration logic changed) ,
+- Run **manually / occasionally** (e.g. before a notable release, or when orchestration logic changed),
   NOT on every commit. Prices are volatile, judges are non-deterministic, and live fetches cost real
   calls; wiring this into CI would make CI flaky and slow for no contract benefit. The deterministic
   contract gate (`verify_matrix.py`) is the one that belongs in CI.
