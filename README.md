@@ -7,7 +7,7 @@ Triage any buy intent across 13 shopping domains, rank by landed cost (not stick
 [![Source Matrix](https://img.shields.io/badge/Source%20Matrix-13%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.6.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
