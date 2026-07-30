@@ -156,12 +156,10 @@ re-fetches every cited URL backing an `E1`/`L1` price entering the ranking and i
 price + stock + timestamp + **seller** (Sold-by/Shipped-by) + **evidence_grade** (a real PDP/API read,
 not a snippet). Same-subagent self-verification is a bug.
 
-**Browser concurrency (the fan-out constraint nobody reads until it bites).** The browser MCP is
-commonly **ONE shared instance across every subagent**, whatever the isolation flags claim; tabs get
-navigated away or closed under each other. So: subagents MUST use atomic `newContext()`/`newPage()`
-per call (open, extract, close) and MUST NOT address tabs by index; and **heavy in-page JS evaluation
-deadlocks under contention** (observed: silent hangs until the MCP idle timeout, tens of minutes, zero
-output). Read the rendered page; never hand-roll signed API calls inside a contended shared browser.
+**Browser concurrency.** The browser MCP is commonly **ONE shared instance across every subagent**,
+whatever the isolation flags claim. Subagents MUST use atomic `newContext()`/`newPage()` per call
+(open, extract, close), MUST NOT address tabs by index, and MUST NOT hand-roll signed API calls
+in-page (heavy JS eval deadlocks silently under contention). Detail: `source-reliability.md`.
 
 ### Step 5b, Login handoff for S2 channels (BLOCKING, main session only)
 
@@ -254,40 +252,33 @@ kept stable rather than renumbered.
   PDP / official API) may be a ranked winner; `E2` (aggregator) enters only with a corroborating `E1`
   of the **same `variant_key`**; `E3` (SERP / cross-model recall) is never ranked, re-fetch to `E1`.
   A first-party domain does NOT upgrade an E3 snippet. (`evidence-schema.md` #5b)
-- **#5 Seller tier (L1 to L5, WHO sold it).** A DOMAIN is not proof of first-party (Best Buy /
-  Walmart / Newegg / Amazon all host 3P under their own domain). Stamp **L1 ONLY after reading
-  `Sold by` / `Shipped by`**; if unread, **L3, never L1**. Missing `seller_name` **degrades to L3,
-  does NOT reject**. Don't rank L4/L5 winners without override; mark every tier. Reading Sold-by also
-  **finds the channel**, not just gates trust: a 3P seller on a big-box domain can be the product's
-  own exclusive source, and its first-party storefront may sell the same unit for less.
-  (`evidence-schema.md` #5)
-- **#1 Snapshot timestamp.** Every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]` (prices change
-  hourly, Amazon Buy Box); one without is "unverified." State the snapshot date at report top.
-- **`variant_key`.** Confirmed from **spec text, SKU option strings, or a manufacturer id (EAN/MPN)**,
-  never from the title. Titles routinely name a size or character the listing does not contain, and a
-  seller's spec block is often copy-pasted from a sibling product, so when spec block and SKU option
-  string disagree, the **option string wins** and that seller's spec block stops being usable as an
-  independent source.
+- **#5 Seller tier (L1 to L5, WHO sold it).** A DOMAIN is not proof of first-party. Stamp **L1 ONLY
+  after reading `Sold by` / `Shipped by`**; unread → **L3, never L1**. Missing `seller_name`
+  **degrades to L3, does NOT reject**. Don't rank L4/L5 winners without override; mark every tier.
+  Sold-by is also **channel discovery**: a 3P seller on a big-box domain can be the product's own
+  exclusive source, whose first-party storefront sells it for less. (`evidence-schema.md` #5)
+- **#1 Snapshot timestamp.** Every entry carries `[fetched YYYY-MM-DD HH:MM TZ]`; one without is
+  "unverified". State the snapshot date at report top.
+- **`variant_key`.** Confirmed from **spec text, SKU option strings, or a manufacturer id (EAN/MPN),
+  never the title**. When a spec block and an option string disagree the **option string wins**, and
+  that spec block stops counting as an independent source (`source-reliability.md`).
 
 ### B. Comparability, a sticker is not a price
 
-- **#3 Landed cost, not sticker.** See Step 6. Sticker-only with no computable landed cost → label
-  `⚠ sticker only, actual landed cost may be higher.` Every tax/duty/shipping/FX value MUST resolve
-  to a `reference/data/` row (with `source_url` + `verified_date`) or be stamped `(assumed)`; a bare
-  rate or threshold typed from memory is a provenance bug (CONSTITUTION I.7). For oversized goods the
-  freight and packaging can dominate so completely that item price stops deciding the ranking, see
-  `source-reliability.md` cross-border.
-- **#2 Stock state is part of the price.** Rank in-stock first; OOS / preorder = footnote, not top
-  pick. **Read the fulfilment promise, not the stock attribute**: a structured "in stock" field and a
-  buy box saying "preorder, 30 days" coexist on the same PDP, and the attribute is the one that lies.
+- **#3 Landed cost, not sticker.** See Step 6. No computable landed cost → label `⚠ sticker only,
+  actual landed cost may be higher.` Every tax/duty/shipping/FX value MUST resolve to a
+  `reference/data/` row (`source_url` + `verified_date`) or be stamped `(assumed)`; a rate typed from
+  memory is a provenance bug (CONSTITUTION I.7). For oversized goods freight and packaging can
+  dominate to where item price stops deciding the ranking (`source-reliability.md` cross-border).
+- **#2 Stock state is part of the price.** In-stock ranks first; OOS / preorder is a footnote.
+  **Rank on the fulfilment promise, not the stock attribute**, which is the one that lies.
 
 ### C. Verification, test the claim instead of repeating it
 
-- **#4 Coupon verification gate.** Don't trust "coupons available!" badges; verify via a playwright
-  cart test or label `coupon claims unverified` (Honey-style false positives are real; Honey 2026
-  status in `reference/domains/browser-extensions.md`). Same for stacked promos: a PDP lists what
-  **exists**, only the order-confirm page shows what **stacks**. Report the stack as a range with its
-  conditions named, and say plainly when the confirm page was not reached.
+- **#4 Coupon and promo gate.** Badges are not evidence: verify via a playwright cart test or label
+  `coupon claims unverified` (Honey 2026 status in `domains/browser-extensions.md`). A PDP lists what
+  promos **exist**; only the order-confirm page shows what **stacks**. Quote a range with conditions
+  named, and say when the confirm page was not reached.
 - **#7 Disagreement = re-fetch / reconcile, never average** (`evidence-schema.md` #7):
   - (a) **Cross-snapshot** (same page, two pulls >5% apart): re-fetch a 3rd time; resolve or surface
     both with timestamps.
@@ -298,52 +289,32 @@ kept stable rather than renumbered.
 
 ### D. Absence is not a finding, and this is where runs go wrong
 
-The unifying failure: **a search result page looks identical whether the market is empty, the query
-was gated, or you only read the top of it.** Every rule here exists to tell those apart.
+**A search result page looks identical whether the market is empty, the query was gated, or you only
+read the top of it.** These four rules tell those apart. Signatures, failure modes and war-stories:
+`source-reliability.md` "Reading a search result page".
 
-- **#11 A zero from a gated source is not a zero (control-query gate).** A session-gated marketplace
-  search renders its shell, filters, even a recommendation carousel, and reports **"no results"**,
-  which is byte-identical to "nobody sells this." Before recording ANY zero-result from a marketplace
-  search, run a **control query** for a term that platform certainly has thousands of live listings
-  for (the bare category noun). If the control **also** returns zero, the search layer is not working
-  for you and **every zero from that platform this run is void**: it is an S2/S3 signal, never a stock
-  signal. Cite the control query + its result next to the finding. Loading the homepage to collect
-  risk-control cookies does NOT substitute and has been observed to change nothing. This applies to a
-  **brand's own in-store search** too, where a legacy endpoint can ignore the keyword and return the
-  empty state for everything while the shop's full catalogue sits behind its all-products listing;
-  believing it inverts the conclusion from "brand sells it, cheapest of anyone" to "brand discontinued
-  it." Full rules: `reference/login-handoff.md`.
-- **#12 The first page is not the market (depth gate).** Any "cheapest" entering the ranking MUST
-  declare its **search depth**: pages read, unique items seen, and how paging was driven. Page one
-  alone, undeclared, is an unstated confidence bound.
-  - **Test the paging mechanism, never assume it.** All three have been observed on one run: a URL
-    page param that works; a **URL page param that is silently ignored while the page still renders a
-    full grid**; and paging that only advances by clicking numeric controls.
-  - **Judge by NEW ids, not by returned count.** Diff the id set per page. Thirty rows that are all
-    duplicates is a broken pager, not a second page. **Trusting an ignored page param is worse than
-    not paging at all: it manufactures false coverage.**
-  - **Stop** when a page yields zero new ids, or the price band's floor is covered. Depth payoff is
-    **unpredictable per site and must be measured**: in one run the same query went 30 to 270 items on
-    one marketplace and 46 to 47 on another.
-  - Sort order is part of depth: a relevance-sorted first page is not a price-sorted one, so either
-    page far enough to reach the floor or sort by price and say which you did.
-- **#9 Failures AND never-tried become explicit gaps** (coverage floor; `evidence-schema.md` #9):
-  - (a) **Failures:** any subagent returning `failed/empty` → one query rewrite + retry; if still
-    empty, list in an explicit "Not covered" section.
-  - (b) **Coverage floor:** an in-scope channel class (`reference/channel-classes.md`) **never
-    attempted** is also a gap; record `status: not-attempted` + reason and emit a `coverage_gap` line
-    (Step 7). The "Coverage gaps" section MUST list every in-scope class not taken to `E1`.
-    Completeness-by-omission is a bug.
-  - (c) **Gap reason is typed, not prose.** One of `session-gated-declined` /
-    `session-gated-unattended` / `structurally-unreachable` / `tool-outage` / `not-attempted`. The
-    first two mean "one operator login away, retry next run"; the third means "no login helps, stop
-    spending on it." Collapsing them into one bucket is what makes a reachable channel look
-    permanently dead. Never backfill a gapped cell with a different channel's numbers.
-- **#6 No silent degradation.** Falling back from Keepa to spot-only playwright → the report MUST say
-  `⚠ historical data unavailable, only live price shown, cannot confirm if this is a good deal vs.
-  recent floor.` Never swap silently. A tool's own health line is not evidence it works: **probe it
-  functionally with a control query**, since a server can report Connected while every call returns an
-  empty result set.
+- **#11 Control-query gate: a zero is not a zero until a control says so.** Before recording ANY
+  zero-result from a marketplace search, re-query a term that platform certainly stocks. Control also
+  zero → **every zero from that platform this run is void** (an access-state signal, not a stock
+  signal). Cite the control + its result beside the finding. Applies to a brand's own in-store search.
+- **#12 Depth gate: the first page is not the market.** Any ranked "cheapest" MUST declare pages read,
+  unique items, and **how paging was driven**. Test the mechanism, never assume it. Judge pages by
+  **new ids, not returned count** (a full grid of duplicates is a broken pager, and trusting an
+  ignored page param manufactures false coverage). Stop at zero new ids or once the band's floor is
+  covered. Sort order is part of depth: say whether you paged to the floor or sorted by price.
+- **#9 Failures AND never-tried become explicit gaps** (`evidence-schema.md` #9):
+  - (a) **Failures:** subagent returns `failed/empty` → one query rewrite + retry; still empty → an
+    explicit "Not covered" entry.
+  - (b) **Coverage floor:** an in-scope channel class (`channel-classes.md`) never attempted is also a
+    gap. "Coverage gaps" MUST list every in-scope class not taken to `E1`; completeness-by-omission
+    is a bug.
+  - (c) **Typed reason, not prose:** `session-gated-declined` / `session-gated-unattended` /
+    `structurally-unreachable` / `tool-outage` / `not-attempted`. Collapsing "one login away" into
+    "no login helps" is what makes a reachable channel look permanently dead. Never backfill a gapped
+    cell with another channel's numbers.
+- **#6 No silent degradation.** Any fallback is stated in-line (`⚠ historical data unavailable, only
+  live price shown...`). **A tool's health line is not evidence it works**: probe it functionally, a
+  server can report Connected while every call returns empty.
 
 ### E. Adversarial, what would make this wrong
 
@@ -351,11 +322,10 @@ was gated, or you only read the top of it.** Every rule here exists to tell thos
   fake-reseller / refurb-not-as-advertised / DOA) against the cheapest pick; report a "Risks &
   counter-evidence" section. Empty = "actively reverse-searched, none found, not proof of safety,"
   never silence. Taxonomy + Codex option: `evidence-schema.md` (#8).
-- **#10 Affiliate disclosure tracking (read-only).** Extensions/sites that affiliate-hijack (Honey,
-  Karma, Slickdeals, smzdm) MUST NOT bias the ranking; cross-check any "save $X via our link" claim
-  against the retailer's public price. Related: a price shown by a **notification or release-calendar
-  site that is not itself the merchant** is not reproducible at any checkout, treat it as `E3` at
-  best. Detail: `evidence-schema.md` (#10).
+- **#10 Affiliate and non-merchant prices MUST NOT bias the ranking.** Cross-check any "save $X via
+  our link" claim (Honey, Karma, Slickdeals, smzdm) against the retailer's public price. A price shown
+  by a notification or release-calendar site that is **not itself the merchant** is not reproducible
+  at checkout, `E3` at best. Detail: `evidence-schema.md` (#10).
 
 ## Output
 
