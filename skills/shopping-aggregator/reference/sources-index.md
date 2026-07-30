@@ -36,7 +36,7 @@ Barrier-route legend (same scheme as `market-intel`):
 ## Non-US/CN regional routing (no dedicated shard, route to ④)
 
 The shards above are deliberately US- and CN-centric (where the access-method ecosystem is richest).
-Major **non-US/CN regional marketplaces have no dedicated shard and no usable consumer price API** ,
+Major **non-US/CN regional marketplaces have no dedicated shard and no usable consumer price API**,
 they are reached via **playwright ④** (live PDP read), with the EU price-comparison engines as the
 discovery layer on top (see [`channel-classes.md`](./channel-classes.md) price-comparison-engine row +
 the X1 map). Do not invent a shard for these prematurely; route to ④ and confirm at E1.

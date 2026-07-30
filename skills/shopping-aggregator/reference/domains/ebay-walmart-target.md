@@ -10,8 +10,8 @@ Costco, Home Depot, Newegg, Micro Center. Also: "anywhere besides Amazon", "is t
 | **BigGo MCP** ([biggo-mcp.md](../tools/biggo-mcp.md)) | ④ free | covers eBay + AliExpress + Amazon + Shopee + Taobao via single MCP | `claude mcp list` → `biggo ✓` | low; star count only 18, small project, watch for drift |
 | **Apify price-intelligence MCP** ([apify-price-intelligence.md](../tools/apify-price-intelligence.md)) | ② paid | Amazon + Walmart + Target + eBay + Best Buy in one MCP | Apify token | $0.008,$0.15/call; **broadest paid coverage** |
 | **Oxylabs E-Commerce Scraper** ([oxylabs.md](../tools/oxylabs.md)) | ② | Walmart/eBay/Target/Wayfair/Costco/HomeDepot/BestBuy +100 anti-bot scrape | API key | $49/mo trial, +$1.25/1k for JS render |
-| Walmart Open API | ① |, | walmart.io closed to non-sellers | **✗ no consumer API**, only path is Impact.com affiliate (≤4%) for catalog feeds |
-| eBay Finding API | ① |, |, | **✗ DECOMMISSIONED 2025-02-05**, use Browse API |
+| Walmart Open API | ① | n/a | walmart.io closed to non-sellers | **✗ no consumer API**, only path is Impact.com affiliate (≤4%) for catalog feeds |
+| eBay Finding API | ① | n/a | n/a | **✗ DECOMMISSIONED 2025-02-05**, use Browse API |
 | Google Shopping (via SerpApi) | ② | cross-merchant SERP, 195 geos | SerpApi key | $25/mo 1k calls; SERP-level only (no SKU detail) |
 
 **Default pick:**
