@@ -188,7 +188,11 @@ git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins
   `deep-research` / `market-intel`。若都没连上，skill 引导安装而不自己抓。
 - **矩阵会腐烂**, 扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS
   仓库停更。新鲜度由 refresh 协议维护，并非时时保证。
-- **登录墙零售商**（如 Costco）报为显式覆盖空白，不静默遗漏，但不自动抓取。
+- **登录墙渠道是交接，不是空白。** 会话门控的市场属于 `S2`：你登录一次它就完全可读。skill 会先把
+  所有匿名能做的做完，再把全部门控渠道**合并成一次询问**，打开登录页后**停手**，等你确认再继续。
+  **它绝不替你登录**，也不碰任何凭据。你拒绝、或无人值守运行，它记录一个带类型的 `session-gated-*`
+  空白，含义是「差一次登录」而不是「够不着」。见
+  [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md)。
 - **非卖家侧/搬砖工具**, FBA / 批发 / 市场调研请用
   [`market-intel`](https://github.com/DaizeDong/market-intel)。
 - **不自动下单**, skill 产出推荐，下单由你点。
