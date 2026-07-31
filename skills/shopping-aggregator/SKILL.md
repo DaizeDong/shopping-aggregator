@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Use to compare a product's price across retailers (Amazon/eBay/Taobao) + price-history/coupons, or a hotel/lodging's total-stay cost across booking channels. Triggers: compare prices, cheapest to buy, good deal, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, 凑单, 订酒店, 差旅住宿, 酒店比价."
+description: "Use to compare a product's price across retailers, or a hotel's total-stay cost. Triggers: compare prices, cheapest to buy, good deal, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, 凑单, 订酒店, 差旅住宿, 酒店比价."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
@@ -19,6 +19,14 @@ history backfill, adversarial verification, citation synthesis, is **delegated**
 > change must pass "does it fix the framing, or just patch a symptom?"
 
 ## Scope, when this skill applies, and when to stop
+
+The frontmatter `description` carries **trigger phrases only**. Which retailers are covered
+(Amazon / eBay / Walmart / Best Buy / Taobao / JD / PDD, see the Region row in Step 1), which
+price-history and coupon layers are used (Keepa / Camelcamelcamel / 慢慢买, coupon-cart
+verification), and how the lodging booking channel is driven all live in this file. Keep them
+here: `description` is charged against the library metadata budget on every single turn, this
+file is loaded only when the skill actually fires. Do not re-inflate the description with
+capability lists.
 
 **Use this skill** for the consumer buy decision: "compare prices / find the cheapest place to buy X",
 "is this a good deal / should I wait for a sale / what's the historical low". **Stop and delegate**
