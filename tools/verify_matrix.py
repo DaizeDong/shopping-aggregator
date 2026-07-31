@@ -163,6 +163,15 @@ STAR_LINE_RE = re.compile(r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\*{0,2}\s*\((\d+(?:
 
 
 def _strip_git(r):
+    """Normalise a captured owner/repo slug.
+
+    Trailing '.' is stripped because REPO_RE's character class includes '.', so a repo cited at the
+    end of a sentence ("... see github.com/owner/repo.") captures the sentence's full stop as part of
+    the name. That produced a standing BLOCK on a repo that exists: the real slug resolved fine while
+    the dotted twin 404'd forever. A GitHub repository name cannot end in a dot, so removing it can
+    never merge two distinct repos.
+    """
+    r = r.rstrip(".")
     return r[:-4] if r.endswith(".git") else r
 
 
@@ -693,10 +702,20 @@ def run_checks():
         for marker in ["L1", "L5", "E1", "E3"]:
             if marker not in skill:
                 block("METH", f"SKILL.md lost tier/grade legend marker '{marker}'")
-        # numbered guardrails: lines like `1. **...` or `5b. **...`
-        guardrail_nums = len(re.findall(r"^\s*\d+[a-z]?\.\s+\*\*", skill, re.M))
-        if guardrail_nums < 10:
-            block("METH", f"SKILL.md numbered guardrails look reduced ({guardrail_nums} found, expect >=10)")
+        # Guardrail count, monotonic per CONSTITUTION III.4.
+        #
+        # This used to count markdown list markers (`1. **...`), which measured FORMATTING rather than
+        # coverage: regrouping twelve flat rules under five headings dropped the count to 7 and blocked,
+        # while not one rule had been removed. It would also have missed the real failure it exists to
+        # catch, a rule quietly deleted while the list renumbers itself to stay dense.
+        #
+        # Count the stable IDs instead (`#1`, `#5b`, `#12`), which are the contract: evidence-schema.md,
+        # report-template.md and the CONSTITUTION all cite guardrails by ID, so an ID cannot vanish
+        # without breaking a cross-reference. Presentation may change freely; the ID set may only grow.
+        guardrail_ids = set(re.findall(r"(?<![\w])#(\d+[a-z]?)\b", skill))
+        if len(guardrail_ids) < 10:
+            block("METH", f"SKILL.md guardrail IDs look reduced ({len(guardrail_ids)} found, expect >=10): "
+                          f"{sorted(guardrail_ids)}")
     SOURCES_INDEX = os.path.join(REF, "sources-index.md")
     if os.path.exists(SOURCES_INDEX):
         sidx = read(SOURCES_INDEX)

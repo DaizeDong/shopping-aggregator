@@ -112,7 +112,31 @@ Three things decide whether this works:
 Paging control lives in `data.resultInfo.searchResControlFields`: `numFound` (total hits, use it to
 state real coverage) and `nextPage` (stop condition). Items are under `data.resultList[]`, with the
 useful fields at `.data.item.main.exContent` (`itemId`, `title`, `price`, `userNickName`, `area`).
-`price` is sometimes an array of segments, join them. Keep a ~0.5s gap between pages.
+`price` is sometimes an array of segments, join them.
+
+### Throttling: a per-API quota, not a rate limit, and not a ban
+
+Measured, and the distinction changes what you do about it:
+
+- **It is a quota on cumulative calls, not a rate.** ~0.45s spacing was fine for the first ~136
+  calls; past roughly 200 in one session *every* search call failed. Slowing to 2.5s afterwards did
+  **not** restore it, so "space the requests out" alone does not buy more depth.
+- **The punishment is a black hole, not an error code.** The call hangs until your own client
+  timeout fires (`TIMEOUT::接口超时` at exactly the configured ms). There is no 429 and no retry
+  header, so retry-with-backoff burns wall-clock and recovers nothing.
+- **It is scoped to this one API, not the session.** While search was black-holed,
+  `mtop.idle.web.user.page.nav` and `mtop.taobao.idlemessage.pc.loginuser.get` both returned
+  `SUCCESS` in **244 to 497ms** on the same context. Cookies, login and IP were fine. So do NOT
+  respond by rotating profile, re-logging-in, or assuming the account is flagged, none of that is
+  the problem and re-logging a risk-controlled account has its own cost.
+- **Recovery is slow.** Still black-holed tens of minutes later.
+
+**Use latency as the early-warning signal.** A healthy search call answers in a few hundred ms in
+the same range as those other endpoints. Track a rolling latency; when a call crosses ~5s, you are
+at the edge of the quota, **stop immediately and bank what you have** rather than pushing into the
+penalty window. Budget **under ~100 search pages per session** with 2 to 3s spacing, and when a
+sweep needs more coverage than that, split it across sessions or time windows instead of going
+deeper in one run. Prefer few keywords deep over many keywords shallow when the two compete.
 
 `sortField` / `sortValue` are exposed by the same call, so server-side sorting (e.g. by price) is
 available without client-side re-ranking.
