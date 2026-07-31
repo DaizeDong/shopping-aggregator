@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Use to compare a product's price across retailers, or a hotel's total-stay cost. Triggers: compare prices, cheapest to buy, good deal, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, 凑单, 订酒店, 差旅住宿, 酒店比价."
+description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
@@ -23,10 +23,10 @@ history backfill, adversarial verification, citation synthesis, is **delegated**
 The frontmatter `description` carries **trigger phrases only**. Which retailers are covered
 (Amazon / eBay / Walmart / Best Buy / Taobao / JD / PDD, see the Region row in Step 1), which
 price-history and coupon layers are used (Keepa / Camelcamelcamel / 慢慢买, coupon-cart
-verification), and how the lodging booking channel is driven all live in this file. Keep them
-here: `description` is charged against the library metadata budget on every single turn, this
-file is loaded only when the skill actually fires. Do not re-inflate the description with
-capability lists.
+verification), and how lodging booking is driven all live in this file. Keep them
+here: `description` is charged against the library metadata budget on every turn, this
+file loads only when the skill fires. Do not re-inflate the description with
+capability lists, and do not drop a trigger phrase without naming it.
 
 **Use this skill** for the consumer buy decision: "compare prices / find the cheapest place to buy X",
 "is this a good deal / should I wait for a sale / what's the historical low". **Stop and delegate**
@@ -284,7 +284,7 @@ kept stable rather than renumbered.
 ### C. Verification, test the claim instead of repeating it
 
 - **#4 Coupon and promo gate.** Badges are not evidence: verify via a playwright cart test or label
-  `coupon claims unverified` (Honey 2026 status in `domains/browser-extensions.md`). A PDP lists what
+  `coupon claims unverified` (Honey 2026 status in `reference/domains/browser-extensions.md`). A PDP lists what
   promos **exist**; only the order-confirm page shows what **stacks**. Quote a range with conditions
   named, and say when the confirm page was not reached.
 - **#7 Disagreement = re-fetch / reconcile, never average** (`evidence-schema.md` #7):
@@ -313,7 +313,7 @@ read the top of it.** These four rules tell those apart. Signatures, failure mod
   - **A silently-ignored page param is the common failure**, and it fails *quietly*: the page still
     returns 200 with a full grid. Diff item ids across pages before believing any pager. When a web
     UI has no pager at all, the SPA's own XHR endpoint usually does, capture it from the network log
-    and drive that (worked example: `domains/auction-resale.md` → Goofish mtop).
+    and drive that (worked example: `reference/domains/auction-resale.md` → Goofish mtop).
   - **Report coverage as a fraction.** Most search backends return a total-hits field; quote it
     (`read 300 of 3,564`). "Scanned N items" hides whether N is the market or a rounding error.
   - **Dedupe by SELLER before treating repeated prices as agreement.** Listing spam concentrates on
