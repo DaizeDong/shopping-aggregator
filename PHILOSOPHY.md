@@ -144,6 +144,23 @@ already held verbatim.
 2. Delete the SKILL.md paragraph. Is the rule still *enforceable* from what remains? If yes, the
    paragraph was rationale and belongs in the reference.
 
+**The tell, and it is nearly always the same section.** An audit across every skill in the fleet found
+one shape recurring: a **war-story / gotcha compendium**, and each one announced itself. Their own
+opening lines say "the rules above already encode the fix, this section explains why" and "each
+gotcha is rooted in a real past incident". **A section that describes itself as explaining where the
+rules above came from is, by definition, a reference.** Move it and leave an ID index; the rules it
+explains are already stated, so nothing enforceable leaves with it. Where such a compendium is
+already cited by ID from elsewhere, the move is pure relocation with no de-duplication risk at all.
+
+**And the inverse tell, which matters just as much.** A small skill whose every run needs every line
+is *correctly* monolithic, and splitting it costs a tool call to save nothing. Two signals that
+prose should STAY in an always-loaded file even though it reads like rationale: it states an
+invariant whose violation is the exact bug the skill exists to fix (a maintainer who does not read it
+will "repair" the thing back into the defect), or it is a troubleshooting branch of the main flow
+rather than an appendix (the failure happens *during* the procedure, so a jump costs more than it
+saves). **Do not refactor for tidiness. Measure first, and be willing to conclude "this one is
+already right".**
+
 **Corollary: fewer files is not the goal.** A directory of small, densely specific docs is healthy
 when each is loaded only by the run that needs it; the audit that motivated this principle went
 looking for bloat in a 33-file tool directory and found layering instead (a one-line routing index, a
