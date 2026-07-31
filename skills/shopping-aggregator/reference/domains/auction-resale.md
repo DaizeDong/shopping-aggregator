@@ -18,6 +18,7 @@ Mercari, Depop, ThredUp). Also: "should I buy used", "what's the going rate", "c
 | **GOAT** | ① | n/a | no official public API (GitHub org is internal tooling only) | **✗ no official API**, only 3P scrapers (Retailed.io, Apify) or unofficial reverse-eng libs (Sneaks-API), all break-prone |
 | **Whatnot Seller API** | ① | seller inventory mgmt + sale notifications | developers.whatnot.com, **Developer Preview, NOT accepting new applicants** | **✗ closed** + seller-only (no buyer/market-data scope); for market reads use playwright or 3P Apify scraper |
 | **Poshmark** | ④ | live listings + sold flag; brand/size/condition in unstructured seller text | no official API at all; playwright the marketplace | **✗ no official API**; sold shown but not a clean field; moderate anti-bot; condition free-text (NWT/EUC/"like new") |
+| **Goofish / 闲鱼** (CN, Alibaba) | ④ | China's largest C2C resale market; also the default channel for grey/virtual goods (API quota, accounts, kuji prizes). Search needs a logged-in session; the web SPA renders **only the first 30 rows**, deeper pages come from its own mtop endpoint (see below) | `goofish.com`; playwright +阿里系 cookies in the context | medium; login-walled search, per-seller listing spam distorts page 1 |
 | **Mercari** | ④ | live US listings; client-side rendered + Cloudflare | **Mercari Shops API** is contract-only (assigned `API_CLIENT_NAME`); no public consumer API | **✗ no public consumer API**; needs browser automation (CSR + Cloudflare); unofficial libs get AWS IPs blacklisted |
 | **Depop Selling API** | ① | official Selling API (API-key / OAuth2) | **private**, partner approval via partnerapi.depop.com only | **✗ not self-serve**; for reads, playwright or 3P scraper (ScrapingBee/Oxylabs) |
 | **ThredUp** | ④ | live thrift listings | no public dev API; **RaaS** is B2B-only (raas.thredup.com) | **✗ no public API**; obfuscated CSS classes; scrape via playwright |
@@ -80,6 +81,54 @@ say so explicitly ("asks only, no realized comps") rather than implying a market
 authenticity/condition fraud is real, StockX/GOAT authenticate, P2P platforms (Poshmark, Mercari,
 Depop) do not; flag that gap when a high-value used buy routes through an unauthenticated P2P seller.
 
+## Goofish (闲鱼) deep pagination, the mtop route
+
+The web SPA is a **coverage trap**: `goofish.com/search?q=` renders exactly **30 rows**, has no
+pagination control, does not infinite-scroll, and **silently ignores `&page=N`** (page 2 returns a
+byte-identical result set). Scrolling to the bottom adds nothing. A run that stops there reports
+30 of what are often thousands of listings while looking complete.
+
+The page itself pages through its own mtop endpoint. Drive that instead:
+
+```
+api : mtop.taobao.idlemtopsearch.pc.search   v: 1.0
+data: { pageNumber, keyword, rowsPerPage: 30, fromFilter: false,
+        sortField: "", sortValue: "", propValueStr: {}, extraFilterValue: "{}",
+        customDistance: "", gps: "", customGps: "", userPositionJson: "{}",
+        searchReqFromPage: "pcSearch" }
+```
+
+Three things decide whether this works:
+
+1. **`type: 'POST'`, not `method: 'POST'`.** In `lib-mtop`, `type` is the HTTP-verb slot. Any other
+   spelling fails with `UNEXCEPT_REQUEST::错误的请求类型`, which reads like a payload problem and
+   sends you debugging the wrong thing.
+2. **Call it from the page context** (`window.lib.mtop.request`) so the library signs the request.
+   Hand-rolling the `sign` means reproducing the token-plus-timestamp MD5 scheme; borrowing the
+   page's own library avoids that entirely.
+3. **Session cookies must be in the context.** Anonymous search returns a login modal over the
+   results, not results.
+
+Paging control lives in `data.resultInfo.searchResControlFields`: `numFound` (total hits, use it to
+state real coverage) and `nextPage` (stop condition). Items are under `data.resultList[]`, with the
+useful fields at `.data.item.main.exContent` (`itemId`, `title`, `price`, `userNickName`, `area`).
+`price` is sometimes an array of segments, join them. Keep a ~0.5s gap between pages.
+
+`sortField` / `sortValue` are exposed by the same call, so server-side sorting (e.g. by price) is
+available without client-side re-ranking.
+
+## Coverage lesson: page 1 is not a sample, it is a biased one
+
+A single-seller listing spam is normal on C2C marketplaces, and it concentrates on page 1. In a real
+run, one price point looked like multi-seller consensus across the first page; deep paging showed
+**two accounts had posted 14+ near-identical listings**. Ranking off page 1 would have reported a
+manufactured price as the market rate.
+
+So: **never infer a market rate from one page**, and always group by seller before treating repeated
+prices as corroboration. Two listings from the same nickname are one data point, not two. Where a
+platform hides its pagination (as above), finding the real pager is part of the job, not an optional
+extra, and `numFound` belongs in the report so the reader can see coverage as a fraction.
+
 **Install guidance:** `../volatile/pricing-install.md` → auction-resale section.
 
-## Last verified: 2026-06
+## Last verified: 2026-07
