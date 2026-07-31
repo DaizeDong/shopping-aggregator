@@ -302,6 +302,17 @@ read the top of it.** These four rules tell those apart. Signatures, failure mod
   **new ids, not returned count** (a full grid of duplicates is a broken pager, and trusting an
   ignored page param manufactures false coverage). Stop at zero new ids or once the band's floor is
   covered. Sort order is part of depth: say whether you paged to the floor or sorted by price.
+  - **A silently-ignored page param is the common failure**, and it fails *quietly*: the page still
+    returns 200 with a full grid. Diff item ids across pages before believing any pager. When a web
+    UI has no pager at all, the SPA's own XHR endpoint usually does, capture it from the network log
+    and drive that (worked example: `domains/auction-resale.md` → Goofish mtop).
+  - **Report coverage as a fraction.** Most search backends return a total-hits field; quote it
+    (`read 300 of 3,564`). "Scanned N items" hides whether N is the market or a rounding error.
+  - **Dedupe by SELLER before treating repeated prices as agreement.** Listing spam concentrates on
+    page 1, so a price repeated by one account reads as multi-seller consensus exactly where the
+    evidence is thinnest. Observed in a real run: two accounts had posted 14+ near-identical
+    listings, and the "consensus" price was one seller talking to itself. N listings from one
+    nickname is **one** data point.
 - **#9 Failures AND never-tried become explicit gaps** (`evidence-schema.md` #9):
   - (a) **Failures:** subagent returns `failed/empty` → one query rewrite + retry; still empty → an
     explicit "Not covered" entry.
