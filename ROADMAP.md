@@ -1,8 +1,8 @@
 # Roadmap
 
-Current: **v0.4.0**
+Current: **v0.6.0**
 
-`shopping-aggregator` is at v0.4.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
+`shopping-aggregator` is at v0.6.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
 gap and the v0.4 domain expansion in one batch (see **Shipped** below), on top of the v0.2.0
 structural/framework batch (CONSTITUTION, demand-side channel-class primitive, the evidence-unit
 schema `variant_key` / `seller_tier` / `evidence_grade`, seller-identity gate, codex-crossval) and
@@ -10,6 +10,29 @@ the v0.1.0 base (orchestration core, philosophy inherited from market-intel). Th
 next; completed work is in **Shipped**.
 
 ## Shipped
+
+### v0.6.0, the login handoff and the reading-a-result-page guardrails
+
+- [x] **Access state is a first-class property of a channel** (S1 anonymous / S2 session-gated /
+      S3 structural), with `reference/login-handoff.md` plus SKILL.md steps 3b and 5b. An S2
+      channel is never a coverage gap until the operator has been asked, in one batched ask.
+- [x] **The agent never authenticates** (CONSTITUTION V.4), and post-login access is read-only and
+      scoped to product content, never account or order or payment views.
+- [x] **Control query (guardrail 11) and typed gap reasons (guardrail 9c)**, so a gated search that
+      renders its shell and reports zero results can no longer be recorded as "nobody sells this".
+- [x] **Search depth is declared (guardrail 12)**, pages judged by new ids rather than by returned
+      count, after a URL page param was observed being silently ignored.
+- [x] Cross-border oversized-goods rules (volumetric weight, box dimensions, sea freight) and the
+      rule that tariff list membership is verified against the primary schedule.
+
+### v0.5.0, data boundary: the skill stops writing its user's life into a public repo
+
+- [x] **Every path declared TOOL / FIXTURE / DATA** (`.dataclass.json`); real-run output resolves
+      from a private companion dir via `tools/datadir.py`, with no in-repo fallback.
+- [x] **`tools/data_boundary.py` wired into both hooks and CI** as the primary control, with
+      `pii_guard` demoted to backstop; fixtures are generated, so a real record cannot pass.
+- [x] `reference/source-reliability.md`, the generalizable half of the removed observations,
+      distilled with product, price and region stripped.
 
 ### v0.4.0, self-evolve: enforcement + landed-cost data + domain expansion
 
