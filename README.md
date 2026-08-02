@@ -7,7 +7,7 @@ Triage any buy intent across 13 shopping domains, rank by landed cost (not stick
 [![Source Matrix](https://img.shields.io/badge/Source%20Matrix-13%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.4.0-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.6.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
@@ -213,8 +213,12 @@ by design:
 - **The matrix decays**, extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
   (PA-API 2026-05-15), OSS repos go silent. Freshness is maintained by the refresh protocol, not
   guaranteed at every moment.
-- **Login-walled retailers** (e.g. Costco) are reported as explicit coverage gaps, not silently
-  omitted, but are not auto-fetched.
+- **Login-walled channels are a handoff, not a gap.** A session-gated marketplace is `S2`: it becomes
+  fully readable the moment you sign in once. The skill finishes everything anonymous first, then
+  batches every gated channel into a single ask, opens the login page and **stops**, and resumes after
+  you confirm. **It never signs in for you** and never touches a credential. Decline, or run it
+  unattended, and it records a typed `session-gated-*` gap that says "one login away" rather than
+  "unreachable". See [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md).
 - **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
 - **No auto-purchase**, the skill produces a recommendation; you click buy.
