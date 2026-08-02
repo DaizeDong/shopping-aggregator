@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Use to compare a product's price across retailers (Amazon/eBay/Taobao) + price-history/coupons, or a hotel/lodging's total-stay cost across booking channels. Triggers: compare prices, cheapest to buy, good deal, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, 凑单, 订酒店, 差旅住宿, 酒店比价."
+description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
@@ -19,6 +19,14 @@ history backfill, adversarial verification, citation synthesis, is **delegated**
 > change must pass "does it fix the framing, or just patch a symptom?"
 
 ## Scope, when this skill applies, and when to stop
+
+The frontmatter `description` carries **trigger phrases only**. Which retailers are covered
+(Amazon / eBay / Walmart / Best Buy / Taobao / JD / PDD, see the Region row in Step 1), which
+price-history and coupon layers are used (Keepa / Camelcamelcamel / 慢慢买, coupon-cart
+verification), and how lodging booking is driven all live in this file. Keep them
+here: `description` is charged against the library metadata budget on every turn, this
+file loads only when the skill fires. Do not re-inflate the description with
+capability lists, and do not drop a trigger phrase without naming it.
 
 **Use this skill** for the consumer buy decision: "compare prices / find the cheapest place to buy X",
 "is this a good deal / should I wait for a sale / what's the historical low". **Stop and delegate**
@@ -95,6 +103,22 @@ playwright, see `reference/domains/amazon-us.md`); **BigGo MCP** (`reference/too
 history); **Apify price-intelligence MCP** (paid, broadest US). Also ask the user (can't auto-detect):
 Camelcamelcamel bookmark, Keepa account, browser extensions (Capital One Shopping / Karma / 购物党 / 慢慢买 App).
 
+#### 3b, Classify each in-scope CHANNEL by access state (NOT the same axis as tool health)
+
+Tool health answers "can I drive a browser." It does not answer "will that browser see anything."
+Classify every in-scope channel class into one of three states, full rules in
+[`reference/login-handoff.md`](./reference/login-handoff.md):
+
+| state | meaning | action |
+|---|---|---|
+| **S1 anonymous** | a real read lands with no session | fetch, grade normally |
+| **S2 session-gated** | page loads, content needs a logged-in session the operator could supply | **login handoff (Step 5b)**, NOT a gap until asked and declined |
+| **S3 structural** | no operator session helps (geo-block, dead domain, closed API, proxy pool needed) | genuine `coverage_gap`, declare up front, stop retrying |
+
+**A session-gated marketplace search returns "no results", not an error.** That is the same shape as
+"nobody sells this." Guardrail #11 makes the control query mandatory before any zero is recorded.
+Classifying S2 as S3 silently discards a reachable channel; classifying it as S1 fabricates a zero.
+
 ### Step 4, Select sources + guide install (non-blocking)
 
 For each triaged domain read **only** its shard `reference/domains/<domain>.md`, pick the best
@@ -140,6 +164,35 @@ re-fetches every cited URL backing an `E1`/`L1` price entering the ranking and i
 price + stock + timestamp + **seller** (Sold-by/Shipped-by) + **evidence_grade** (a real PDP/API read,
 not a snippet). Same-subagent self-verification is a bug.
 
+**Browser concurrency.** The browser MCP is commonly **ONE shared instance across every subagent**,
+whatever the isolation flags claim. Subagents MUST use atomic `newContext()`/`newPage()` per call
+(open, extract, close), MUST NOT address tabs by index, and MUST NOT hand-roll signed API calls
+in-page (heavy JS eval deadlocks silently under contention). Detail: `source-reliability.md`.
+
+### Step 5b, Login handoff for S2 channels (BLOCKING, main session only)
+
+If Step 3b marked any in-scope channel **S2**, that channel is one human login away, not a gap. Run
+[`reference/login-handoff.md`](./reference/login-handoff.md); the shape is:
+
+1. **Finish all S1 work first**, so a declined handoff still ships a complete report.
+2. **Batch every S2 channel into ONE ask.** Asking once per platform is the failure this prevents.
+3. **Main session, exclusive browser, never inside a parallel subagent** (see concurrency above); a
+   sibling agent stealing the tab mid-login destroys the session.
+4. **Open the login page and STOP.** Emit no further tool calls against that browser, state which
+   platforms need login and what each unlocks, give the resume signal, then **end the turn.** Waiting
+   means ending the turn, not polling.
+5. **The agent NEVER authenticates**: no credentials, no codes, no QR scans, no account creation, not
+   even if the operator pastes a password (tell them to type it into the browser instead).
+6. **On resume, re-run the control query** to prove the session is live before trusting any read; a
+   still-empty control means the channel was S3 after all, say so.
+7. **Post-login is read-only + a PII surface**: no ordering, bidding, offers, messaging, or settings
+   changes without a fresh per-action instruction; never snapshot account / order / address /
+   payment views (CONSTITUTION V.4). A cart added to reveal a tax line MUST be emptied and re-read.
+
+Declined or unattended is a normal outcome: record `session-gated-declined` (or
+`session-gated-unattended`), which is a **different** gap fact from `structurally-unreachable`, and
+never backfill the missing cell with another channel's numbers.
+
 ### Step 6, Normalize and rank by LANDED COST
 
 The most-skipped step and the most decision-relevant. **Every tax / duty / shipping / FX number used
@@ -178,55 +231,120 @@ here MUST resolve to a row in `reference/data/` (carrying `source_url` + `verifi
 - [ ] `Sold by` was read for every unit stamped `L1` (else it is `L3`, not `L1`)?
 - [ ] The zero-context verifier (Step 5) actually re-confirmed each ranked `E1`/`L1` price?
 - [ ] No `E3` lead is sitting in the ranking, and no two snapshots were silently averaged?
+- [ ] Every in-scope channel got an access state (S1/S2/S3), and **every S2 one was either handed
+      off or explicitly declined**, not quietly filed as unreachable?
+- [ ] Every zero-result from a marketplace search carries its **control query** (#11)?
+- [ ] Every "cheapest" declares its **search depth** and how paging was driven, judged by NEW ids (#12)?
+- [ ] Every `coverage_gap` carries a **typed reason**, not prose (#9c)?
 
 ## Quality guardrails (HARD rules, apply during synthesis)
 
 Price-data-specific extensions of the market-intel guardrails, read both together. Long-form
-rationale + war-stories for #5/#5b/#7/#8/#9/#10: `reference/evidence-schema.md`.
-1. **Snapshot timestamp is MANDATORY.** Every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`
-   (prices change hourly, Amazon Buy Box); one without is "unverified." State the snapshot date at
-   report top.
-2. **Stock state is part of the price.** Rank in-stock first; OOS / preorder = footnote, not top pick.
-3. **Landed cost, not sticker.** See Step 6. Sticker-only with no computable landed cost → label
-   `⚠ sticker only — actual landed cost may be higher.` Every tax/duty/shipping/FX value MUST resolve
-   to a `reference/data/` row (with `source_url` + `verified_date`) or be stamped `(assumed)`, a bare
-   rate or threshold typed from memory is a provenance bug (CONSTITUTION I.7).
-4. **Coupon verification gate.** Don't trust "coupons available!" badges, verify via playwright cart
-   test or label `coupon claims unverified` (Honey-style false positives are real; Honey 2026 status in
-   `reference/domains/browser-extensions.md`).
-5. **Seller tiers (L1 to L5, WHO sold it).** A DOMAIN is not proof of first-party (Best Buy / Walmart /
-   Newegg / Amazon all host 3P under their own domain), stamp **L1 ONLY after reading `Sold by` /
-   `Shipped by`**; if unread, **L3, never L1**. Missing `seller_name` **degrades to L3, does NOT
-   reject**. Don't rank L4/L5 winners without override; mark every tier. Defs + Run-B war-story:
-   `reference/evidence-schema.md` (#5).
-5b. **Evidence grade (E1/E2/E3, HOW obtained, gates ranking FIRST, before seller_tier).** Only `E1`
-   (live PDP / official API) may be a ranked winner; `E2` (aggregator) enters only with a corroborating
-   `E1` of the **same `variant_key`**; `E3` (SERP / cross-model recall) is never ranked, re-fetch to
-   `E1`. A first-party domain does NOT upgrade an E3 snippet. Rules: `reference/evidence-schema.md` (#5b).
-6. **No silent degradation.** Falling back from Keepa to spot-only playwright → the report MUST say
-   `⚠ historical data unavailable, only live price shown, cannot confirm if this is a good deal vs.
-   recent floor.` Never swap silently.
-7. **Disagreement = re-fetch / reconcile, never average** (procedure + war-story: `evidence-schema.md` #7):
-   - (a) **Cross-snapshot** (same page, two pulls >5% apart): re-fetch a 3rd time; resolve or surface
-     both with timestamps.
-   - (b) **Cross-SOURCE recon** (different sources): FIRST confirm same `variant_key` (mismatched = two
-     SKUs, separate, NOT a disagreement); if same-key and >5% apart, write a Disagreement-matrix row
-     (cause ∈ `{different seller, stale/aggregated (E2/E3), coverage-gap}`) and resolve by grade, E1
-     wins; an E2/E3 that can't be lifted corroborates or is discarded, never averaged.
-8. **Disconfirmation mandate.** Run a dedicated reverse-search subagent (scam / counterfeit / fake-
-   reseller / refurb-not-as-advertised / DOA) against the cheapest pick; report a "Risks &
-   counter-evidence" section, empty = "actively reverse-searched, none found, not proof of safety,"
-   never silence. Taxonomy + Codex option: `reference/evidence-schema.md` (#8).
-9. **Failures AND never-tried become explicit gaps** (coverage floor; full rule: `evidence-schema.md` #9):
-   - (a) **Failures:** any subagent returning `failed/empty` → one query rewrite + retry; if still
-     empty, list in an explicit "Not covered" section.
-   - (b) **Coverage floor:** an in-scope channel class (`reference/channel-classes.md`) **never
-     attempted** is also a gap, record `status: not-attempted` + reason, emit a `coverage_gap` line
-     (Step 7); the "Coverage gaps" section MUST list every in-scope class not taken to `E1`.
-     Completeness-by-omission is a bug.
-10. **Affiliate disclosure tracking (read-only).** Extensions/sites that affiliate-hijack (Honey,
-    Karma, Slickdeals, smzdm) MUST NOT bias the ranking, cross-check any "save $X via our link" claim
-    against the retailer's public price. Detail: `reference/evidence-schema.md` (#10).
+rationale + war-stories for #5/#5b/#7/#8/#9/#10/#12: `reference/evidence-schema.md`.
+
+They group into **five questions**, asked in order. The grouping is presentation; the numbered IDs
+are the contract (`evidence-schema.md`, `report-template.md` and CONSTITUTION cite them), so they are
+kept stable rather than renumbered.
+
+| ask | rules | one-line test |
+|---|---|---|
+| **A. Can this row be ranked at all?** | #5b, #5, #1 | is its provenance complete |
+| **B. Is this number comparable?** | #3, #2 | is it landed and in-stock |
+| **C. Did I test the claim or repeat it?** | #4, #7 | did I re-fetch rather than trust |
+| **D. Is absence posing as a finding?** | #11, #12, #9, #6 | can I tell empty from unreached |
+| **E. What would make this wrong?** | #8, #10 | did I argue against myself |
+
+### A. Provenance, four fields or it does not rank
+
+- **#5b Evidence grade (E1/E2/E3, HOW obtained). Gates FIRST, before seller_tier.** Only `E1` (live
+  PDP / official API) may be a ranked winner; `E2` (aggregator) enters only with a corroborating `E1`
+  of the **same `variant_key`**; `E3` (SERP / cross-model recall) is never ranked, re-fetch to `E1`.
+  A first-party domain does NOT upgrade an E3 snippet. (`evidence-schema.md` #5b)
+- **#5 Seller tier (L1 to L5, WHO sold it).** A DOMAIN is not proof of first-party. Stamp **L1 ONLY
+  after reading `Sold by` / `Shipped by`**; unread → **L3, never L1**. Missing `seller_name`
+  **degrades to L3, does NOT reject**. Don't rank L4/L5 winners without override; mark every tier.
+  Sold-by is also **channel discovery**: a 3P seller on a big-box domain can be the product's own
+  exclusive source, whose first-party storefront sells it for less. (`evidence-schema.md` #5)
+- **#1 Snapshot timestamp.** Every entry carries `[fetched YYYY-MM-DD HH:MM TZ]`; one without is
+  "unverified". State the snapshot date at report top.
+- **`variant_key`.** Confirmed from **spec text, SKU option strings, or a manufacturer id (EAN/MPN),
+  never the title**. When a spec block and an option string disagree the **option string wins**, and
+  that spec block stops counting as an independent source (`source-reliability.md`).
+
+### B. Comparability, a sticker is not a price
+
+- **#3 Landed cost, not sticker.** See Step 6. No computable landed cost → label `⚠ sticker only,
+  actual landed cost may be higher.` Every tax/duty/shipping/FX value MUST resolve to a
+  `reference/data/` row (`source_url` + `verified_date`) or be stamped `(assumed)`; a rate typed from
+  memory is a provenance bug (CONSTITUTION I.7). For oversized goods freight and packaging can
+  dominate to where item price stops deciding the ranking (`source-reliability.md` cross-border).
+- **#2 Stock state is part of the price.** In-stock ranks first; OOS / preorder is a footnote.
+  **Rank on the fulfilment promise, not the stock attribute**, which is the one that lies.
+
+### C. Verification, test the claim instead of repeating it
+
+- **#4 Coupon and promo gate.** Badges are not evidence: verify via a playwright cart test or label
+  `coupon claims unverified` (Honey 2026 status in `reference/domains/browser-extensions.md`). A PDP lists what
+  promos **exist**; only the order-confirm page shows what **stacks**. Quote a range with conditions
+  named, and say when the confirm page was not reached.
+- **#7 Disagreement = re-fetch / reconcile, never average** (`evidence-schema.md` #7):
+  - (a) **Cross-snapshot** (same page, two pulls >5% apart): re-fetch a 3rd time; resolve or surface
+    both with timestamps.
+  - (b) **Cross-SOURCE recon** (different sources): FIRST confirm same `variant_key` (mismatched =
+    two SKUs, separate, NOT a disagreement); if same-key and >5% apart, write a Disagreement-matrix
+    row (cause ∈ `{different seller, stale/aggregated (E2/E3), coverage-gap}`) and resolve by grade,
+    E1 wins; an E2/E3 that can't be lifted corroborates or is discarded, never averaged.
+
+### D. Absence is not a finding, and this is where runs go wrong
+
+**A search result page looks identical whether the market is empty, the query was gated, or you only
+read the top of it.** These four rules tell those apart. Signatures, failure modes and war-stories:
+`source-reliability.md` "Reading a search result page".
+
+- **#11 Control-query gate: a zero is not a zero until a control says so.** Before recording ANY
+  zero-result from a marketplace search, re-query a term that platform certainly stocks. Control also
+  zero → **every zero from that platform this run is void** (an access-state signal, not a stock
+  signal). Cite the control + its result beside the finding. Applies to a brand's own in-store search.
+- **#12 Depth gate: the first page is not the market.** Any ranked "cheapest" MUST declare pages read,
+  unique items, and **how paging was driven**. Test the mechanism, never assume it. Judge pages by
+  **new ids, not returned count** (a full grid of duplicates is a broken pager, and trusting an
+  ignored page param manufactures false coverage). Stop at zero new ids or once the band's floor is
+  covered. Sort order is part of depth: say whether you paged to the floor or sorted by price.
+  - **A silently-ignored page param is the common failure**, and it fails *quietly*: the page still
+    returns 200 with a full grid. Diff item ids across pages before believing any pager. When a web
+    UI has no pager at all, the SPA's own XHR endpoint usually does, capture it from the network log
+    and drive that (worked example: `reference/domains/auction-resale.md` → Goofish mtop).
+  - **Report coverage as a fraction.** Most search backends return a total-hits field; quote it
+    (`read 300 of 3,564`). "Scanned N items" hides whether N is the market or a rounding error.
+  - **Dedupe by SELLER before treating repeated prices as agreement.** Listing spam concentrates on
+    page 1, so a price repeated by one account reads as multi-seller consensus exactly where the
+    evidence is thinnest. Observed in a real run: two accounts had posted 14+ near-identical
+    listings, and the "consensus" price was one seller talking to itself. N listings from one
+    nickname is **one** data point.
+- **#9 Failures AND never-tried become explicit gaps** (`evidence-schema.md` #9):
+  - (a) **Failures:** subagent returns `failed/empty` → one query rewrite + retry; still empty → an
+    explicit "Not covered" entry.
+  - (b) **Coverage floor:** an in-scope channel class (`channel-classes.md`) never attempted is also a
+    gap. "Coverage gaps" MUST list every in-scope class not taken to `E1`; completeness-by-omission
+    is a bug.
+  - (c) **Typed reason, not prose:** `session-gated-declined` / `session-gated-unattended` /
+    `structurally-unreachable` / `tool-outage` / `not-attempted`. Collapsing "one login away" into
+    "no login helps" is what makes a reachable channel look permanently dead. Never backfill a gapped
+    cell with another channel's numbers.
+- **#6 No silent degradation.** Any fallback is stated in-line (`⚠ historical data unavailable, only
+  live price shown...`). **A tool's health line is not evidence it works**: probe it functionally, a
+  server can report Connected while every call returns empty.
+
+### E. Adversarial, what would make this wrong
+
+- **#8 Disconfirmation mandate.** Run a dedicated reverse-search subagent (scam / counterfeit /
+  fake-reseller / refurb-not-as-advertised / DOA) against the cheapest pick; report a "Risks &
+  counter-evidence" section. Empty = "actively reverse-searched, none found, not proof of safety,"
+  never silence. Taxonomy + Codex option: `evidence-schema.md` (#8).
+- **#10 Affiliate and non-merchant prices MUST NOT bias the ranking.** Cross-check any "save $X via
+  our link" claim (Honey, Karma, Slickdeals, smzdm) against the retailer's public price. A price shown
+  by a notification or release-calendar site that is **not itself the merchant** is not reproducible
+  at checkout, `E3` at best. Detail: `evidence-schema.md` (#10).
 
 ## Output
 
@@ -273,7 +391,9 @@ user to `/schedule` (cron re-run) or a native Keepa / Camelcamelcamel / 慢慢�
 ## Progressive loading rules
 
 SKILL.md (this file) is always loaded, keep it the only frequently-loaded content. Read on-demand,
-**never a whole directory**: `reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
+**never a whole directory**: `reference/login-handoff.md` at Step 3b whenever a channel looks
+session-gated, and again before writing any `coverage_gap` whose reason starts `session-gated`;
+`reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
 `reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
 `reference/tools/<slug>.md`; `reference/source-reliability.md` at Step 3/4 when choosing a route and
 again at Step 7 before writing a `coverage_gap` (which sources hold up, which fail and how to detect

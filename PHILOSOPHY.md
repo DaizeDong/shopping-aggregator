@@ -118,6 +118,56 @@ every decision that follows.
 
 ---
 
+## P7, Load budget is a design constraint · 加载预算是设计约束
+
+**SKILL.md is paid for on every single invocation. Reference docs are paid for only when read.**
+That asymmetry is the whole reason progressive loading exists, and it dictates where a sentence
+belongs, not taste:
+
+- **SKILL.md carries the RULE and its test.** Imperative, checkable, and short enough that the reader
+  reaches the end.
+- **References carry the RATIONALE, the signature, and the war-story.** Why the rule exists, how the
+  failure looks when it happens, what to do instead.
+- **The same sentence never appears in both.** A rule with its evidence pasted underneath is not a
+  clearer rule, it is two copies that will drift, and the copy a future reader trusts is whichever
+  one they happened to open.
+
+**The failure mode is specific and it feels like diligence at the time.** You learn something
+expensive in a real run, you write the rule, and then you paste the story that justifies the rule
+right next to it so nobody weakens the rule later. Do that a dozen times and the always-loaded file
+has grown by half while carrying nothing new that is enforceable. Observed here: one change took
+SKILL.md from 291 to 422 lines (+45%), and the added bulk was narrative that the reference doc
+already held verbatim.
+
+**Two questions settle every placement:**
+1. Delete the reference doc. Is SKILL.md still *correct and actionable*? If no, you moved too much out.
+2. Delete the SKILL.md paragraph. Is the rule still *enforceable* from what remains? If yes, the
+   paragraph was rationale and belongs in the reference.
+
+**The tell, and it is nearly always the same section.** An audit across every skill in the fleet found
+one shape recurring: a **war-story / gotcha compendium**, and each one announced itself. Their own
+opening lines say "the rules above already encode the fix, this section explains why" and "each
+gotcha is rooted in a real past incident". **A section that describes itself as explaining where the
+rules above came from is, by definition, a reference.** Move it and leave an ID index; the rules it
+explains are already stated, so nothing enforceable leaves with it. Where such a compendium is
+already cited by ID from elsewhere, the move is pure relocation with no de-duplication risk at all.
+
+**And the inverse tell, which matters just as much.** A small skill whose every run needs every line
+is *correctly* monolithic, and splitting it costs a tool call to save nothing. Two signals that
+prose should STAY in an always-loaded file even though it reads like rationale: it states an
+invariant whose violation is the exact bug the skill exists to fix (a maintainer who does not read it
+will "repair" the thing back into the defect), or it is a troubleshooting branch of the main flow
+rather than an appendix (the failure happens *during* the procedure, so a jump costs more than it
+saves). **Do not refactor for tidiness. Measure first, and be willing to conclude "this one is
+already right".**
+
+**Corollary: fewer files is not the goal.** A directory of small, densely specific docs is healthy
+when each is loaded only by the run that needs it; the audit that motivated this principle went
+looking for bloat in a 33-file tool directory and found layering instead (a one-line routing index, a
+machine-readable registry, and per-tool docs holding real operational knowledge). Merging those would
+have destroyed value while saving nothing at run time. **Count what a run loads, not what the repo
+contains.**
+
 ## How these apply to shopping-aggregator specifically
 
 | Principle | Concrete consequence in this repo |
