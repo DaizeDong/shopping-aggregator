@@ -24,7 +24,15 @@ jobs:
         run: |
           MONTH=$(date -u '+%Y-%m')
           # any commit this month touching the source matrix?
-          HITS=$(git log --since="${MONTH}-01" --oneline -- skills/shopping-aggregator/reference | wc -l)
+          # NOTE the explicit T00:00:00. Without it git parses "2026-08-01" with approxidate,
+          # which fills the MISSING time fields from the CURRENT clock: on a run at 12:00 UTC
+          # the window silently starts at 12:00 on the 1st, not midnight. That is the wrong
+          # direction for this check. The refresh it is watching fires at 07:00 UTC, so a
+          # perfectly successful refresh landed 5 hours BEFORE the window opened and this
+          # heartbeat would open an issue saying it never happened. Demonstrated 2026-08-20 on
+          # a scratch repo: one commit at 00:30 on the 1st, --since="2026-08-01" found 0,
+          # --since="2026-08-01T00:00:00" found 1.
+          HITS=$(git log --since="${MONTH}-01T00:00:00" --oneline -- skills/shopping-aggregator/reference | wc -l)
           if [ "$HITS" -eq 0 ]; then
             echo "No refresh commit found for $MONTH — opening heartbeat issue."
             gh issue create -R "$GITHUB_REPOSITORY" \
