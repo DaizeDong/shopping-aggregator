@@ -1,44 +1,90 @@
 {
   "schema_version": 1,
-  "last_verified": "2026-06",
+  "last_verified": "2026-08",
+  "review_cadence_days": 45,
   "domain": "duty",
-  "title": "Cross-border de-minimis thresholds + typical-category HTS duty rates (US <-> CN/EU). HIGHEST-VOLATILITY facts in repo: re-verify against primary gov sources (CBP / Federal Register / EU Council / GACC / USITC HTS) on EVERY refresh, never from memory.",
+  "title": "US and cross-border duty facts: which tariff INSTRUMENTS are in force, then the rates. HIGHEST-VOLATILITY table in this repo (the 2026 US regime changed three times in eight months). Re-verify against primary sources (SCOTUS / Federal Register / CBP CSMS / USITC HTS / EU Council / GACC) on EVERY refresh, never from memory, and re-ask the instrument question before the rate question.",
   "rows": [
     {
-      "key": "us_de_minimis_section321_status",
-      "value": "SUSPENDED (all countries)",
-      "unit": "bool/status",
-      "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
-      "verified_date": "2026-06-22",
+      "key": "us_active_tariff_instruments_2026_08",
+      "value": "Section 301 (China Lists 1-4) + Section 301 (forced labor, 60 economies) + Section 232 + AD/CVD. NOT IEEPA, NOT Section 122.",
+      "unit": "instrument_list",
+      "source_url": "https://www.federalregister.gov/documents/2026/02/25/2026-03832/ending-certain-tariff-actions",
+      "verified_date": "2026-08-19",
       "evidence_grade": "E1",
-      "note": "Executive Order 14324 (signed 2025-07-30) suspends duty-free de minimis treatment under sec 321(a)(2)(C) of the Tariff Act of 1930 for ALL countries, regardless of origin, for goods valued <= $800. Effective 12:01am EDT 2025-08-29. Previously suspended for China/HK first (eff 2025-05-02). Low-value goods still importable but now require formal/informal ACE entry (Type 11 / Type 01) and pay duty. Corroborated by CBP CSMS #66065494 (https://content.govdelivery.com/accounts/USDHSCBP/bulletins/3f01456) and CBP newsroom (https://www.cbp.gov/newsroom/national-media-release/cbp-ready-enforce-end-de-minimis-loophole-securing-borders-and). Federal Register host blocks automated fetch (302 -> unblock.federalregister.gov); URL is canonical citable primary source."
+      "note": "READ THIS ROW BEFORE ANY RATE ROW. A refresh that re-checks each rate against its own source cannot detect that an instrument was abolished, because the abolishing event is not in that source and the original notice stays online saying what it always said. That is exactly how this file sat two months describing IEEPA as live. Ask WHICH INSTRUMENTS ARE IN FORCE first, then ask the rates. Dead as of 2026-02-24: every IEEPA tariff. Dead as of 2026-07-24: the Section 122 10 pct global surcharge."
+    },
+    {
+      "key": "us_ieepa_tariff_authority_status",
+      "value": "STRUCK DOWN (no IEEPA tariff collected since 2026-02-24)",
+      "unit": "bool/status",
+      "source_url": "https://www.supremecourt.gov/opinions/25pdf/24-1287_4gcj.pdf",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "SCOTUS decided Learning Resources, Inc. v. Trump, No. 24-1287, consolidated with Trump v. V.O.S. Selections, No. 25-250, 607 U.S. 229 (2026), on 2026-02-20, 6 to 3, Roberts writing: IEEPA does not authorize the President to impose tariffs. EO 14389 (91 FR 9437) terminated the IEEPA duties. CBP CSMS #67834313 (2026-02-22) stopped collection for goods entered on or after 12:00 a.m. ET 2026-02-24 and deactivated the IEEPA Chapter 99 codes in ACE. Refunds run through CAPE in the ACE portal. Section 232 and Section 301 were NOT affected, and the de-minimis suspension survived on a separate power."
+    },
+    {
+      "key": "us_section_122_surcharge_status",
+      "value": "EXPIRED 2026-07-24 (was 10 pct global)",
+      "unit": "bool/status",
+      "source_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/25/2026-03824.txt",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Proclamation 11012 (91 FR 9339) imposed a temporary 10 pct ad valorem import surcharge effective 12:01 a.m. EST 2026-02-24, capped by statute at 150 days, and it lapsed by operation of law at 12:01 a.m. EDT 2026-07-24 without Congressional extension. CAVEAT, foreign-trade-zone users only: goods admitted to a US FTZ in privileged foreign status during the window and entered for consumption after expiry still pay the 10 pct (CBP CSMS 67844987, 19 CFR 146.65). Not applicable to ordinary consumer imports."
+    },
+    {
+      "key": "us_section_301_forced_labor_status",
+      "value": "IN FORCE since 2026-07-24, 60 economies, 10 to 12.5 pct",
+      "unit": "% (ad valorem)",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "USTR final action announced 2026-07-23, duties on entries on or after 12:01 a.m. ET 2026-07-24 (goods loaded before that moment and entered before 12:01 a.m. ET 2026-07-28 are exempt). Published 91 FR 47318 (FR Doc 2026-15181), dockets USTR-2026-0265 and USTR-2026-0266, HTS headings 9903.05.20 through 9903.05.84. CBP guidance CSMS #69326983. Three suits are pending at the CIT (25 state AGs filed 2026-08-03) with no injunction and no merits ruling as of 2026-08-19, so collection continues."
+    },
+    {
+      "key": "us_section_301_forced_labor_tier_mechanic",
+      "value": "FOUR tiers, not two. Two of them are NET OF MFN and are NOT additive.",
+      "unit": "mechanic",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "CODING THIS AS A UNIFORM ADD-ON WILL CORRUPT LANDED COST. 10 pct flat (17 economies). 10 pct NET OF MFN (EU member states, Taiwan). 12.5 pct NET OF MFN (Japan, South Korea, Switzerland). 12.5 pct flat (38 economies). For the net-of-MFN tiers the 301 duty is only the GAP, so MFN plus 301 equals the tier rate, and the 301 component is zero where MFN already meets or exceeds it (US note 52(k)). The flat tiers stack on MFN Column 1, stack on the pre-existing China Lists 1-4 (9903.88.xx), and stack on AD/CVD. Section 232 covered goods are carved out at 9903.05.90; USMCA duty-free Canada and Mexico goods at 9903.05.93 and 9903.05.94."
+    },
+    {
+      "key": "us_de_minimis_section321_status",
+      "value": "SUSPENDED (all countries), and it SURVIVED the IEEPA ruling",
+      "unit": "bool/status",
+      "source_url": "https://www.federalregister.gov/documents/2026/06/24/2026-11455/suspension-of-duty-free-de-minimis-treatment",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Still suspended on 2026-08-19, and NOT collateral damage from the Supreme Court striking down IEEPA tariff authority, because it rests on a different power. EO 14388 (91 FR 17839, effective 2026-02-24) continues the suspension under IEEPA 50 USC 1702(a)(1)(B), the power to nullify or void the exercising of a privilege, which is not the tariff power the Court rejected. CBP then issued two interim final rules on 2026-06-24 (91 FR 37789 non-postal, 19 CFR pt 10; 91 FR 37801 postal, 19 CFR pt 145) stating verbatim that CBP acts independently pursuant to its own statutory authorities, which gives the suspension a second leg that does not depend on IEEPA at all. The CIT upheld it on 2026-08-13 in Axle of Dearborn (Detroit Axle) v. Dept of Commerce, Ct. No. 25-00091, Slip Op. 26-94. PRACTICAL ANSWER: a US consumer today CANNOT receive a commercial parcel under 800 USD duty free. Entry is formal or informal in ACE with a 10-digit HTSUS classification and all duties due, at any value."
     },
     {
       "key": "us_de_minimis_threshold_legacy",
       "value": 800,
       "unit": "USD",
       "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
-      "verified_date": "2026-06-22",
+      "verified_date": "2026-08-19",
       "evidence_grade": "E1",
-      "note": "The former Section 321 de-minimis value ($800, per 19 USC 1321(a)(2)(C)). NOW SUSPENDED for all countries as of 2025-08-29 -- this $800 no longer grants duty-free entry. Statutory repeal of Section 321 de minimis is also scheduled for 2027-07-01 under the One Big Beautiful Bill Act. Do NOT treat $800 as a live duty-free threshold."
+      "note": "The former Section 321 de-minimis value (800 USD, 19 USC 1321(a)(2)(C)). SUSPENDED, so it no longer grants duty-free entry. Do NOT treat 800 USD as a duty-free ceiling. Statutory repeal follows on 2027-07-01 under the OBBBA, which will make the suspension moot rather than change today's answer."
     },
     {
       "key": "us_de_minimis_repeal_date_statutory",
       "value": "2027-07-01",
       "unit": "date",
       "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
-      "verified_date": "2026-06-22",
+      "verified_date": "2026-08-19",
       "evidence_grade": "E2",
-      "note": "One Big Beautiful Bill Act (signed 2025-07-04) permanently repeals Section 321 de minimis effective 2027-07-01. Date reported in multiple summaries of the Act; not independently confirmed against the bill text in this pass -> graded E2. Practically moot since admin already suspended de minimis worldwide on 2025-08-29."
+      "note": "One Big Beautiful Bill Act, Pub. L. 119-21 sec. 70531(b), 139 Stat. 72, 283, permanently repeals the Section 321 de-minimis administrative exemption effective 2027-07-01. This is a FUTURE date and is NOT the basis for today's suspension; see us_de_minimis_section321_status for the live basis."
     },
     {
       "key": "us_personal_gift_exemption",
       "value": 100,
       "unit": "USD",
       "source_url": "https://www.federalregister.gov/documents/2025/09/02/2025-16802/notice-of-implementation-of-the-presidents-executive-order-14324-suspending-duty-free-de-minimis",
-      "verified_date": "2026-06-22",
-      "evidence_grade": "E3",
-      "note": "Bona-fide gift exemption (~$100) reported as unaffected by the de-minimis suspension; long-standing CBP rule under 19 USC 1321(a)(2)(A). Value sourced from secondary summary only, not directly from the CBP regulation in this pass -> graded E3. UNVERIFIED against primary CBP gift-exemption text; confirm before relying."
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E2",
+      "note": "Bona-fide gift exemption under 19 USC 1321(a)(2)(A), a DIFFERENT subsection from the suspended (a)(2)(C), confirmed still available on 2026-08-19. 100 USD generally, 200 USD from insular possessions. The personal-baggage exemption at (a)(2)(B) also survives. Neither is a lawful route for a commercial purchase."
     },
     {
       "key": "eu_customs_duty_de_minimis_threshold",
@@ -132,12 +178,12 @@
     },
     {
       "key": "worked_example_us_import_cotton_tshirt_from_cn",
-      "value": "20 cotton T-shirts at $8 = $160 intrinsic; de-minimis SUSPENDED so duty owed = $160 x 16.5% = $26.40 base MFN duty (before any Section 301/IEEPA China surtax + MPF + formal/informal entry); pre-2025-08-29 this $160 entered duty-free under Section 321 $800.",
+      "value": "20 cotton T-shirts at $8 = $160 intrinsic, China origin. De-minimis SUSPENDED so duty is owed: 16.5 pct MFN + 25 pct List 3 (9903.88.03) + 12.5 pct forced-labor 301 (9903.05.31) = 54 pct = $86.40, plus MPF and entry filing.",
       "unit": "worked_example",
       "source_url": "https://hts.usitc.gov/search?query=6109.10.00",
-      "verified_date": "2026-06-22",
+      "verified_date": "2026-08-19",
       "evidence_grade": "E1",
-      "note": "Illustrates the post-suspension swing: a $160 China-origin apparel parcel went from $0 (Section 321 de-minimis) to >= $26.40 base duty plus stacked China tariffs + Merchandise Processing Fee + entry filing. De-minimis suspension is the dominant landed-cost driver. Combines hts_apparel_cotton_tshirt_6109_10_00 (16.5%) + us_de_minimis_section321_status (suspended)."
+      "note": "Updated 2026-08-19. The previous version of this row said 'before any Section 301/IEEPA China surtax'. IEEPA no longer exists; the live China stack is MFN plus List 3 plus the forced-labor 301. Before 2025-08-29 this same $160 parcel entered duty free under Section 321."
     },
     {
       "key": "worked_example_eu_import_smartphone_under_150",
@@ -147,6 +193,78 @@
       "verified_date": "2026-06-22",
       "evidence_grade": "E1",
       "note": "Shows EU change: customs duty goes from EUR 0 to EUR 3 flat per HS6 category from 2026-07-01; VAT was always due (no VAT de-minimis since 2021). VAT rate is destination-member-state specific (DE 19% used illustratively). Combines eu_low_value_flat_duty + eu_import_vat_de_minimis_threshold."
+    },
+    {
+      "key": "us_section_301_forced_labor_rate_cn",
+      "value": 12.5,
+      "unit": "% (ad valorem, flat additive)",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "China origin, HTS heading 9903.05.31. FLAT, so it adds on top of both Column 1 and any China List 1-4 duty. Hong Kong is 9903.05.43."
+    },
+    {
+      "key": "us_section_301_forced_labor_rate_th",
+      "value": 12.5,
+      "unit": "% (ad valorem, flat additive)",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Thailand origin, HTS heading 9903.05.77. FLAT additive. Load-bearing for consumer electronics and optics, much of which is built in Thailand, so a product that is neither Chinese nor American still carries this."
+    },
+    {
+      "key": "us_section_301_forced_labor_rate_jp",
+      "value": 12.5,
+      "unit": "% (ad valorem, NET OF MFN, not additive)",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Japan origin, HTS headings 9903.05.48 (MFN already at or above 12.5 pct, no additional duty) and 9903.05.49 (MFN below 12.5 pct, combined Column 1 plus 301 equals 12.5 pct). DO NOT read Japan as exempt. A Japan-origin good whose MFN rate is Free still lands at 12.5 pct total, not 0 pct, because the 301 fills the entire gap."
+    },
+    {
+      "key": "us_section_301_china_list3_rate",
+      "value": 25,
+      "unit": "% (ad valorem, additive)",
+      "source_url": "https://hts.usitc.gov/reststop/file?release=currentRelease&filename=China+Tariffs",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Section 301 List 3, HTS heading 9903.88.03, reads 'The duty provided in the applicable subheading + 25%'. 10 pct from 2018-09-24, raised to 25 pct effective 2019-05-10 (84 FR 20459). US notes 20(e) and 20(f), subchapter III, chapter 99. China origin only. The USITC China Tariffs concordance (last updated 2026-07-28) is the authoritative HTS-to-Chapter-99 mapping; use it rather than any summary site, which is how two summary sites once returned two different wrong rates for one category."
+    },
+    {
+      "key": "us_tariff_origin_rule",
+      "value": "country of ORIGIN (where manufactured), never country of export",
+      "unit": "rule",
+      "source_url": "https://www.cbp.gov/trade/programs-administration/trade-remedies/section-301-trade-remedies/faqs",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Section 301 duties attach to the country of origin, not the country the parcel ships from. A Thailand-built item shipped from China is Thailand origin and does NOT pay the China List 3 duty; a China-built item shipped from Japan does pay it. For consumer goods the origin is usually printed on the product itself and absent from every retailer page, so it often has to be asked for before a landed cost can be computed at all. This one fact can swing a landed cost by tens of percent."
+    },
+    {
+      "key": "hts_camera_lens_9002_11_90_00",
+      "value": 2.3,
+      "unit": "% (ad valorem, General/Col-1)",
+      "source_url": "https://hts.usitc.gov/search?query=9002.11.90",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "USITC HTS 9002.11.90.00, 'Objective lenses and parts and accessories thereof: For cameras, projectors or photographic enlargers or reducers: Other'. 2026 HTS Revision 16. Column 2 is 45 pct. Special is 'Free (A,AU,BH,CL,CO,D,E,IL,JO,JP,KR,MA,OM,P,PA,PE,S,SG)'. CAUTION: program code A is GSP, lapsed since 2020-12-31 and not claimable today. The only exclusion ever written for this statistical line (note 20(vv) item 163, M12-mount machine-vision lenses) is marked expired. This line is NOT on the note 52(b) forced-labor exemption list."
+    },
+    {
+      "key": "worked_example_us_import_camera_lens_by_origin",
+      "value": "Same lens, three origins: Thailand 2.3 + 12.5 = 14.8 pct; China 2.3 + 25 + 12.5 = 39.8 pct; Japan 12.5 pct total (net-of-MFN, NOT 0).",
+      "unit": "worked_example",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E1",
+      "note": "Shows why origin dominates the landed cost and why the net-of-MFN tier must not be modelled as an add-on. Japan is the trap: its Column 1 rate for this line is Free under the JP special program, which reads like 0 pct total, but the forced-labor 301 tops the combined rate up to 12.5 pct. Combines hts_camera_lens_9002_11_90_00, us_section_301_china_list3_rate, us_section_301_forced_labor_rate_cn / _th / _jp, and us_tariff_origin_rule."
+    },
+    {
+      "key": "us_pending_tariff_actions_watchlist",
+      "value": "4 pending actions that could move these rates before the next scheduled refresh",
+      "unit": "watchlist",
+      "source_url": "https://www.federalregister.gov/documents/2026/07/28/2026-15181/notice-of-actions-in-section-301-investigations-of-acts-policies-and-practices-of-various-economies",
+      "verified_date": "2026-08-19",
+      "evidence_grade": "E2",
+      "note": "This is why the file carries a 45-day cadence. (1) A SECOND Section 301 action on structural excess capacity is pending against 16 economies including China, Thailand and Japan, and would add a layer this file does not model. (2) The Second Four-Year Review of the China technology-transfer 301 was initiated 2026-05-06 (FR 2026-08806) and is the instrument that could move the List 3 rate. (3) Section 232 on unmanned aircraft systems takes effect 2026-09-03; camera lenses are not in its annexes today, but Commerce may add UAS components by notice effective on the date of the finding, and optics modules are a plausible candidate. (4) Drawback was disallowed on the forced-labor 301 headings effective 2026-08-12 (CSMS 69535943), which changes cost for re-exporters only."
     }
   ]
 }

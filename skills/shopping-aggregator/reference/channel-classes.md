@@ -34,6 +34,7 @@ not actually take to a real read becomes a `not-attempted` coverage gap (guardra
 | price-comparison engine | meta-aggregators that index many merchants' offers for one product (esp. **EU**, where this is the dominant discovery layer) | **EU: Idealo (pan-EU: DE/AT/FR/ES/IT/UK), Geizhals (DACH, electronics/specs), PriceRunner (UK + Scandinavia)** · pan-region: Google Shopping (free listings) · (US analogue: BigGo / Google Shopping) | browser ④ (none expose a consumer price API); read the engine, then E1-confirm the winning merchant's own PDP |
 | travel-booking / OTA | booking intermediaries + brand-direct for **lodging** (a distinct buyer-channel TYPE, not a store) | Booking, Expedia, Hotels.com, Priceline · brand.com (Hilton/Marriott/IHG) · Google Hotels (discovery only) | browser ④ (rate/availability live; **verify dates on the actual channel**, Google Hotels locks dates) |
 | **C2C / social secondhand** | person-to-person resale apps, where the *seller is an individual*, distinct from auction-house and consignment resale. Often the only channel carrying a discontinued or region-exclusive item at all | Mercari, Poshmark, Depop, Facebook Marketplace, Craigslist · CN: 闲鱼/goofish, 转转, 得物, 微店 | **④ and almost always S2 session-gated**, see [`login-handoff.md`](./login-handoff.md). Search itself is walled and returns zero rather than an error; engines do not index these PDPs. Never file as unreachable before the operator has been offered the handoff |
+| **offer-brokerage / name-your-price** | intermediaries where the buyer NAMES a price and **authorized** dealers privately accept or counter. The only channel that legitimately transacts BELOW MAP while keeping the full manufacturer warranty, because MAP binds the *advertised* price, not the transacted one | GreenToe (US: cameras, TVs, watches, appliances, optics) | ④, but the transacted price is **never published**: it cannot be read off a page, only elicited by submitting an offer |
 
 > **price-comparison-engine is a DISCOVERY layer, not a price of record.** An engine's listed price is
 > an indexed/cached offer, it can be stale, exclude shipping, or point at an unauthorized merchant.
@@ -42,6 +43,19 @@ not actually take to a real read becomes a `not-attempted` coverage gap (guardra
 > before ranking it. Never rank a bare engine price as the winner. EU engine coverage verified 2026-06
 > ([Idealo](https://en.wikipedia.org/wiki/Idealo),
 > [EU comparison-site landscape](https://prisync.com/blog/europe-price-comparison-landscape/)).
+
+> **offer-brokerage prices cannot be READ, only ELICITED, and eliciting one is a commitment.** This
+> class exists wherever a manufacturer enforces MAP (camera, TV, watch, appliance), which is exactly
+> where every visible retailer quotes the identical number and a run looks finished at that number.
+> Three rules. **(1)** The broker's own "lowest online" table is an **affiliate placement**, not a
+> price of record; guardrail #10 applies to it. Observed: a broker cited a first-party retailer $300
+> under that retailer's live price, on a link carrying the broker's own affiliate tag. **(2)** An
+> offer is typically a **firm, irrevocable commitment** that auto-charges on acceptance, and the
+> return may carry a restocking fee the accepting retailer sets, so this class cannot be taken to E1
+> the way a PDP can. **(3)** The agent **NEVER submits an offer** (CONSTITUTION V.4). Cover the class
+> by naming the broker, a calibrated offer band, and the commitment caveat. Calibrate the band from
+> the brand's observed discount depth, not from the broker's displayed anchor, which is the number
+> most likely to be stale.
 
 ## Coverage rule
 
@@ -57,6 +71,12 @@ a door first. A class that is **S2 session-gated** is NOT a gap until the operat
 the login handoff and declined ([`login-handoff.md`](./login-handoff.md)), and its gap reason is
 typed `session-gated-declined`, never `structurally-unreachable`. The C2C class above is the one
 that is S2 by default, which is exactly why it kept getting written off.
+
+**One class cannot reach E1 without spending the operator's money.** An offer-brokerage price does
+not exist until a binding offer is placed, so for that class alone a named broker plus a calibrated
+offer band plus the commitment caveat IS the covered state. Placing the offer is the operator's
+action, never the agent's, and a declined handoff is typed `not-attempted`, never
+`structurally-unreachable`.
 
 ## X1, channel-class ↔ shard coverage map
 
@@ -76,6 +96,7 @@ as a `not-attempted` gap if skipped). Use it to confirm an in-scope class is not
 | refurb / open-box | `amazon-us` (WHD), `ebay-walmart-target` | ④ | only if refurb-OK |
 | **price-comparison engine** | `claude-mcps` (BigGo, US), `oss-self-host` (pricebuddy EU) partial; **EU Idealo/Geizhals/PriceRunner have NO dedicated shard** | ④ | **shard-thin for EU**, read the engine via browser, then E1 the merchant PDP. Non-US/CN regional routing → [`../sources-index.md`](../sources-index.md) regional note |
 | **travel-booking / OTA** | `hotel-travel` | ④ | Booking.com is the spine; total-stay cost READ off the Your-Details `(NN% Tax)` line (never hard-coded) + separate parking research; Google Hotels discovery-only (date-lock). Flights/cars/trains OUT of scope |
+| **offer-brokerage / name-your-price** | (none dedicated) | ④ | **shard-thin**; in scope only for MAP-controlled categories. The price is not on the page, so "covered" means a named broker + a calibrated offer band + the commitment caveat, not a read. Agent never submits the offer |
 
 ## What this is NOT
 
@@ -84,4 +105,4 @@ as a `not-attempted` gap if skipped). Use it to confirm an in-scope class is not
   (mixing them re-introduces the supply-side rigidity that hid Micro Center).
 - NOT a refactor of the domain shards, this sits ABOVE them; shards stay access-method-oriented.
 
-## Last verified: 2026-07
+## Last verified: 2026-08
