@@ -16,7 +16,7 @@
 > things that make an observation *someone's*. If you cannot state the lesson without naming what was
 > bought, it is not a lesson yet; leave it in the private file.
 
-`last_verified: 2026-07`
+`last_verified: 2026-08`
 
 ## The one-paragraph version
 
@@ -116,6 +116,15 @@ navigated away or closed under each other more than a dozen times over one run.
 - **Budget implication:** retries against a contended browser are not free, they are the single
   largest observed time sink in a fan-out run. One control query beats eleven keyword retries.
 
+**A dead MCP is not a dead capability.** A browser MCP has been observed reporting `Connected` in
+the health listing while its tools resolved from the deferred registry **not at all**, by keyword and
+by exact name alike, in the main session and in every one of twelve subagents. When the health line
+and the tool registry disagree, the health line is the one lying, which is the same shape as #6.
+Before recording a browser-only channel as unreachable, check whether the browser library is
+**installed locally**: driving it straight from the shell against the operator's already-persisted
+session file restores exactly what the MCP was providing. Doing that recovered a channel that no
+other route could reach at all, after the MCP failure had already been written up as a tool outage.
+
 ## Reading a search result page
 
 Absorbed here: the old "a verified ZERO is a finding" entry, plus the paging and endpoint failures
@@ -154,6 +163,24 @@ different things**, and telling them apart is the whole skill:
 - **Sorting is part of depth.** A relevance-sorted first page is not a price-sorted one. Either page
   deep enough to reach the band's floor or sort by price, and say which you did.
 
+- **A sort parameter can be inert and fail silently.** Observed on one marketplace: descending
+  price sort returned an id sequence **identical position for position** to no sort at all, while
+  ascending sort returned a different set containing ids the descending pass never saw. An agent
+  used the inert one as its measuring instrument and then stopped on a saturation signal that the
+  working one contradicts. Diff id sequences with and without the parameter before trusting either,
+  the same test #12 already demands for paging.
+- **Some sites render their own zero, and that is a gift.** A search that returns a literal
+  nothing-found string, a page counter reading 1 of 1, and a grid backfilled with unrelated stock is
+  **self-reporting** the zero. That is distinguishable from a block on sight. Run the control query
+  anyway, it costs nothing and it also proves the session is live.
+- **A price can be split across sibling DOM nodes, with the LIVE price first.** One marketplace
+  renders a card as separate nodes for the currency mark, the integer, the fraction and a magnitude
+  suffix, places any struck-through original **after** the live price, and puts no separator before
+  the following interest counter. A largest-number regex therefore reads the struck-through value,
+  and an unbounded one concatenates the price with the counter into a number an order of magnitude
+  too large. Take the **first** currency token and stop at the next non-numeric boundary. Where the
+  page is an SPA, its own XHR returns clean fields and is worth the effort of driving directly.
+
 ## What a listing page says versus what is true
 
 - **The stock attribute lies more often than the buy box.** Structured "in stock" parameters and
@@ -170,6 +197,31 @@ different things**, and telling them apart is the whole skill:
 - **Promotions: a PDP lists what EXISTS, the order-confirm page shows what STACKS.** Conditional
   offers (new-customer credits, threshold discounts, account-level vouchers) cannot be resolved from
   the PDP. Quote a range with the conditions named, and say when the confirm page was not reached.
+
+- **A brand-direct restock alert may simply not exist**, so do not promise one without checking.
+  On one first-party store the entire UI string table contained **zero** notify or waitlist strings,
+  and the only product buttons defined were add-to-cart, out-of-stock, preorder and unavailable. A
+  "Back in Stock" link in the navigation was a browse CATEGORY, not a subscription. The only
+  mechanism that actually worked was an external page monitor that renders JS.
+- **One listing can BE the market.** A buyer arriving with a price they believe is the going rate may
+  be quoting the only listing of that article on that platform, which makes it the **ceiling**, not
+  the rate. Check whether an anchor price is a distribution or a single point before benchmarking
+  against it. On the one listing that mattered, the review block rendered anonymously and showed the
+  seller had never received a real review for that item.
+- **A regional reissue is not automatically the same article.** Same product line, same brand,
+  comparable price, and still a different physical object: a vendor post described a reissue as
+  having changed one construction detail, and a review video existed devoted entirely to
+  domestic-versus-imported differences. **The existence of a comparison video is itself evidence the
+  two differ.** Grade identity on stated dimensions, weight and a manufacturer id, never on name and
+  price agreement.
+- **The decoy field around a sought-after item can hold five or more distinct objects, and the cheap
+  ones are the loud ones.** Catalogued in one category: the full-size article, a same-name accessory
+  at one sixth the size, a charm whose title still contains the full-size product word, a
+  same-character item from an entirely different product line, workshop replicas, and unlicensed
+  factory copies. Many sellers cluster on the cheap decoy, which reads as market consensus exactly
+  where it is most misleading. **Price band does not discriminate them:** on one platform the two
+  bands overlapped outright, falsifying a heuristic that had held elsewhere. Stated dimensions,
+  weight and a JAN or UPC do.
 
 ## Cross-border
 
@@ -198,6 +250,14 @@ Three route facts that recur:
   it may be **anonymous even when its product pages require login**, so a route can be priced
   exactly while the purchase path is unavailable. Also check the site's own FX rate: a forwarder
   quoting in one currency while charging in another adds a spread on top of the freight.
+
+**On a non-English platform, query the LOCAL name before concluding the platform has none.** A
+character or product frequently ships under a localized name sharing no characters with the English
+or transliterated one. Observed: the English-name query returned a self-rendered zero on a platform
+that in fact carried pages of matches under the local name, including an entire **regional official
+release** that appears in no English or Japanese source and undercut the imported version by roughly
+two thirds on that same platform. Getting the local name wrong produces a zero that looks exactly
+like absence.
 
 **Tariff schedules: verify list membership against the primary schedule, never a summary.** Two
 independent tariff-summary sites gave two different rates for the same category, and both were
