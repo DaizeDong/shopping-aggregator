@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "last_verified": "2026-06",
+  "review_cadence_days": 180,
   "domain": "shipping",
   "title": "Retailer free-shipping baselines (free-ship thresholds for guest / non-member buyers)",
   "rows": [

@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "last_verified": "2026-06",
+  "review_cadence_days": 365,
   "domain": "tax",
   "title": "US state-level general sales tax rates (50 states + DC)",
   "_note": "value = state statutory general sales-tax rate (%). note = typical local add-on (avg local + combined), per Tax Foundation State and Local Sales Tax Rates 2026 (as of 2026-01-01), itself sourced from state DORs + Sales Tax Clearinghouse. CA/UT/VA state rates include mandatory statewide local add-ons (matches DOR base). This is the GENERAL retail sales tax, NOT vehicle-specific mechanisms (TAVT/HUT/excise/IMF), so figures differ from buy-me-a-car/data/state_fees.json tax_state by design.",

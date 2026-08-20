@@ -23,3 +23,13 @@ jobs:
         # They are a maintainer-side check (run `python tools/verify_matrix.py` locally, authenticated,
         # before a matrix change). CI enforces every offline durable-contract + data-integrity check.
         run: python tools/verify_matrix.py --no-net
+
+      # The freshness gate's own tests. Its logic is pure local arithmetic (an age against a
+      # per-file declared cadence), so it is unit-tested directly rather than through the matrix
+      # gate, which would burn GitHub API quota to assert date maths. ABSENT is a failure, not a
+      # reason to skip, same rule the pii-guard workflow states: a guard that is not here is not a
+      # guard. Verified by deleting the file and watching this step exit non-zero.
+      - name: Data-freshness gate tests (can it still tell stale from unchecked?)
+        run: |
+          test -f tools/test_data_freshness.py || { echo "::error::tools/test_data_freshness.py is MISSING -- re-vendor it (install.py); a guard that is not here is not a guard"; exit 1; }
+          python -m pytest tools/test_data_freshness.py -q
