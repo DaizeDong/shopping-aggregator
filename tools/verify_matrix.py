@@ -54,7 +54,9 @@ ADDED (provenance + registration — new this revision):
             without a git baseline.
 
 ADDED (data-integrity — prior revision):
-  DATA      reference/data/*.json conform to the envelope {schema_version,last_verified,rows:[...]}
+  DATA      reference/data/*.json conform to the envelope
+            {schema_version,last_verified,review_cadence_days,rows:[...]} and are not past
+            their own declared re-verification cadence
             and every row carries source_url + verified_date (BLOCK on violation; future date BLOCK).
             No data dir / no json files => silent no-op (so the baseline stays green until the
             parallel agent lands reference/data/). Envelope schema is owned by
@@ -116,6 +118,71 @@ def block(code, msg):
 
 def warn(code, msg):
     warns.append(f"[{code}] {msg}")
+
+
+def check_data_freshness(fn, obj, today):
+    """Envelope freshness for one reference/data/*.json. PURE: returns [(level, code, msg)].
+
+    Kept out of run_checks() so it is unit-testable without touching the network. run_checks()
+    does the GitHub round-trips, so testing freshness through it would burn API quota to assert
+    something that is entirely local arithmetic.
+
+    WHY THIS EXISTS. data/README.md already said cross-border de-minimis "must be re-verified
+    against the primary government source on every refresh, never from memory". That was an
+    intention with no mechanism. The file then sat two months past its refresh still describing
+    IEEPA as live tariff authority, months after the Supreme Court struck it down, and every gate
+    in this repo stayed green throughout, because the gates only asked whether `last_verified`
+    EXISTED and was not in the FUTURE. Nothing ever asked whether it was OLD. A gate that
+    reassures is this fleet's signature defect (same shape load_budget's docstring describes).
+    This is the mechanism (PHILOSOPHY P2).
+
+    One global TTL would be wrong in both directions: statutory sales-tax rates move about once a
+    year, while the 2026 US tariff regime moved three times in eight months. So each table
+    declares its own `review_cadence_days`, and declaring it is mandatory: a table that never says
+    how fast it rots can never be reported stale, which is precisely how this file class went
+    silently wrong.
+    """
+    out = []
+    if "last_verified" not in obj:
+        return [("block", "DATA", f"data/{fn} missing envelope key 'last_verified'")]
+
+    lv = str(obj["last_verified"]).strip()
+    mlv = re.match(r"^(\d{4})-(\d{2})$", lv)
+    if not mlv:
+        # An unparseable stamp must NOT silently skip the checks below. A file whose age cannot be
+        # computed is indistinguishable from one never verified at all, so it fails rather than
+        # passing quietly. The previous `if mlv and ...` let a malformed stamp sail past the future
+        # check, and would have let it sail past this one too.
+        return [("block", "DATA", f"data/{fn} 'last_verified' {lv!r} is not YYYY-MM, so its age "
+                                  f"cannot be computed and its freshness cannot be asserted")]
+
+    yy, mm = int(mlv.group(1)), int(mlv.group(2))
+    if not 1 <= mm <= 12:
+        return [("block", "DATA", f"data/{fn} 'last_verified' {lv!r} has month {mm:02d}, not 01-12")]
+    if f"{yy:04d}-{mm:02d}" > today.strftime("%Y-%m"):
+        return [("block", "DATA", f"data/{fn} 'last_verified' {lv} is in the future")]
+
+    cad = obj.get("review_cadence_days")
+    if isinstance(cad, bool) or not isinstance(cad, int) or cad <= 0:
+        return [("block", "DATA", f"data/{fn} missing positive-integer envelope key "
+                                  f"'review_cadence_days'. A table that never declares how fast it "
+                                  f"rots can never be reported stale, which is exactly how this "
+                                  f"file class went silently wrong")]
+
+    age_days = (today - datetime.date(yy, mm, 1)).days
+    if age_days > 2 * cad:
+        out.append(("block", "DATA",
+                    f"data/{fn} is {age_days}d old against its own declared {cad}d cadence (over 2x). "
+                    f"Re-verify each row against its primary source AND re-ask whether the "
+                    f"instruments those rows describe still exist, then bump 'last_verified'. "
+                    f"Row-level re-checking alone does not catch an abolished instrument: the "
+                    f"original notice stays online and still says what it said. To relax instead, "
+                    f"raise 'review_cadence_days' deliberately and record why in CHANGELOG.md"))
+    elif age_days > cad:
+        out.append(("warn", "DATA",
+                    f"data/{fn} is {age_days}d old against its own declared {cad}d cadence, "
+                    f"due for re-verification"))
+    return out
 
 
 def read(path):
@@ -784,46 +851,51 @@ def run_checks():
     # ================================================================= ADDED CHECK (data integrity)
     # ---- DATA: reference/data/*.json conform to the envelope + per-row provenance ----
     # Envelope (owned by reference/data/README.md): {schema_version, last_verified, rows:[{...}]}
-    # Each row MUST carry source_url + verified_date. No data dir / no json => silent no-op so the
-    # baseline stays green until the parallel agent lands the directory.
-    if os.path.isdir(DATA_DIR):
-        data_files = sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".json"))
-        for fn in data_files:
-            path = os.path.join(DATA_DIR, fn)
-            try:
-                obj = json.loads(read(path))
-            except Exception as e:
-                block("DATA", f"data/{fn} is not valid JSON: {e}")
+    # Each row MUST carry source_url + verified_date.
+    #
+    # The old wording here was "No data dir / no json => silent no-op so the baseline stays green
+    # until the parallel agent lands the directory." That scaffold outlived its reason: the
+    # directory landed, and the temporary green became permanent. As written, deleting or renaming
+    # reference/data/ made every check below vanish and the gate print clean, which is the same
+    # measure-nothing-and-report-success defect load_budget's docstring documents. This repo SHIPS
+    # data tables; their absence is a defect in the repo or in this resolution, never a clean run.
+    data_files = (sorted(f for f in os.listdir(DATA_DIR) if f.endswith(".json"))
+                  if os.path.isdir(DATA_DIR) else [])
+    if not data_files:
+        block("DATA", f"no reference/data/*.json found under {os.path.relpath(DATA_DIR, ROOT)}: "
+                      f"nothing was measured, so nothing is cleared. Restore the tables or remove "
+                      f"this check deliberately; do not let it pass by finding nothing")
+    for fn in data_files:
+        path = os.path.join(DATA_DIR, fn)
+        try:
+            obj = json.loads(read(path))
+        except Exception as e:
+            block("DATA", f"data/{fn} is not valid JSON: {e}")
+            continue
+        if not isinstance(obj, dict):
+            block("DATA", f"data/{fn} top-level is not a JSON object (expected envelope dict)")
+            continue
+        if "schema_version" not in obj:
+            block("DATA", f"data/{fn} missing envelope key 'schema_version'")
+        for _lvl, _code, _msg in check_data_freshness(fn, obj, today):
+            (block if _lvl == "block" else warn)(_code, _msg)
+        rows = obj.get("rows")
+        if not isinstance(rows, list):
+            block("DATA", f"data/{fn} envelope 'rows' is missing or not a list")
+            continue
+        for i, row in enumerate(rows):
+            if not isinstance(row, dict):
+                block("DATA", f"data/{fn} rows[{i}] is not an object")
                 continue
-            if not isinstance(obj, dict):
-                block("DATA", f"data/{fn} top-level is not a JSON object (expected envelope dict)")
-                continue
-            if "schema_version" not in obj:
-                block("DATA", f"data/{fn} missing envelope key 'schema_version'")
-            if "last_verified" not in obj:
-                block("DATA", f"data/{fn} missing envelope key 'last_verified'")
+            if not row.get("source_url"):
+                block("DATA", f"data/{fn} rows[{i}] missing non-empty 'source_url'")
+            if not row.get("verified_date"):
+                block("DATA", f"data/{fn} rows[{i}] missing non-empty 'verified_date'")
             else:
-                lv = str(obj["last_verified"])
-                mlv = re.match(r"(\d{4})-(\d{2})", lv)
-                if mlv and f"{mlv.group(1)}-{mlv.group(2)}" > this_month:
-                    block("DATA", f"data/{fn} 'last_verified' {lv} is in the future")
-            rows = obj.get("rows")
-            if not isinstance(rows, list):
-                block("DATA", f"data/{fn} envelope 'rows' is missing or not a list")
-                continue
-            for i, row in enumerate(rows):
-                if not isinstance(row, dict):
-                    block("DATA", f"data/{fn} rows[{i}] is not an object")
-                    continue
-                if not row.get("source_url"):
-                    block("DATA", f"data/{fn} rows[{i}] missing non-empty 'source_url'")
-                if not row.get("verified_date"):
-                    block("DATA", f"data/{fn} rows[{i}] missing non-empty 'verified_date'")
-                else:
-                    vd = str(row["verified_date"])
-                    mvd = re.match(r"(\d{4})-(\d{2})", vd)
-                    if mvd and f"{mvd.group(1)}-{mvd.group(2)}" > this_month:
-                        block("DATA", f"data/{fn} rows[{i}] 'verified_date' {vd} is in the future")
+                vd = str(row["verified_date"])
+                mvd = re.match(r"(\d{4})-(\d{2})", vd)
+                if mvd and f"{mvd.group(1)}-{mvd.group(2)}" > this_month:
+                    block("DATA", f"data/{fn} rows[{i}] 'verified_date' {vd} is in the future")
 
 
 def main():
