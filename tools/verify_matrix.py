@@ -530,7 +530,12 @@ def run_checks():
                 block("STAR", f"{repo}: claims {claimed_k}k★ but API says {real} (>{int(STAR_TOL*100)}% off)")
 
     # ---- GHACTIVE (deterministic activity gate; archived/404 BLOCK, stale WARN, RL bypass) ----
-    GH_CACHE = os.path.join(SKILL, "metrics", "gh-api-cache.json")
+    # The API cache goes to the COMPANION, not into skills/<name>/metrics/ inside this public repo.
+    # `metrics/*.jsonl` under a skill directory is the literal shape of the 2026-07 leak, and a
+    # cache of what this tool asked GitHub about is a record of what the operator was checking.
+    # Falls back to the in-repo path only when no companion resolves, where check 4 will catch it:
+    # being caught is a better failure than being silent.
+    GH_CACHE = _cache_path("gh-api-cache.json")
     gh_cache = {}
     if os.path.exists(GH_CACHE):
         try:
@@ -896,6 +901,25 @@ def run_checks():
                 mvd = re.match(r"(\d{4})-(\d{2})", vd)
                 if mvd and f"{mvd.group(1)}-{mvd.group(2)}" > this_month:
                     block("DATA", f"data/{fn} rows[{i}] 'verified_date' {vd} is in the future")
+
+
+def _cache_path(name):
+    """<companion>/data/cache/<name>, or the historical in-repo path when no companion resolves."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    dd = os.path.join(root, "tools", "datadir.py")
+    if os.path.isfile(dd):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_dd_for_vm", dd)
+        if spec is not None and spec.loader is not None:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            fn = getattr(mod, "resolve_companion_root", None)
+            comp = fn("shopping-aggregator") if fn else None
+            if comp:
+                d = os.path.join(str(comp), "data", "cache")
+                os.makedirs(d, exist_ok=True)
+                return os.path.join(d, name)
+    return os.path.join(SKILL, "metrics", name)
 
 
 def main():
