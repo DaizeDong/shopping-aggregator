@@ -76,6 +76,11 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
+# which had already begun to drift. The insert above stays, because sibling modules in this
+# same tools/ directory are still imported by bare name.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                "guards", "tools"))
 from datadir import resolve_data_dir  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
