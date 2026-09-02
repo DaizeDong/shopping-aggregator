@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # The guards submodule holds datadir.py, which this repo's code resolves at runtime.
+        # Without this the directory is present and EMPTY, and the failure is not a missing
+        # checkout, it is whatever the code does when its resolver is absent.
+        with:
+          submodules: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
