@@ -36,5 +36,11 @@ jobs:
       # guard. Verified by deleting the file and watching this step exit non-zero.
       - name: Data-freshness gate tests (can it still tell stale from unchecked?)
         run: |
-          test -f tools/test_data_freshness.py || { echo "::error::tools/test_data_freshness.py is MISSING -- re-vendor it (install.py); a guard that is not here is not a guard"; exit 1; }
+          # pytest was never installed in this job, so the step died with "No module named pytest"
+          # and the gate has been red since it was added. The error text above it says the test file
+          # is MISSING, which it is not: that message sent two separate investigations after a file
+          # that was tracked, committed and present in the very commit under test. An error that
+          # names the wrong cause costs more than no error.
+          python -m pip install --quiet pytest
+          test -f tools/test_data_freshness.py || { echo "::error::tools/test_data_freshness.py is MISSING from this repo. It is not part of the guards submodule; it belongs here."; exit 1; }
           python -m pytest tools/test_data_freshness.py -q
