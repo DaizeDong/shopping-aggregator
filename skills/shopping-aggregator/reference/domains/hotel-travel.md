@@ -2,7 +2,8 @@
 
 **Triage signals:** "book a hotel", "cheapest hotel near <venue>", "hotel for <these dates>", lodging
 price compare, "which site is cheapest for this hotel", 订酒店、差旅住宿、酒店比价、"帮我订酒店".
-Flights / rental cars / trains are **OUT of scope** (messier data sources), future extension, do NOT build.
+Rental cars, trains, cruises and package tours are **OUT of scope**. **Flights now have their own shard**,
+[`air-travel.md`](./air-travel.md); route airfare intents there, not here.
 
 > **This domain applies to hotel/lodging price comparison + book-to-confirm.** Unlike the product shards
 > (read a PDP and stop), the deliverable is: rank the real **total-stay cost** across booking channels for
