@@ -532,6 +532,8 @@ def _render(rows, limit=25):
             price = "no price node"
         print(f"{price:>12}  {row['flights']:<24} {row['route']:<20} {row['stops']:<3} "
               f"{str(row['duration'] or ''):<14} {row['depart'] or ''}")
+    if len(rows) > limit:
+        print(f"# showing {limit} of {len(rows)} rows (display limit; the JSON output has all of them)")
 
 
 def main(argv=None) -> int:
