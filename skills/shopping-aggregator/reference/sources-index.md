@@ -22,7 +22,8 @@ shard(s) in `domains/`. Do not read shards you didn't match.
 | ai-shopping-assistants | "Perplexity Shopping", "ChatGPT shopping", Rufus, Klarna AI | Perplexity Pro ① (in-app PayPal) | `domains/ai-shopping-assistants.md` |
 | **claude-mcps** | "want a Claude agent to compare for me", MCP-driven price compare | BigGo MCP ④ free · Apify price-intelligence MCP ② paid | `domains/claude-mcps.md` |
 | oss-self-host | "self-host", docker, "自己跑一个", privacy-first | pricebuddy ④ (US/EU) · PriceDive ④ (CN, only fresh multi-platform) | `domains/oss-self-host.md` |
-| hotel-travel | "book a hotel", "cheapest hotel near", lodging price compare, hotel + dates, 订酒店, 差旅住宿, 酒店比价 (flights/cars/trains OUT) | Booking.com playwright ④ (Genius often lowest public; drive to Your-Details, then hand off pay) | `domains/hotel-travel.md` |
+| hotel-travel | "book a hotel", "cheapest hotel near", lodging price compare, hotel + dates, 订酒店, 差旅住宿, 酒店比价 (rental cars/trains OUT; flights now have their own shard) | Booking.com playwright ④ (Genius often lowest public; drive to Your-Details, then hand off pay) | `domains/hotel-travel.md` |
+| **air-travel** | flight/airfare compare, "cheapest flight to X", "is this ticket a good deal", a 票代/consolidator or travel-agent quote to judge, award vs cash, 机票比价, 查机票, 这个机票价格值不值, 特价机票 | `tools/flight_probe.py` ④ (Google Flights server-rendered `tfs`, **card-scoped**) + Skiplagged JSON ③ as the second transport; **never a single transport, never a proximity-matched price** | `domains/air-travel.md` |
 
 Barrier-route legend (same scheme as `market-intel`):
 ① official API / official site, compliant, often paid/limited, no ban risk

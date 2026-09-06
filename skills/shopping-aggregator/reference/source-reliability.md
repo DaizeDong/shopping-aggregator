@@ -273,3 +273,32 @@ a sweep finds that a failure has recurred, same signature, different product, **
 graduates into this file, stripped to the source or retailer-class property. One run is an anecdote;
 a repeat is a tool fact. A lesson that cannot be stated without naming what someone bought has not
 been distilled yet, and does not belong here.
+
+## Grid-rendered listings: when a parse failure becomes a market fact
+
+Product-agnostic, learned on an airfare run but true of any result grid (search pages, marketplace
+listings, comparison tables). Three distinct bugs, one shape: **a field the parser failed to obtain
+was silently converted into a value that competed on equal footing with values that were actually
+read.** None of them announced itself; two of them reproduced identically across independent
+snapshots, which is precisely why a re-fetch gate cannot catch them.
+
+- **Proximity matching.** Binding a price to a listing by "nearest match after the anchor" fails the
+  moment the source declines to price a row. A major metasearch renders a literal `Price unavailable`
+  string with no price node at all; a proximity parser then reaches into an unrelated card, measured
+  at 33,252 bytes away, and reports its number. **Bind a value to its listing by shared container, not
+  by distance, and report the unpriced state verbatim.**
+- **Silent drops in a filter.** A filter that compares an unparsed field as out-of-range removes the
+  row without saying so. Change the locale and every label localizes, every parse fails, every row
+  drops, and the output reads as an empty market rather than a broken reader. **When a field is
+  missing from EVERY row that otherwise parsed, raise; an empty result set must never be the way a
+  parser reports its own failure.**
+- **Unknown coerced to zero.** A duration parser summing "hours found or 0" plus "minutes found or 0"
+  returns zero for text in a language it does not know, so the longest itinerary on the page becomes
+  the shortest. **Unknown is infinity for a max-filter and never zero**, and the same asymmetry applies
+  to any "smaller is better" field: a missing weight, a missing distance, a missing delivery estimate.
+
+The detection that works for all three is a **negative control in the test suite**: reintroduce the
+bug deliberately and assert the suite goes red. A suite that only ever passes cannot distinguish
+"nothing is wrong" from "not looking". Poison-testing these three took minutes and each one failed
+loudly with the exact historical symptom.
+

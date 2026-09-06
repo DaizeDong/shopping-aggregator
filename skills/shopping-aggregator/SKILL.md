@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价."
+description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, cheapest flight, is this ticket a good deal, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价, 机票比价, 查机票, 这个机票值不值."
 Base directory for this skill: ${CLAUDE_PLUGIN_ROOT}/skills/shopping-aggregator
 ---
 
@@ -41,7 +41,9 @@ otherwise, before doing anything, route away these non-buy-decision asks:
 If both apply ("buying X, also tell me what reviewers think / whether the category is declining"),
 own the buy decision here and **delegate the side-research to market-intel as a sub-task**.
 
-**Lodging (`hotel-travel`) is the one domain that intentionally goes past "read a PDP and stop":** it drives the browser to the Booking "Your Details" confirm page (total + tax + cancellation + parking surfaced) and then **stops at the payment/PII hand-off**. This is still the decision-layer identity above, it never enters card or personal info; the confirm-page URL + ranked total-stay table is the deliverable, not a completed booking. Flights / rental cars / trains stay OUT of scope.
+**Two domains intentionally go past "read a PDP and stop": lodging and air travel.**
+
+**Air travel (`air-travel`)** is a full buy decision, not a lookup: an airfare is a perishable, brand-tiered, multi-currency product whose displayed price excludes the things that decide it. It has its own shard, its own tool (`tools/flight_probe.py`), and three extra gates (#13 to #15 below). Rental cars, trains, cruises and package tours stay OUT of scope. **Lodging (`hotel-travel`)** it drives the browser to the Booking "Your Details" confirm page (total + tax + cancellation + parking surfaced) and then **stops at the payment/PII hand-off**. This is still the decision-layer identity above, it never enters card or personal info; the confirm-page URL + ranked total-stay table is the deliverable, not a completed booking. Rental cars and trains stay OUT of scope.
 
 ## Workflow
 ### Step 1, Parse the buy intent (BLOCKING)
@@ -57,6 +59,13 @@ decision.
 | **Sensitivity** (warranty, refurb-OK, rating cutoff, returns) | drives trust tiers (AliExpress rating, Amazon WHD vs marketplace) |
 | **Existing accounts / extensions** | use what's installed; don't recommend new tooling unless clearly worth it |
 
+**For a flight, "Product" is not one field.** Capture origin AND destination as *sets of airports* (a
+city is not an airport: NYC is JFK+EWR+LGA, Beijing is PEK+PKX, Shanghai is PVG+SHA), the **date
+window** rather than one date, cabin, passenger count, passport nationality (it drives transit-visa
+feasibility), and **how many checked bags are actually needed**. That last field is not a preference,
+it is a price term: it has flipped the winner in a real run. Missing any of these produces a
+confident answer to a question the traveller did not ask.
+
 If the user said only "find me the cheapest", confirm region + condition first, cheapest "new from
 authorized US seller" ≠ cheapest "any condition + any AliExpress seller."
 
@@ -71,7 +80,10 @@ Read `reference/sources-index.md` (thin index); match the buy intent to 1 to N o
 `claude-mcps`; CN → `taobao-tmall`, `jd-pdd`, `claude-mcps`, maybe `oss-self-host`. Historical-low
 queries always add `amazon-us` (Camelcamelcamel/Keepa) or `taobao-tmall` (慢慢买).
 
-**Hotel / lodging** intents ("book a hotel", "cheapest hotel near", 订酒店/差旅住宿/酒店比价) → `hotel-travel` (Booking.com ④ is the spine). For lodging the "landed cost" is **total-stay cost**; the shard owns the full formula, only remember here that the lodging tax is **READ off Booking's Your-Details page, never hard-coded**, and parking is separate (NOT in Booking's total) and materially reorders rankings. Flights / rental cars / trains stay OUT of scope.
+**Flight / airfare** intents ("cheapest flight to X", "is this ticket worth it", judging a 票代 or
+travel-agent quote, 机票比价/查机票/特价机票) → `air-travel`. For a flight the "landed cost" is
+fare + checked bags + seat + payment-method FX; the shard owns the formula and the three flight
+gates. **Hotel / lodging** intents ("book a hotel", "cheapest hotel near", 订酒店/差旅住宿/酒店比价) → `hotel-travel` (Booking.com ④ is the spine). For lodging the "landed cost" is **total-stay cost**; the shard owns the full formula, only remember here that the lodging tax is **READ off Booking's Your-Details page, never hard-coded**, and parking is separate (NOT in Booking's total) and materially reorders rankings. Rental cars and trains stay OUT of scope.
 
 #### 2b, Map to channel classes
 Read `reference/channel-classes.md` and enumerate the authorized-retailer classes the product spans
@@ -217,6 +229,13 @@ here MUST resolve to a row in `reference/data/` (carrying `source_url` + `verifi
     sub-$800 cross-border parcel as duty-free.** Read the de-minimis status row + the relevant HTS
     category rate, estimate duty, and cite both rows; where no category row fits, flag `duty likely
     owed, confirm exact HTS rate at checkout` rather than assuming $0.
+- **Flights, landed cost = fare + checked bags + seat selection + payment-method FX.** The displayed
+  fare is taxes-inclusive but **excludes bags and seats**, which is exactly where two "same" fares
+  diverge. When the buyer pays a foreign-currency seller (a consolidator quoting CNY, an overseas
+  point-of-sale), price the **transactable** conversion, not the ECB mid rate: a live check put real
+  USD to CNY delivery at about 1.5 pct by bank transfer, 3 pct by debit, and 7.9 pct by credit card,
+  which is a material slice of a typical consolidator discount. Baggage numbers resolve from
+  `reference/data/airline-baggage.json`; anything not in that table is stamped `(assumed)`.
 - **Coupons**: verify by **playwright cart test** (badges lie); mark each `code, applied?, $`.
 - **Trust-adjust**: drop marketplace listings < 95% rating or < 500 ratings unless user OK'd it
   (AliExpress especially).
@@ -236,6 +255,9 @@ here MUST resolve to a row in `reference/data/` (carrying `source_url` + `verifi
 - [ ] Every zero-result from a marketplace search carries its **control query** (#11)?
 - [ ] Every "cheapest" declares its **search depth** and how paging was driven, judged by NEW ids (#12)?
 - [ ] Every `coverage_gap` carries a **typed reason**, not prose (#9c)?
+- [ ] **Flights only:** every ranked fare was read **card-scoped** (#13), corroborated by a **second
+      transport** (#14), and carries a **fare brand + bag allowance or an explicit `unverified`** (#15)?
+- [ ] **Flights only:** `python tools/flight_probe.py selftest` was run and passed this session?
 
 ## Quality guardrails (HARD rules, apply during synthesis)
 
@@ -253,6 +275,7 @@ kept stable rather than renumbered.
 | **C. Did I test the claim or repeat it?** | #4, #7 | did I re-fetch rather than trust |
 | **D. Is absence posing as a finding?** | #11, #12, #9, #6 | can I tell empty from unreached |
 | **E. What would make this wrong?** | #8, #10 | did I argue against myself |
+| **F. Is this an airfare?** | #13, #14, #15 | did I attribute, corroborate, and brand it |
 
 ### A. Provenance, four fields or it does not rank
 
@@ -267,6 +290,15 @@ kept stable rather than renumbered.
   exclusive source, whose first-party storefront sells it for less. (`evidence-schema.md` #5)
 - **#1 Snapshot timestamp.** Every entry carries `[fetched YYYY-MM-DD HH:MM TZ]`; one without is
   "unverified". State the snapshot date at report top.
+- **#13 Card-scoped attribution (flights, and any grid-rendered listing).** A price belongs to an
+  offer ONLY if it was read from **that offer's own DOM card or API record**. No proximity matching,
+  no nearest-price-after-the-anchor, no widening radius. A source that cannot price a row renders it
+  `price_unavailable`; report that verbatim, never drop the row and never borrow a neighbour's
+  number. **Why this is a hard gate and not advice:** a proximity parser once reported a nonstop at
+  $551 that was $652, by reaching 33,252 bytes into an unrelated card, and reported it identically
+  across two snapshots, because a deterministic bug reproduces exactly like a stable measurement.
+  `tools/flight_probe.py` enforces this and ships a negative-control `selftest` that fails if the
+  leak returns; run it before trusting any run.
 - **`variant_key`.** Confirmed from **spec text, SKU option strings, or a manufacturer id (EAN/MPN),
   never the title**. When a spec block and an option string disagree the **option string wins**, and
   that spec block stops counting as an independent source (`source-reliability.md`).
@@ -280,6 +312,13 @@ kept stable rather than renumbered.
   dominate to where item price stops deciding the ranking (`source-reliability.md` cross-border).
 - **#2 Stock state is part of the price.** In-stock ranks first; OOS / preorder is a footnote.
   **Rank on the fulfilment promise, not the stock attribute**, which is the one that lies.
+- **#15 The fare brand is part of the price (flights).** Never rank two airfares without stating the
+  **checked-bag allowance behind each**. Metasearch markup carries **no fare-brand and no baggage
+  attribute anywhere** (grep `Saver`, `Basic`, `checked bag`: zero hits), so **the same flight number
+  is not the same product**, and one snapshot legitimately shows several prices for one flight pair.
+  Where the brand is unknown, say `fare brand unverified` and carry the extra-bag cost as an explicit
+  range; do not let an unknown default to "equivalent". A one-bag fare compared against a two-bag
+  fare has flipped a double-digit discount into a net loss.
 
 ### C. Verification, test the claim instead of repeating it
 
@@ -287,6 +326,12 @@ kept stable rather than renumbered.
   `coupon claims unverified` (Honey 2026 status in `reference/domains/browser-extensions.md`). A PDP lists what
   promos **exist**; only the order-confirm page shows what **stacks**. Quote a range with conditions
   named, and say when the confirm page was not reached.
+- **#14 Two transports or it is not a price (flights).** Every fare entering a ranking is confirmed
+  by a **second independent transport** (e.g. server-rendered metasearch AND a JSON aggregator).
+  One transport cannot tell a real absence from its own blind spot: a metasearch that renders
+  `Price unavailable` for a flight another source sells at $652 is not evidence the flight is cheap,
+  or dear, or gone. Disagreement over 5 pct means re-fetch, never average (#7). Repeated calls to
+  the SAME endpoint often replay one cached payload, so N calls is **one** observation, not N.
 - **#7 Disagreement = re-fetch / reconcile, never average** (`evidence-schema.md` #7):
   - (a) **Cross-snapshot** (same page, two pulls >5% apart): re-fetch a 3rd time; resolve or surface
     both with timestamps.
@@ -394,7 +439,8 @@ SKILL.md (this file) is always loaded, keep it the only frequently-loaded conten
 **never a whole directory**: `reference/login-handoff.md` at Step 3b whenever a channel looks
 session-gated, and again before writing any `coverage_gap` whose reason starts `session-gated`;
 `reference/sources-index.md` + `reference/channel-classes.md` at triage; only the matched
-`reference/domains/<domain>.md`; `reference/tools/index.md` then only the picked
+`reference/domains/<domain>.md` (for any flight intent that is `domains/air-travel.md`, and read it
+BEFORE the first fetch, not after); `reference/tools/index.md` then only the picked
 `reference/tools/<slug>.md`; `reference/source-reliability.md` at Step 3/4 when choosing a route and
 again at Step 7 before writing a `coverage_gap` (which sources hold up, which fail and how to detect
 it); `reference/install-guide.md` when setting up a source;
