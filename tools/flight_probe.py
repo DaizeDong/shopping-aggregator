@@ -1,47 +1,17 @@
 #!/usr/bin/env python3
 """Card-scoped flight price probe: Google Flights (server-rendered) plus a Skiplagged cross-check.
 
-WHY THIS FILE EXISTS
---------------------
-A real run priced a transpacific one-way off Google Flights and reported a nonstop at USD 551
-that was actually USD 652, and a second nonstop at USD 472 that was actually USD 785. The
-itineraries were read correctly. The prices were not, and the failure mode is the whole point:
+A price belongs to an itinerary only when both occur in the same offer card.
+Missing prices remain unavailable. The offline selftest checks cross-card leakage,
+duration parsing and absence logic; it does not verify live site access.
 
-    the parser matched a price to an itinerary by PROXIMITY, taking the nearest
-    aria-label="NNN US dollars" that followed the itinerary= token.
+Usage from the package root:
+    python tools/flight_probe.py selftest
+    python tools/flight_probe.py search ORIGIN DESTINATION YYYY-MM-DD
 
-Google Flights does not price every card. A card it cannot price renders the literal string
-"Price unavailable" and carries no price node at all. The proximity parser therefore walked past
-that card (measured distance: 33,252 bytes) and stapled a different card's price onto it. Two
-independent snapshots agreed with each other, because a deterministic bug reproduces exactly like
-a stable measurement. Nothing in the output distinguished a price that was read from one that was
-invented.
-
-THE INVARIANT THIS MODULE ENFORCES
-----------------------------------
-    A price belongs to an itinerary ONLY if both live inside the same <li> card.
-
-There is no fallback, no nearest match, no widening radius. A card with no price node yields
-price=None and price_unavailable=True, and callers must render that as "price unavailable". They
-must never drop the row (an unpriced nonstop is a real option worth naming) and never borrow a
-neighbour's number. That is a fix to the FRAMING, meaning what counts as evidence that a number
-belongs to a flight, rather than to the symptom, meaning one wrong figure.
-
-selftest() is a NEGATIVE control: it fails if a price ever attaches across a card boundary. A test
-that can only pass proves nothing, so it is built to fail on the exact historical defect.
-
-USAGE
-    python flight_probe.py search JFK PEK 2026-11-09
-    python flight_probe.py search JFK PEK 2026-11-09 --max-stops 1 --max-hours 24
-    python flight_probe.py sweep  JFK PEK 2026-11-01 2026-11-12
-    python flight_probe.py cross  JFK PEK 2026-11-09
-    python flight_probe.py sellers JFK PEK 2026-11-09 KE86+KE851
-    python flight_probe.py selftest
-
-EVIDENCE GRADE
-    Everything here is E2 (metasearch). Reaching E1 means the airline's own booking page.
-    Google Flights server HTML carries NO fare-brand and NO baggage attribute anywhere, so a fare
-    bucket can never be inferred from these numbers. See reference/domains/air-travel.md.
+All probe output is E2 metasearch evidence. Obtain selected airline/seller E1
+evidence and fare-brand, baggage, tax and refund terms before total ranking.
+See skills/shopping-aggregator/reference/domains/air-travel.md.
 """
 from __future__ import annotations
 

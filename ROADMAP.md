@@ -1,8 +1,8 @@
 # Roadmap
 
-Current: **v0.6.0**
+Current: **v0.8.1**
 
-`shopping-aggregator` is at v0.6.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
+`shopping-aggregator` is at v0.8.1. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
 gap and the v0.4 domain expansion in one batch (see **Shipped** below), on top of the v0.2.0
 structural/framework batch (CONSTITUTION, demand-side channel-class primitive, the evidence-unit
 schema `variant_key` / `seller_tier` / `evidence_grade`, seller-identity gate, codex-crossval) and

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.1] - 2026-09-23
+
+- Require a verified PRIVATE companion before transcript evaluation; invoke installed llmcall only with explicit --judge and validate input hashes and per-criterion evidence.
+- Ship generic flight guidance and an explicitly unverified baggage checklist; reject missing or untracked delivery resources and incomplete airfare totals.
+- Preserve selection triggers and numbered safeguards in a shorter entry point, synchronize domain/version metadata, and document offline versus live verification limits.
+
 ## [0.8.0], 2026-08-28
 
 **The run that priced a flight, got it wrong twice, and could not tell.** A consumer asked whether a WeChat consolidator's quote for a New York to Beijing one-way was worth taking. The run recommended shifting the date to fly nonstop for less. The nonstop it named cost **160 to 340 USD more** than the quote. So did the second one. Both numbers came out of a hand-rolled Google Flights parser that matched a price to an itinerary by **proximity**, taking the nearest `aria-label="NNN US dollars"` after the `itinerary=` anchor.
