@@ -34,7 +34,7 @@ jobs:
       # gate, which would burn GitHub API quota to assert date maths. ABSENT is a failure, not a
       # reason to skip, same rule the pii-guard workflow states: a guard that is not here is not a
       # guard. Verified by deleting the file and watching this step exit non-zero.
-      - name: Data-freshness gate tests (can it still tell stale from unchecked?)
+      - name: Offline contract tests (freshness, private evaluation and delivery)
         run: |
           # pytest was never installed in this job, so the step died with "No module named pytest"
           # and the gate has been red since it was added. The error text above it says the test file
@@ -43,4 +43,7 @@ jobs:
           # names the wrong cause costs more than no error.
           python -m pip install --quiet pytest
           test -f tools/test_data_freshness.py || { echo "::error::tools/test_data_freshness.py is MISSING from this repo. It is not part of the guards submodule; it belongs here."; exit 1; }
-          python -m pytest tools/test_data_freshness.py -q
+          test -f tools/test_scenario_eval.py || { echo "::error::private evaluator tests are missing"; exit 1; }
+          test -f tools/test_delivery.py || { echo "::error::delivery tests are missing"; exit 1; }
+          python -m pytest tools/ -q
+          python tools/flight_probe.py selftest

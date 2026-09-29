@@ -1,0 +1,11 @@
+{
+  "schema_version": 2,
+  "kind": "collection_requirements",
+  "status": "unverified",
+  "last_verified": null,
+  "review_cadence_days": 30,
+  "rows": [],
+  "required_terms": ["fare_brand", "checked_bags", "cabin_bags", "tax", "seat_selection", "payment_fx", "refund_terms"],
+  "source_types": ["selected airline booking offer", "operating carrier baggage policy", "selected seller refund and fee terms"],
+  "policy": "No default allowance or fee. Unknown terms cannot support a lowest-total claim. Verify the selected fare live and retain dated evidence in the private companion."
+}

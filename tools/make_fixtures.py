@@ -219,6 +219,55 @@ def repo_root():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def evaluation_fixture():
+    """Invented text for transport/schema tests, not evidence of judge quality."""
+    return {"synthetic": True, "transcript": "Synthetic evidence: the example run records its checks.\n"}
+
+
+def matrix_cache_fixture():
+    """Invented GitHub observations for private cache transaction tests."""
+    return {"example-owner/example-repo": {"repo": "example-owner/example-repo", "verdict": "PASS",
+            "checked_at": "2030-01-02T12:00:00", "pushed_at": "2030-01-01T12:00:00Z", "archived": False}}
+
+
+def delivery_fixture(root):
+    """A miniature synthetic package for missing/untracked-resource tests."""
+    from pathlib import Path
+    prefix = "skills/shopping-aggregator"
+    files = {"README.md": f"[air-travel]({prefix}/reference/domains/air-travel.md)\n",
+             "README_CN.md": f"[air-travel]({prefix}/reference/domains/air-travel.md)\n",
+             f"{prefix}/SKILL.md": "# Synthetic skill\nreference/domains/<domain>.md\n",
+             f"{prefix}/reference/sources-index.md": "[air-travel](domains/air-travel.md)\n",
+             f"{prefix}/reference/domains/air-travel.md": "# Synthetic flight shard\n",
+             f"{prefix}/reference/data/airline-baggage.json": "{}\n"}
+    for rel, text in files.items():
+        path = Path(root) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return set(files)
+
+
+def flight_quote():
+    """Invented selected-source fields; example.com never proves a live airfare."""
+    return {"synthetic": True, "variant_key": "example-flight-standard-one-bag", "currency": "USD",
+            "terms": {key: {"status": "verified", "value": value} for key, value in
+                      {"fare": "100", "tax": "10", "checked_bags": "20", "seat_selection": "10",
+                       "cabin_bags": "0", "payment_fx": "0", "fare_brand": "Example Standard",
+                       "refund_terms": "Example nonrefundable"}.items()},
+            "sources": [{"source_url": "https://example.com/booking", "fetched_at": "2030-01-02T11:00:00+00:00",
+                         "variant_key": "example-flight-standard-one-bag", "evidence_grade": "E1", "selected": True,
+                         "transport_id": transport} for transport in ("synthetic-browser", "synthetic-api")]}
+
+
+def judge_response(contract, verdict="PASS"):
+    """A fake response for structural validation tests; no model judgment is implied."""
+    return {"scenario_id": contract["scenario_id"], "input_hashes": dict(contract["input_hashes"]),
+            "criteria": [{"id": key, "verdict": verdict,
+                          "evidence": {"kind": "quote", "quote": evaluation_fixture()["transcript"].strip(),
+                                       "reason": "Synthetic schema test evidence only."}}
+                         for key in contract["criteria"]]}
+
+
 def main():
     ap = argparse.ArgumentParser(description="Generate the synthetic eval-scenario fixture.")
     ap.add_argument("--out", help="write fixtures into this directory (default: regenerate in place)")
@@ -234,6 +283,13 @@ def main():
     # newline="\n": never let Windows translate this to CRLF -- the bytes are the contract.
     with open(dest, "w", encoding="utf-8", newline="\n") as f:
         f.write(render())
+    auxiliary = "skills/shopping-aggregator/reference/scenario-eval/evaluation-fixture.json"
+    extra = os.path.join(a.out, os.path.basename(auxiliary)) if a.out else os.path.join(repo_root(), auxiliary)
+    with open(extra, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(evaluation_fixture(), indent=2) + "\n")
+    quote_dest = os.path.join(os.path.dirname(extra), "flight-quote-fixture.json")
+    with open(quote_dest, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(flight_quote(), indent=2) + "\n")
     print("make_fixtures: wrote %d scenario(s) -> %s" % (len(CASES), dest))
     return 0
 
