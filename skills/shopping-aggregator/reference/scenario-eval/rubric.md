@@ -3,8 +3,8 @@
 > **What this measures.** `tools/verify_matrix.py` is the deterministic gate (Signal A: durable
 > artifacts/schema). This rubric is the *non-deterministic* gate for **orchestration quality**, does a
 > real end-to-end run on `scenarios.jsonl` actually obey the CONSTITUTION when it produces a buy
-> decision? That is a judgement call, so it is graded by heterogeneous LLM judges (see
-> `judge-protocol.md`), **never in CI**, and never blocking.
+> decision? This optional judgment uses the installed llmcall policy (see
+> `judge-protocol.md`) and stays outside CI. Actual backend independence must be established separately.
 >
 > **Every criterion below cites the CONSTITUTION clause it enforces.** The rubric adds no new rules; it
 > only makes the constitution checkable on a live transcript. If a clause changes, this file follows it
@@ -18,7 +18,9 @@ Each criterion is scored **PASS / PARTIAL / FAIL / N/A** against the run transcr
 - **PARTIAL**, the intent is visible but execution is incomplete (e.g. timestamp present on some rows,
   missing on others).
 - **FAIL**, the clause is violated (the constitution calls each of these "a bug in the change").
-- **N/A**, the criterion does not apply to this scenario (e.g. coupon criteria when no coupon exists).
+- **N/A**, a conditional non-blocking universal criterion does not apply to this run.
+  Blocking universal checks and all scenario-specific checks are required; the judge cannot waive
+  them. If missing sources or execution prevent evaluation, use PARTIAL or FAIL with absence evidence.
 
 A scenario's headline verdict is **the weakest mandatory criterion**: any FAIL on a *blocking* criterion
 (marked **[BLOCKING]**) makes the whole scenario FAIL, mirroring how the constitution treats a violated
@@ -30,7 +32,7 @@ for each verdict. **No ground-truth prices are provided**, judging is on *consti
 reasoning quality*, not on whether a price matched a number the eval author happened to know
 (`judge-protocol.md`).
 
-## Universal criteria (apply to every scenario unless N/A)
+## Universal criteria (blocking checks are always required)
 
 | # | Criterion | CONSTITUTION clause | Blocking? |
 |---|---|---|---|
@@ -105,5 +107,5 @@ These are the *scenario-specific* checks layered on top of the universal ones. T
   not its value.
 - **Prose/wording.** That is the deterministic gate's non-job too (`verify_matrix.py` gates on artifacts,
   not wording); this gate gates on conduct, not phrasing.
-- **Tool availability.** A skipped best-effort delegate (e.g. Codex/BigGo unavailable) is fine if flagged
+- **Tool availability.** A skipped best-effort delegate (e.g. reviewer/BigGo unavailable) is fine if flagged
   per **II.3 / guardrail #9**; it is not a FAIL.

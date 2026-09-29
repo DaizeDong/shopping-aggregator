@@ -33,7 +33,7 @@ PORTED from market-intel (richer judgement; network gates honour --no-net):
   REPO      documented github.com/<owner>/<repo> + registry `repo` slugs exist (gh api, fail-closed).
             A doc'd repo that 404s => BLOCK; a bare/heuristic slug that 404s => WARN.
   GHACTIVE  every documented repo is alive (not archived) and pushed within 12mo (archived/404 BLOCK,
-            stale WARN, rate-limited bypass-as-WARN). Cached to metrics/gh-api-cache.json (7d TTL).
+            stale WARN, rate-limited bypass-as-WARN). Cached in PRIVATE companion data/cache/ (7d TTL).
   STAR      where a repo and an (NNk★) annotation co-occur, the count is within 25% (BLOCK on lie).
   DOCCOVER  a github repo in a LIVE (non-tombstone) shard row with no per-tool doc => WARN (anti-lost).
   STALE     a tool doc not re-verified in >9 months => WARN (anti-rot nomination).
@@ -71,9 +71,11 @@ pick it up, except a confirmed 404 (a hard fact) which BLOCKs.
 import datetime
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
@@ -259,6 +261,11 @@ def count_table_rows(text):
 
 
 def run_checks():
+    # Network observations require verified private storage; offline checks never use the cache.
+    gh_cache_path = _cache_path("gh-api-cache.json") if not NO_NET else None
+    from delivery_check import delivery_errors
+    for error in delivery_errors(ROOT):
+        block("DELIVERY", error)
     # ================================================================= ORIGINAL CHECKS (unchanged)
     # ---- THREEWAY: registry.json <-> tools/<slug>.md files <-> tools/index.md rows ----
     if not os.path.isdir(TOOLS_DIR):
@@ -535,17 +542,12 @@ def run_checks():
                 block("STAR", f"{repo}: claims {claimed_k}k★ but API says {real} (>{int(STAR_TOL*100)}% off)")
 
     # ---- GHACTIVE (deterministic activity gate; archived/404 BLOCK, stale WARN, RL bypass) ----
-    # The API cache goes to the COMPANION, not into skills/<name>/metrics/ inside this public repo.
-    # `metrics/*.jsonl` under a skill directory is the literal shape of the 2026-07 leak, and a
-    # cache of what this tool asked GitHub about is a record of what the operator was checking.
-    # Falls back to the in-repo path only when no companion resolves, where check 4 will catch it:
-    # being caught is a better failure than being silent.
-    GH_CACHE = _cache_path("gh-api-cache.json")
     gh_cache = {}
-    if os.path.exists(GH_CACHE):
+    if gh_cache_path is not None and gh_cache_path.exists():
         try:
-            gh_cache = json.loads(read(GH_CACHE))
-        except Exception:
+            gh_cache = json.loads(read(gh_cache_path))
+        except (OSError, ValueError):
+            warn("GHACTIVE", "private cache could not be read; fetching fresh observations")
             gh_cache = {}
     ghactive_results = []
     if NO_NET:
@@ -612,12 +614,7 @@ def run_checks():
                              "checked_at": _now_iso}
             ghactive_results.append(entry)
             gh_cache[r] = entry
-        try:
-            os.makedirs(os.path.dirname(GH_CACHE), exist_ok=True)
-            with open(GH_CACHE, "w", encoding="utf-8") as f:
-                json.dump(gh_cache, f, ensure_ascii=False, indent=2, sort_keys=True)
-        except Exception:
-            pass
+        _write_cache("gh-api-cache.json", gh_cache)
         if ghactive_results:
             _v = {v: 0 for v in ("PASS", "WARN", "BLOCK", "RATE_LIMITED")}
             for e in ghactive_results:
@@ -885,6 +882,12 @@ def run_checks():
         if not isinstance(obj, dict):
             block("DATA", f"data/{fn} top-level is not a JSON object (expected envelope dict)")
             continue
+        if fn == "airline-baggage.json":
+            from delivery_check import baggage_errors
+            for error in baggage_errors(obj):
+                block("DATA", error)
+            warn("BAGGAGE_UNVERIFIED", "airline-baggage.json contains collection requirements only; verify selected fares live")
+            continue
         if "schema_version" not in obj:
             block("DATA", f"data/{fn} missing envelope key 'schema_version'")
         for _lvl, _code, _msg in check_data_freshness(fn, obj, today):
@@ -909,22 +912,26 @@ def run_checks():
 
 
 def _cache_path(name):
-    """<companion>/data/cache/<name>, or the historical in-repo path when no companion resolves."""
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dd = os.path.join(root, "tools", "datadir.py")
-    if os.path.isfile(dd):
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("_dd_for_vm", dd)
-        if spec is not None and spec.loader is not None:
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            fn = getattr(mod, "resolve_companion_root", None)
-            comp = fn("shopping-aggregator") if fn else None
-            if comp:
-                d = os.path.join(str(comp), "data", "cache")
-                os.makedirs(d, exist_ok=True)
-                return os.path.join(d, name)
-    return os.path.join(SKILL, "metrics", name)
+    """Resolve a cache destination only after verifying its PRIVATE repository."""
+    from evaluation_store import prepare_store
+    return prepare_store().output_path(Path("cache") / name)
+
+
+def _write_cache(name, cache):
+    """Recheck storage and atomically publish observations; write failures block the gate."""
+    path = _cache_path(name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix="." + path.name + "-", suffix=".tmp", delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump(cache, stream, ensure_ascii=False, indent=2, sort_keys=True)
+            stream.write("\n")
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def main():
