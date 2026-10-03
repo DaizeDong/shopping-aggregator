@@ -12,7 +12,7 @@
 - Sign up: keepa.com → Dashboard → API tab.
 - Install MCP (BWB03 one-click): download `.mcpb` from `BWB03/keepa-adapter` releases → Claude
   imports automatically.
-- Install MCP (cosjef stdio): `git clone github.com/cosjef/Keepa_MCP` → edit `~/.claude.json` to
+- Install MCP (cosjef stdio): `git clone https://github.com/cosjef/Keepa_MCP` → edit `~/.claude.json` to
   add stdio server pointing at `python main.py`.
 - Restart Claude session.
 - `last_verified: 2026-06`
@@ -95,7 +95,7 @@
 - `last_verified: 2026-06`
 
 ### Taobao MCP (JeremyDong22/taobao_mcp)
-- `git clone github.com/JeremyDong22/taobao_mcp && cd taobao_mcp && pip install -r requirements.txt`.
+- `git clone https://github.com/JeremyDong22/taobao_mcp && cd taobao_mcp && pip install -r requirements.txt`.
 - 启动 stdio MCP，注入登录态 cookie（每 1-2 周需刷新）。
 - 编辑 `~/.claude.json` 加 stdio server。
 - 重启 session。
@@ -157,25 +157,25 @@
 ## oss-self-host
 
 ### pricebuddy
-- `git clone github.com/jez500/pricebuddy && cd pricebuddy && cp .env.example .env`
+- `git clone https://github.com/jez500/pricebuddy && cd pricebuddy && cp .env.example .env`
 - 编辑 `.env`: LLM provider 选 OpenAI / Anthropic / Gemini / Ollama；填 key。
 - `docker compose up -d` → 访问 http://localhost:8080。
 - `last_verified: 2026-06`
 
 ### PriceGhost
-- `git clone github.com/clucraft/PriceGhost && cd PriceGhost && cp .env.example .env`
+- `git clone https://github.com/clucraft/PriceGhost && cd PriceGhost && cp .env.example .env`
 - 配置 LLM、retailers、alerts。
 - `docker compose up -d`。
 - `last_verified: 2026-06`
 
 ### PriceDive
-- `git clone github.com/DAILtech/PriceDive && cd PriceDive && pip install -r requirements.txt`
+- `git clone https://github.com/DAILtech/PriceDive && cd PriceDive && pip install -r requirements.txt`
 - `python init_db.py && python tracker.py --add <product_url>`。
 - Taobao/Tmall 部分查询需 cookie 注入。
 - `last_verified: 2026-06`
 
 ### Discount-Bandit
-- `git clone github.com/Cybrarist/Discount-Bandit && cd Discount-Bandit && docker compose up -d`。
+- `git clone https://github.com/Cybrarist/Discount-Bandit && cd Discount-Bandit && docker compose up -d`。
 - `last_verified: 2026-06`
 
 ## claude-mcps

@@ -38,7 +38,7 @@ jobs:
             gh issue create -R "$GITHUB_REPOSITORY" \
               --title "heartbeat: no shopping-aggregator refresh in $MONTH" \
               --body "The scheduled monthly refresh produced no commit to the source matrix this month. Likely the local machine was off, or the run failed. Please check the local refresh log and re-run the refresh manually if needed." \
-              || echo "issue create failed"
+              || { echo "issue create failed" >&2; exit 1; }
           else
             echo "Refresh activity detected for $MONTH ($HITS commit(s)) — healthy."
           fi

@@ -77,27 +77,6 @@ If nothing found, state explicitly: "actively reverse-searched, none found, not 
 | 90-day low | Keepa: $89 | Camelcamelcamel: $79 | Keepa misses some 3P deals; Camel includes Warehouse | Camel ($79) |
 | Live Buy Box | playwright 14:32: $129 | playwright 14:38: $134 | rotated to 3P seller | re-fetch 3x; band $129-134 |
 
-## Coverage gaps
-
-Every row carries a **typed reason** (CONSTITUTION II.8), because "one login away" and "no login
-helps" are different facts and the next run should treat them differently.
-
-| channel / dimension | gap reason | what it would have bought | retry next run? |
-|---|---|---|---|
-| <C2C secondhand> | `session-gated-declined` | <the going secondhand rate, the only channel carrying it> | **yes**, one operator login |
-| <marketplace X> | `session-gated-unattended` | <live listings> | **yes**, if run attended |
-| <region-locked store> | `structurally-unreachable` | <nothing a login fixes> | no |
-| <aggregator Y> | `tool-outage` | <cross-store sweep> | yes, when the MCP is back |
-| <class Z> | `not-attempted` | <in-scope class never queried, say why> | yes |
-
-- **Zeros are qualified**: any "no listings found" from a marketplace states its **control query** and
-  that query's result (guardrail #11). Without one, the zero is not reportable.
-- **No backfilling**: a gapped cell is left empty. Another channel's numbers do not answer a question
-  about this one; say the cell is empty and move on.
-- **Configure for deeper data**:
-  - "<retailer/dimension> would be stronger with <source>, install via <command> (then reconnect)."
-  - e.g. "Amazon history would be stronger with Keepa MCP, install via `~/.claude.json` edit (€49/mo)."
-
 ## Sources
 
 Full list with tier + timestamp. Mark `✓verified / ⚠unverifiable / ✗dead`.
@@ -107,6 +86,8 @@ Full list with tier + timestamp. Mark `✓verified / ⚠unverifiable / ✗dead`.
 - ...
 
 ## Optional sections (use when relevant)
+
+Place any optional sections before the final **Coverage gaps** section.
 
 ### Coupon stacking strategy
 
@@ -129,3 +110,27 @@ If applicable (phones, laptops, electronics):
 - Apple Trade-In / Samsung Trade-In / Amazon Trade-In quote estimates.
 - 3P alternatives: Gazelle, Decluttr, ItsWorthMore.
 - True net cost after trade-in.
+
+## Coverage gaps
+
+This section is mandatory and MUST be last, after Sources and any optional sections (CONSTITUTION I.6).
+If no gaps remain, state explicitly: "actively reverse-searched, none found".
+
+Every row carries a **typed reason** (CONSTITUTION II.8), because "one login away" and "no login
+helps" are different facts and the next run should treat them differently.
+
+| channel / dimension | gap reason | what it would have bought | retry next run? |
+|---|---|---|---|
+| <C2C secondhand> | `session-gated-declined` | <the going secondhand rate, the only channel carrying it> | **yes**, one operator login |
+| <marketplace X> | `session-gated-unattended` | <live listings> | **yes**, if run attended |
+| <region-locked store> | `structurally-unreachable` | <nothing a login fixes> | no |
+| <aggregator Y> | `tool-outage` | <cross-store sweep> | yes, when the MCP is back |
+| <class Z> | `not-attempted` | <in-scope class never queried, say why> | yes |
+
+- **Zeros are qualified**: any "no listings found" from a marketplace states its **control query** and
+  that query's result (guardrail #11). Without one, the zero is not reportable.
+- **No backfilling**: a gapped cell is left empty. Another channel's numbers do not answer a question
+  about this one; say the cell is empty and move on.
+- **Configure for deeper data**:
+  - "<retailer/dimension> would be stronger with <source>, install via <command> (then reconnect)."
+  - e.g. "Amazon history would be stronger with Keepa MCP, install via `~/.claude.json` edit (€49/mo)."

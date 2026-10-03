@@ -9,7 +9,7 @@ and shards must read these, not restate numbers inline.
 > `source_url` (authoritative http(s) page, a statute / gov / official policy page, **not**
 > a SERP or memory) + a `verified_date`. Never from memory.
 
-## Envelope schema (every `*.json` in this dir)
+## Envelope schema (verified fact tables)
 
 ```json
 {
@@ -45,7 +45,15 @@ and shards must read these, not restate numbers inline.
 
 ## `DATA` gate check (enforced by `tools/verify_matrix.py`)
 
-Scans only `reference/data/*.json`. **No-op (PASS) when the dir has no `.json`.**
+Scans `reference/data/*.json`. Missing tables fail closed.
+
+`airline-baggage.json` is a schema-version-2 `collection_requirements` resource,
+not a fact table. It must retain `status: unverified`, `last_verified: null`, and
+empty `rows`; its required terms and authoritative source types tell the caller
+what to collect for the selected fare. The gate reports BAGGAGE_UNVERIFIED and
+rejects invented fee rows. Do not assign a verification date until a separate
+reviewed fact-table design and actual source verification justify it. Unknown
+tax, baggage or refund terms cannot establish a lowest total.
 
 - **BLOCK**: invalid JSON / not an object · missing or non-integer `schema_version` ·
   `rows` missing or empty · a row missing any of `key`/`value`/`source_url`/`verified_date` ·

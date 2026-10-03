@@ -33,8 +33,7 @@ PORTED from market-intel (richer judgement; network gates honour --no-net):
   REPO      documented github.com/<owner>/<repo> + registry `repo` slugs exist (gh api, fail-closed).
             A doc'd repo that 404s => BLOCK; a bare/heuristic slug that 404s => WARN.
   GHACTIVE  every documented repo is alive (not archived) and pushed within 12mo (archived/404 BLOCK,
-            stale WARN, rate-limited bypass-as-WARN). Cached in the private companion's
-            data/cache/gh-api-cache.json (7d TTL); with no companion it is not cached at all.
+            stale WARN, rate-limited bypass-as-WARN). Cached in PRIVATE companion data/cache/ (7d TTL).
   STAR      where a repo and an (NNk★) annotation co-occur, the count is within 25% (BLOCK on lie).
   DOCCOVER  a github repo in a LIVE (non-tombstone) shard row with no per-tool doc => WARN (anti-lost).
   STALE     a tool doc not re-verified in >9 months => WARN (anti-rot nomination).
@@ -72,17 +71,23 @@ pick it up, except a confirmed 404 (a hard fact) which BLOCKs.
 import datetime
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
+from urllib.parse import urlsplit
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
 # which had already begun to drift. The insert above stays, because sibling modules in this
 # same tools/ directory are still imported by bare name.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                "guards", "tools"))
-from datadir import resolve_companion_root, resolve_data_dir  # noqa: E402
+GUARDS_TOOLS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "guards", "tools")
+if not os.path.isfile(os.path.join(GUARDS_TOOLS, "datadir.py")):
+    raise SystemExit("Missing Guards resolver. Run git submodule update --init --recursive "
+                     "from the shopping-aggregator plugin directory.")
+sys.path.insert(0, GUARDS_TOOLS)
+from datadir import resolve_data_dir  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, "skills")
@@ -191,6 +196,67 @@ def check_data_freshness(fn, obj, today):
     return out
 
 
+def check_data_schema(fn, obj, today):
+    """Validate a verified fact table; the separate baggage checklist has its own schema."""
+    out = []
+    def finding(level, message):
+        out.append((level, "DATA", f"data/{fn} {message}"))
+    if not isinstance(obj, dict):
+        finding("block", "must be an envelope object")
+        return out
+    if type(obj.get("schema_version")) is not int or obj["schema_version"] != 1:
+        finding("block", "schema_version must be integer 1")
+    rows = obj.get("rows")
+    if not isinstance(rows, list) or not rows:
+        finding("block", "rows must be a nonempty list of verified facts")
+        return out
+    keys = set()
+    for index, row in enumerate(rows):
+        label = f"rows[{index}]"
+        if not isinstance(row, dict):
+            finding("block", label + " must be an object")
+            continue
+        key = row.get("key")
+        if not isinstance(key, str) or not key.strip():
+            finding("block", label + " requires a nonempty key")
+        elif key in keys:
+            finding("block", label + " repeats a key")
+        else:
+            keys.add(key)
+        if "value" not in row:
+            finding("block", label + " requires a value")
+        source = row.get("source_url")
+        try:
+            parsed = urlsplit(source) if isinstance(source, str) else None
+            valid_source = (parsed is not None and parsed.scheme in {"http", "https"}
+                            and parsed.hostname and parsed.username is None and parsed.password is None
+                            and not any(character.isspace() for character in source))
+            if parsed is not None:
+                parsed.port
+        except ValueError:
+            valid_source = False
+        if not valid_source:
+            finding("block", label + " requires an HTTP(S) source_url with a hostname")
+        verified = row.get("verified_date")
+        try:
+            if not isinstance(verified, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", verified):
+                raise ValueError("Invalid date shape")
+            date = datetime.date.fromisoformat(verified)
+        except ValueError:
+            finding("block", label + " requires a real YYYY-MM-DD verified_date")
+        else:
+            if date > today:
+                finding("block", label + " verified_date is in the future")
+        value = row.get("value")
+        numeric = (type(value) in {int, float} or isinstance(value, str)
+                   and re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)", value.strip()))
+        if numeric and not row.get("unit"):
+            finding("warn", label + " has a numeric value without a unit")
+        if "evidence_grade" in row and row["evidence_grade"] not in ("E1", "E2", "E3"):
+            finding("warn", label + " has an unrecognized evidence_grade")
+    return out
+
+
 def read(path):
     with open(path, encoding="utf-8") as f:
         return f.read()
@@ -260,6 +326,11 @@ def count_table_rows(text):
 
 
 def run_checks():
+    # Network observations require verified private storage; offline checks never use the cache.
+    gh_cache_path = _cache_path("gh-api-cache.json") if not NO_NET else None
+    from delivery_check import delivery_errors
+    for error in delivery_errors(ROOT):
+        block("DELIVERY", error)
     # ================================================================= ORIGINAL CHECKS (unchanged)
     # ---- THREEWAY: registry.json <-> tools/<slug>.md files <-> tools/index.md rows ----
     if not os.path.isdir(TOOLS_DIR):
@@ -380,6 +451,8 @@ def run_checks():
     REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
     OUTCOME_OK = {"created", "verified", "unverifiable", "dead", "fallback_used",
                   "price_mismatch", "coupon_fake", "coverage_gap"}
+    GAP_REASONS = {"session-gated-declined", "session-gated-unattended",
+                   "structurally-unreachable", "tool-outage", "not-attempted"}
 
     def _check_liveruns(path, label, required):
         if not os.path.exists(path):
@@ -401,6 +474,11 @@ def run_checks():
                 block("LIVERUNS", f"{label} line {i} missing keys: {sorted(missing)}")
             if rec.get("outcome") not in OUTCOME_OK:
                 warn("LIVERUNS", f"{label} line {i} outcome '{rec.get('outcome')}' not in the declared set")
+            if rec.get("outcome") == "coverage_gap":
+                reason = rec.get("gap_reason")
+                if not isinstance(reason, str) or reason not in GAP_REASONS:
+                    block("LIVERUNS", f"{label} line {i} requires a valid gap_reason "
+                                      "for coverage_gap (CONSTITUTION II.8)")
 
     _check_liveruns(os.path.join(SKILL, "metrics", "live-runs.jsonl.example"),
                     "metrics/live-runs.jsonl.example", required=True)
@@ -536,18 +614,12 @@ def run_checks():
                 block("STAR", f"{repo}: claims {claimed_k}k★ but API says {real} (>{int(STAR_TOL*100)}% off)")
 
     # ---- GHACTIVE (deterministic activity gate; archived/404 BLOCK, stale WARN, RL bypass) ----
-    # The API cache goes to the COMPANION, not into skills/<name>/metrics/ inside this public repo.
-    # `metrics/*.jsonl` under a skill directory is the literal shape of the 2026-07 leak, and a
-    # cache of what this tool asked GitHub about is a record of what the operator was checking.
-    # With no companion there is no cache: a run re-asks GitHub and writes nothing, and says so.
-    GH_CACHE = _cache_path("gh-api-cache.json")
-    if GH_CACHE is None and not NO_NET:
-        warn("GHACTIVE", "activity cache disabled: no private companion resolved, so nothing is cached")
     gh_cache = {}
-    if GH_CACHE and os.path.exists(GH_CACHE):
+    if gh_cache_path is not None and gh_cache_path.exists():
         try:
-            gh_cache = json.loads(read(GH_CACHE))
-        except Exception:
+            gh_cache = json.loads(read(_cache_path("gh-api-cache.json")))
+        except (OSError, ValueError):
+            warn("GHACTIVE", "private cache could not be read; fetching fresh observations")
             gh_cache = {}
     ghactive_results = []
     if NO_NET:
@@ -560,8 +632,12 @@ def run_checks():
                     age = (_now_ts - datetime.datetime.fromisoformat(c["checked_at"])).days
                 except Exception:
                     age = 999
-                if age <= GH_CACHE_MAX_AGE_DAYS and c.get("verdict") != "RATE_LIMITED":
+                if 0 <= age <= GH_CACHE_MAX_AGE_DAYS and c.get("verdict") in {"PASS", "WARN", "BLOCK"}:
                     ghactive_results.append(c)
+                    if c["verdict"] == "BLOCK":
+                        block("GHACTIVE", f"{r}: {c.get('reason', 'cached blocking observation')} (cached)")
+                    elif c["verdict"] == "WARN":
+                        warn("GHACTIVE", f"{r}: {c.get('reason', 'cached warning')} (cached)")
                     continue
             # Read the combined fetch (repo_api) instead of a second gh call. Verdict/cache/message
             # logic is unchanged: only the network round-trip moved to the parallel phase above.
@@ -614,13 +690,7 @@ def run_checks():
                              "checked_at": _now_iso}
             ghactive_results.append(entry)
             gh_cache[r] = entry
-        if GH_CACHE:
-            try:
-                os.makedirs(os.path.dirname(GH_CACHE), exist_ok=True)
-                with open(GH_CACHE, "w", encoding="utf-8") as f:
-                    json.dump(gh_cache, f, ensure_ascii=False, indent=2, sort_keys=True)
-            except Exception:
-                pass
+        _write_cache("gh-api-cache.json", gh_cache)
         if ghactive_results:
             _v = {v: 0 for v in ("PASS", "WARN", "BLOCK", "RATE_LIMITED")}
             for e in ghactive_results:
@@ -888,45 +958,28 @@ def run_checks():
         if not isinstance(obj, dict):
             block("DATA", f"data/{fn} top-level is not a JSON object (expected envelope dict)")
             continue
-        if "schema_version" not in obj:
-            block("DATA", f"data/{fn} missing envelope key 'schema_version'")
-        for _lvl, _code, _msg in check_data_freshness(fn, obj, today):
-            (block if _lvl == "block" else warn)(_code, _msg)
-        rows = obj.get("rows")
-        if not isinstance(rows, list):
-            block("DATA", f"data/{fn} envelope 'rows' is missing or not a list")
+        if fn == "airline-baggage.json":
+            from delivery_check import baggage_errors
+            for error in baggage_errors(obj):
+                block("DATA", error)
+            warn("BAGGAGE_UNVERIFIED", "airline-baggage.json contains collection requirements only; verify selected fares live")
             continue
-        for i, row in enumerate(rows):
-            if not isinstance(row, dict):
-                block("DATA", f"data/{fn} rows[{i}] is not an object")
-                continue
-            if not row.get("source_url"):
-                block("DATA", f"data/{fn} rows[{i}] missing non-empty 'source_url'")
-            if not row.get("verified_date"):
-                block("DATA", f"data/{fn} rows[{i}] missing non-empty 'verified_date'")
-            else:
-                vd = str(row["verified_date"])
-                mvd = re.match(r"(\d{4})-(\d{2})", vd)
-                if mvd and f"{mvd.group(1)}-{mvd.group(2)}" > this_month:
-                    block("DATA", f"data/{fn} rows[{i}] 'verified_date' {vd} is in the future")
+        for _lvl, _code, _msg in check_data_schema(fn, obj, today) + check_data_freshness(fn, obj, today):
+            (block if _lvl == "block" else warn)(_code, _msg)
 
 
 def _cache_path(name):
-    """<companion>/data/cache/<name>, or None when no companion resolves. Never a path in this repo.
+    """Resolve a cache destination only after verifying its PRIVATE repository."""
+    from evaluation_store import prepare_store
+    return prepare_store().output_path(Path("cache") / name)
 
-    This used to load tools/datadir.py by file path and fall back to skills/<name>/metrics/ when
-    that file was absent. datadir.py then moved into the guards submodule, the file check went
-    false on every run, and every authenticated run wrote its GitHub cache into the public worktree,
-    where data_boundary blocks the next push. A missing resolver read as "no companion", and "no
-    companion" meant "write into the repo", the in-repo fallback .dataclass.json exists to forbid. It
-    now asks the resolver this module already imports, and with no companion it caches nothing.
-    """
-    comp = resolve_companion_root("shopping-aggregator")
-    if not comp:
-        return None
-    d = os.path.join(str(comp), "data", "cache")
-    os.makedirs(d, exist_ok=True)
-    return os.path.join(d, name)
+
+def _write_cache(name, cache):
+    """Recheck storage and atomically publish observations; write failures block the gate."""
+    from evaluation_store import prepare_store
+    with prepare_store().atomic_writer(Path("cache") / name) as stream:
+        json.dump(cache, stream, ensure_ascii=False, indent=2, sort_keys=True)
+        stream.write("\n")
 
 
 def main():

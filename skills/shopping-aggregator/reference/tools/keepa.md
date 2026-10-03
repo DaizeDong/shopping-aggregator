@@ -7,7 +7,12 @@
 - **Top pick for its domain:** yes (for history)
 
 ## What it does / when to pick it
-The one irreplaceable Amazon source: full historical **price curve + BSR/sales-rank history + Buy Box / stock history** for any ASIN, going back years. Pick Keepa whenever the question needs *history* (price seasonality, BSR trend, was-it-ever-this-cheap), no free/scrape route can backfill that. For live spot prices only, the free ④ route (playwright, BigGo MCP) is cheaper; reach for Keepa specifically because the OSS route can only accrue history from *its own deploy day*, never the past.
+Keepa provides historical **price curves + BSR/sales-rank history + Buy Box / stock history**, with coverage
+that can extend back years. Pick it when the question needs those dimensions or deeper history for an
+ASIN. Camelcamelcamel offers some historical price data, so a Keepa outage does not erase every history
+option. Check the available date range and series before using either source. A self-hosted spot-price
+tracker can accrue its own observations only after deployment; that limit does not apply to an existing
+history provider. For live spot prices, use the free ④ route (playwright, BigGo MCP).
 
 ## Install
 KEEPA_API_KEY from keepa.com → install MCP. Both MCPs are stdio (local `uvx`/node), on Windows test in a plain shell first per `reference/install-guide.md` (Windows notes). `.mcpb` one-click via `BWB03/keepa-adapter` is the lowest-friction path. No hosted HTTP MCP.
@@ -25,6 +30,11 @@ MCP exposes ASIN/product lookups (e.g. `query_product` / `get_product` by ASIN +
 - Domain code is mandatory and easy to get wrong (US vs DE diverge); a missing `history=1` silently returns spot-only.
 
 ## Failure signals & fallback
-Failure: MCP `✗ Failed` / `! Needs authentication` in `claude mcp list`, HTTP 401 (bad key), or empty history arrays (token-starved / wrong domain). **Fallback for live prices:** playwright MCP or Camelcamelcamel page fetch, but accept you lose all back-history. There is no equivalent for deep history; flag the gap in the report.
+Failure: MCP `✗ Failed` / `! Needs authentication` in `claude mcp list`, HTTP 401 (bad key), or empty history
+arrays (token-starved / wrong domain). **Fallback for live prices:** playwright MCP. **Fallback for some
+historical price data:** fetch the Camelcamelcamel product page and identify the series and date range
+actually available. Do not treat it as a replacement for unavailable **BSR/sales-rank, Buy Box / stock
+history, or deeper price history**. Flag the Keepa fallback inline and list the specific missing dimensions
+or periods in Coverage gaps; retain any historical price evidence the fallback does provide.
 
 ## Last verified: 2026-06

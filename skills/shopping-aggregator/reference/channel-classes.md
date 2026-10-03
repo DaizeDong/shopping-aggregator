@@ -27,7 +27,7 @@ not actually take to a real read becomes a `not-attempted` coverage gap (guardra
 | mass-market marketplace | the everything-stores | Amazon, Walmart, Target, eBay | API/MCP + playwright |
 | category-specialist authorized retail | deep-catalog authorized dealers for a category | **PC/parts: Micro Center, Newegg, B&H, Adorama, Central Computer** · beauty: Sephora, Ulta · audio: Crutchfield · outdoor: REI | mostly browser/scrape (few expose a tool) |
 | brand-direct / DTC | the maker's own store / official Amazon storefront | brand.com · "Sold by `<brand>` Official" | browser; confirm it's the brand, not a 3P |
-| warehouse / membership | member-priced bulk | Costco, Sam's Club, BJ's (CN: 山姆) | login-walled playwright or skip |
+| warehouse / membership | member-priced bulk | Costco, Sam's Club, BJ's (CN: 山姆) | browser with an S2 login handoff; typed coverage gap only if declined or unattended |
 | local-pickup-only | per-store stock, no shipping | **Micro Center store**, Best Buy / Target / Walmart store pickup | **store-specific scrape by ZIP** (the chain page lies about local stock) |
 | cross-border / import | overseas authorized or grey | YesStyle, Stylevana, AliExpress, Olive Young (US→CN: 海淘) | browser; flag customs + slow ship + authenticity |
 | refurb / open-box | manufacturer / authorized refurbished | Amazon WHD, Best Buy Open-Box, brand-refurb | only if user said refurb-OK |

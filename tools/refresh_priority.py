@@ -22,7 +22,8 @@ stays public. The observations themselves do not.
 
 Schema consumed (LIVERUNS, per skills/shopping-aggregator/SKILL.md Step 7 + verify_matrix.py);
 the published shape is skills/shopping-aggregator/metrics/live-runs.jsonl.example:
-  {"ts","domain","source","route?","outcome","detail","user_correction"}
+  {"ts","domain","source","route?","outcome","detail","user_correction","gap_reason?"}
+Every coverage_gap requires a gap_reason from GAP_REASONS. Other outcomes do not.
 
 Weighting (highest signal first), per reference/refresh-protocol.md "Feedback loop":
   - user_correction : the user manually fixed something we were wrong about. This is a JSON
@@ -32,10 +33,11 @@ Weighting (highest signal first), per reference/refresh-protocol.md "Feedback lo
   - price_mismatch  : the source's price diverged from the live authorized listing.
   - coverage_gap    : an in-scope channel could not be taken to E1 depth (missing channel/tool).
 
-Score per (domain, source) = sum over its events of each event's weight. A single event can
+Score per source (or domain with --by domain) = sum of its events' weights. A single event can
 contribute multiple weights (e.g. an outcome=="dead" line that also carries a non-null
 user_correction counts for both). Sources are ranked by descending score; ties broken by
-event count, then alphabetically, so output is stable.
+event count, then alphabetically, so output is stable. Both output formats preserve gap-reason
+counts within each aggregate without changing these weights.
 
 Usage:
   python tools/refresh_priority.py                 # ranked table (default)
@@ -43,8 +45,8 @@ Usage:
   python tools/refresh_priority.py --by domain     # aggregate by domain instead of source
   python tools/refresh_priority.py --file PATH     # read a specific jsonl (default: the private one)
 
-Exit codes: 0 normal (even with zero priority events); non-zero on unreadable / invalid input;
-2 when the private data dir does not exist (the tool is uninitialized — not a crash, a state).
+Exit codes: 0 normal (including zero priority events or an uninitialized private data dir);
+non-zero on unreadable / invalid input.
 """
 
 import argparse
@@ -56,8 +58,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
 # which had already begun to drift. The insert above stays, because sibling modules in this
 # same tools/ directory are still imported by bare name.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                "guards", "tools"))
+GUARDS_TOOLS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "guards", "tools")
+if not os.path.isfile(os.path.join(GUARDS_TOOLS, "datadir.py")):
+    raise SystemExit("Missing Guards resolver. Run git submodule update --init --recursive "
+                     "from the shopping-aggregator plugin directory.")
+sys.path.insert(0, GUARDS_TOOLS)
 from datadir import DataDirNotInitialized, resolve_data_dir  # noqa: E402
 
 SKILL_SLUG = "shopping-aggregator"
@@ -71,9 +77,9 @@ def _liveruns_file():
             "shopping-aggregator has no private data directory, so there are no live-run\n"
             "observations to rank. A freshly cloned public skill is SUPPOSED to look like this:\n"
             "it ships as an uninitialized tool, carrying the schema and none of the contents.\n"
-            "Point it at your own store:\n"
-            "    mkdir -p ~/.shopping-aggregator-config/data/metrics\n"
-            "    (or set SHOPPING_AGGREGATOR_DATA_DIR)\n"
+            "Clone your PRIVATE shopping-aggregator-config companion, then set\n"
+            "SHOPPING_AGGREGATOR_CONFIG to its directory (or set\n"
+            "SHOPPING_AGGREGATOR_DATA_DIR to its data directory).\n"
             "The shape you are expected to produce is published in the repo as\n"
             "skills/shopping-aggregator/metrics/live-runs.jsonl.example."
         )
@@ -117,9 +123,14 @@ WEIGHTS = {
 # "created", are not problems and carry no weight).
 SCORING_OUTCOMES = ("dead", "price_mismatch", "coverage_gap")
 
+GAP_REASONS = frozenset({
+    "session-gated-declined", "session-gated-unattended", "structurally-unreachable",
+    "tool-outage", "not-attempted",
+})
+
 
 def load_records(path):
-    """Yield (lineno, record) for every non-blank line. Raises on bad JSON."""
+    """Read numbered records, rejecting bad JSON or untyped coverage gaps."""
     try:
         with open(path, "r", encoding="utf-8") as fh:
             raw = fh.read()
@@ -131,11 +142,18 @@ def load_records(path):
         if not ln:
             continue
         try:
-            out.append((i, json.loads(ln)))
+            rec = json.loads(ln)
         except json.JSONDecodeError as e:
             raise SystemExit(
                 f"refresh_priority: {path} line {i} is not valid JSON: {e}"
             )
+        if rec.get("outcome") == "coverage_gap":
+            reason = rec.get("gap_reason")
+            if not isinstance(reason, str) or reason not in GAP_REASONS:
+                raise SystemExit(
+                    f"refresh_priority: {path} line {i} coverage_gap requires a valid gap_reason"
+                )
+        out.append((i, rec))
     return out
 
 
@@ -174,6 +192,7 @@ def rank(records, by="source"):
                 "dead": 0,
                 "price_mismatch": 0,
                 "coverage_gap": 0,
+                "gap_reasons": {},
             },
         )
         slot["score"] += w
@@ -182,6 +201,9 @@ def rank(records, by="source"):
         slot["sources"].add(source)
         for s in signals:
             slot[s] += 1
+        if rec.get("outcome") == "coverage_gap":
+            reason = rec["gap_reason"]
+            slot["gap_reasons"][reason] = slot["gap_reasons"].get(reason, 0) + 1
     ranked = sorted(
         agg.values(),
         key=lambda r: (-r["score"], -r["events"], r["key"]),
@@ -195,6 +217,7 @@ def to_jsonable(rows):
         r = dict(r)
         r["domains"] = sorted(r["domains"])
         r["sources"] = sorted(r["sources"])
+        r["gap_reasons"] = dict(sorted(r["gap_reasons"].items()))
         out.append(r)
     return out
 
@@ -207,12 +230,13 @@ def print_table(rows, by):
     label = "SOURCE" if by == "source" else "DOMAIN"
     ctx = "domains" if by == "source" else "sources"
     print(f"{'PRIORITY':<9}{'SCORE':>6}  {'UC':>3} {'DEAD':>4} {'MISM':>4} {'GAP':>3}  "
-          f"{label:<22} {ctx}")
+          f"{label:<22} {ctx}  GAP REASONS")
     print("-" * 78)
     for n, r in enumerate(rows, 1):
         ctx_vals = ",".join(r["domains"] if by == "source" else r["sources"])
+        reasons = ",".join(f"{reason}={count}" for reason, count in sorted(r["gap_reasons"].items()))
         print(f"#{n:<8}{r['score']:>6}  {r['user_correction']:>3} {r['dead']:>4} "
-              f"{r['price_mismatch']:>4} {r['coverage_gap']:>3}  {r['key']:<22} {ctx_vals}")
+              f"{r['price_mismatch']:>4} {r['coverage_gap']:>3}  {r['key']:<22} {ctx_vals}  {reasons or '-'}")
     print()
     print("Work top-down in the next sweep. Weights: user_correction=100 (human override) > "
           "dead=10 > price_mismatch=5 > coverage_gap=3.")
@@ -237,7 +261,7 @@ def main(argv=None):
         path = os.fspath(args.file)
     except DataDirNotInitialized as e:
         print(str(e), file=sys.stderr)
-        return 2
+        return 0
 
     records = load_records(path)
     rows = rank(records, by=args.by)

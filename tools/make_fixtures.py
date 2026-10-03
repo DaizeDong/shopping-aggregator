@@ -219,6 +219,224 @@ def repo_root():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def evaluation_fixture():
+    """Invented text for transport/schema tests, not evidence of judge quality."""
+    return {"synthetic": True, "transcript": "Synthetic evidence: the example run records its checks.\n"}
+
+
+def storage_visibility_fixture(path, states=None, refreshed=None):
+    """Write a local receipt for invented repositories, with no visibility lookup."""
+    from datetime import datetime, timezone
+    from pathlib import Path
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    receipt = {"_refreshed": refreshed or datetime.now(timezone.utc).isoformat(),
+               **(states if states is not None else {"example-owner/example-private": "PRIVATE"})}
+    path.write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def storage_repository_fixture(root, identity="example-owner/example-private", *,
+                               head=True, remote_name="origin"):
+    """Create a disposable Git repository containing only generated synthetic input."""
+    from pathlib import Path
+    import subprocess
+    root = Path(root)
+    root.mkdir(parents=True, exist_ok=True)
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.upper().startswith("GIT_")}
+    def git(*args, text=None):
+        return subprocess.run(["git", "-C", str(root), "-c", "user.name=Example User",
+                               "-c", "user.email=user1@example.com", *args],
+                              input=text, capture_output=True, text=True,
+                              check=True, env=environment).stdout.strip()
+    git("init", "-q")
+    git("remote", "add", remote_name, f"https://github.com/{identity}.git")
+    data = root / "data"
+    data.mkdir()
+    transcript = data / "input.txt"
+    transcript.write_text(evaluation_fixture()["transcript"], encoding="utf-8")
+    if head:
+        git("add", "data/input.txt")
+        tree = git("write-tree")
+        commit = git("commit-tree", tree, text="Synthetic storage fixture\n")
+        git("update-ref", "HEAD", commit)
+    return data, transcript
+
+
+def matrix_cache_fixture():
+    """Invented GitHub observations for private cache transaction tests."""
+    return {"example-owner/example-repo": {"repo": "example-owner/example-repo", "verdict": "PASS",
+            "checked_at": "2030-01-02T12:00:00", "pushed_at": "2030-01-01T12:00:00Z", "archived": False}}
+
+
+def matrix_observation_fixture(verdict):
+    """Generate GitHub-shaped observations for native cold/warm cache checks."""
+    from datetime import datetime, timezone
+    pushed = "2000-01-01T00:00:00Z" if verdict == "WARN" else datetime.now(timezone.utc).isoformat()
+    return {"s": 1000, "a": verdict == "BLOCK", "p": pushed}
+
+
+def fact_table_fixture(variant="valid"):
+    """Generate fact-table schema controls without claiming a real-world observation."""
+    from datetime import date, timedelta
+    today = date.today()
+    row = {"key": "example-rate", "value": 0, "unit": "%", "source_url": "https://example.com/policy",
+           "verified_date": today.isoformat(), "evidence_grade": "E1"}
+    table = {"schema_version": 1, "last_verified": today.strftime("%Y-%m"),
+             "review_cadence_days": 365, "rows": [row]}
+    if variant == "empty":
+        table["rows"] = []
+    elif variant == "malformed":
+        table.update(schema_version="invalid", rows=[{"source_url": "not-a-url", "verified_date": "not-a-date"}])
+    elif variant == "boolean-version":
+        table["schema_version"] = True
+    elif variant == "unsupported-version":
+        table["schema_version"] = 2
+    elif variant == "duplicate-key":
+        table["rows"].append(dict(row))
+    elif variant == "empty-key":
+        row["key"] = ""
+    elif variant == "missing-value":
+        del row["value"]
+    elif variant == "non-http-source":
+        row["source_url"] = "ftp://example.com/policy"
+    elif variant == "missing-host":
+        row["source_url"] = "https:///policy"
+    elif variant == "invalid-date":
+        row["verified_date"] = "2026-02-30"
+    elif variant == "month-only":
+        row["verified_date"] = today.strftime("%Y-%m")
+    elif variant == "future-date":
+        row["verified_date"] = (today + timedelta(days=1)).isoformat()
+    elif variant == "untyped-row":
+        table["rows"] = [None]
+    elif variant == "missing-unit":
+        del row["unit"]
+    elif variant == "unknown-grade":
+        row["evidence_grade"] = "UNKNOWN"
+    elif variant != "valid":
+        raise ValueError("Unknown synthetic fact-table variant")
+    return table
+
+
+def live_run_examples():
+    """Generate the public observation schema using invented source events only."""
+    base = {"ts": "2000-01-01T00:00:00Z", "domain": "example-domain", "source": "example-source",
+            "user_correction": None}
+    return [{**base, "outcome": "verified", "detail": "Synthetic source check."},
+            {**base, "outcome": "dead", "detail": "Synthetic retired source."},
+            {**base, "outcome": "coverage_gap", "gap_reason": "session-gated-unattended",
+             "detail": "Synthetic login handoff received no operator response."}]
+
+
+def render_live_run_examples():
+    return "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in live_run_examples())
+
+
+def flight_search_fixture(card_count=0):
+    """Generate a large response with zero, thin, or healthy synthetic flight cards."""
+    cards = "".join(
+        f'<li><a data-websiteurl="x?itinerary=AAA-BBB-XX-{100 + index}-20300102"></a>'
+        f'<span aria-label="{100 + index} US dollars"></span>'
+        '<div aria-label="Total duration 2 hr."></div></li>'
+        for index in range(card_count))
+    return {"html": "<html>" + cards + "synthetic unrelated content " * 12000 + "</html>",
+            "argv": ["search", "AAA", "BBB", "2030-01-02", "--json"]}
+
+
+def matrix_package_fixture(root):
+    """Generate a minimal complete package for the real matrix CLI, with one invented repo."""
+    from pathlib import Path
+    root = Path(root)
+    delivery_fixture(root)
+    skill = "skills/shopping-aggregator"
+    reference = f"{skill}/reference"
+    files = {
+        "CHANGELOG.md": "# Synthetic package\n\n## [0.0.0]\n",
+        ".claude-plugin/plugin.json": json.dumps({"version": "0.0.0"}),
+        "CONSTITUTION.md": "# Synthetic package contract\n",
+        f"{skill}/SKILL.md": "L1 L5 E1 E3\n" + "\n".join(f"#{i} Synthetic rule" for i in range(1, 11)),
+        f"{reference}/sources-index.md": "① ② ③ ④\n[air-travel](domains/air-travel.md)\n",
+        f"{reference}/tools/registry.json": json.dumps({"tools": [
+            {"slug": "example-tool", "repo": "example-owner/example-repo"}]}),
+        f"{reference}/tools/index.md": "[example-tool](example-tool.md)\n",
+        f"{reference}/tools/example-tool.md": "# Synthetic tool\nhttps://github.com/example-owner/example-repo\n",
+        f"{reference}/report-template.md": "# Coverage gaps\n\n| Ev |\n| --- |\n",
+        f"{skill}/metrics/live-runs.jsonl.example": render_live_run_examples(),
+    }
+    for relative, contents in files.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(contents, encoding="utf-8")
+    return set(files)
+
+
+def baggage_requirements():
+    """Synthetic schema fixture; no observed allowance or fee is asserted."""
+    return {"schema_version": 2, "kind": "collection_requirements", "status": "unverified",
+            "last_verified": None, "review_cadence_days": 30, "rows": [],
+            "required_terms": ["fare_brand", "checked_bags", "cabin_bags", "tax",
+                               "seat_selection", "payment_fx", "refund_terms"],
+            "source_types": ["synthetic-booking-source"],
+            "policy": "Synthetic checklist only; collect selected fare terms before comparison."}
+
+
+def installation_fixture(root, version="0.0.0"):
+    """Generate stand-ins for isolated package tests, never a real installation."""
+    from pathlib import Path
+    prefix = "skills/shopping-aggregator/reference"
+    files = {"CHANGELOG.md": f"# Synthetic installation fixture\n\n## [{version}]\n",
+             f"{prefix}/domains/air-travel.md":
+                 "# Synthetic flight shard\n\nLast verified: 2000-01 (synthetic; no live observations)\n",
+             f"{prefix}/data/airline-baggage.json":
+                 json.dumps(baggage_requirements(), indent=2) + "\n"}
+    for relative, text in files.items():
+        path = Path(root) / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write(text)
+    return set(files)
+
+
+def delivery_fixture(root):
+    """A miniature synthetic package for missing/untracked-resource tests."""
+    from pathlib import Path
+    prefix = "skills/shopping-aggregator"
+    files = {"README.md": f"[air-travel]({prefix}/reference/domains/air-travel.md)\n",
+             "README_CN.md": f"[air-travel]({prefix}/reference/domains/air-travel.md)\n",
+             f"{prefix}/SKILL.md": "# Synthetic skill\nreference/domains/<domain>.md\n",
+             f"{prefix}/reference/sources-index.md": "[air-travel](domains/air-travel.md)\n",
+             f"{prefix}/reference/domains/air-travel.md": "# Synthetic flight shard\n",
+             f"{prefix}/reference/data/airline-baggage.json": json.dumps(baggage_requirements()) + "\n"}
+    for rel, text in files.items():
+        path = Path(root) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return set(files)
+
+
+def flight_quote():
+    """Invented selected-source fields; example.com never proves a live airfare."""
+    return {"synthetic": True, "variant_key": "example-flight-standard-one-bag", "currency": "USD",
+            "terms": {key: {"status": "verified", "value": value} for key, value in
+                      {"fare": "100", "tax": "10", "checked_bags": "20", "seat_selection": "10",
+                       "cabin_bags": "0", "payment_fx": "0", "fare_brand": "Example Standard",
+                       "refund_terms": "Example nonrefundable"}.items()},
+            "sources": [{"source_url": "https://example.com/booking", "fetched_at": "2030-01-02T11:00:00+00:00",
+                         "variant_key": "example-flight-standard-one-bag", "evidence_grade": "E1", "selected": True,
+                         "transport_id": transport} for transport in ("synthetic-browser", "synthetic-api")]}
+
+
+def judge_response(contract, verdict="PASS"):
+    """A fake response for structural validation tests; no model judgment is implied."""
+    return {"scenario_id": contract["scenario_id"], "input_hashes": dict(contract["input_hashes"]),
+            "criteria": [{"id": key, "verdict": verdict,
+                          "evidence": {"kind": "quote", "quote": evaluation_fixture()["transcript"].strip(),
+                                       "reason": "Synthetic schema test evidence only."}}
+                         for key in contract["criteria"]]}
+
+
 def main():
     ap = argparse.ArgumentParser(description="Generate the synthetic eval-scenario fixture.")
     ap.add_argument("--out", help="write fixtures into this directory (default: regenerate in place)")
@@ -234,6 +452,19 @@ def main():
     # newline="\n": never let Windows translate this to CRLF -- the bytes are the contract.
     with open(dest, "w", encoding="utf-8", newline="\n") as f:
         f.write(render())
+    auxiliary = "skills/shopping-aggregator/reference/scenario-eval/evaluation-fixture.json"
+    extra = os.path.join(a.out, os.path.basename(auxiliary)) if a.out else os.path.join(repo_root(), auxiliary)
+    with open(extra, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(evaluation_fixture(), indent=2) + "\n")
+    quote_dest = os.path.join(os.path.dirname(extra), "flight-quote-fixture.json")
+    with open(quote_dest, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(flight_quote(), indent=2) + "\n")
+    live_relative = "skills/shopping-aggregator/metrics/live-runs.jsonl.example"
+    live_dest = (os.path.join(a.out, os.path.basename(live_relative)) if a.out
+                 else os.path.join(repo_root(), live_relative))
+    os.makedirs(os.path.dirname(live_dest), exist_ok=True)
+    with open(live_dest, "w", encoding="utf-8", newline="\n") as f:
+        f.write(render_live_run_examples())
     print("make_fixtures: wrote %d scenario(s) -> %s" % (len(CASES), dest))
     return 0
 

@@ -1,0 +1,57 @@
+{
+  "synthetic": true,
+  "variant_key": "example-flight-standard-one-bag",
+  "currency": "USD",
+  "terms": {
+    "fare": {
+      "status": "verified",
+      "value": "100"
+    },
+    "tax": {
+      "status": "verified",
+      "value": "10"
+    },
+    "checked_bags": {
+      "status": "verified",
+      "value": "20"
+    },
+    "seat_selection": {
+      "status": "verified",
+      "value": "10"
+    },
+    "cabin_bags": {
+      "status": "verified",
+      "value": "0"
+    },
+    "payment_fx": {
+      "status": "verified",
+      "value": "0"
+    },
+    "fare_brand": {
+      "status": "verified",
+      "value": "Example Standard"
+    },
+    "refund_terms": {
+      "status": "verified",
+      "value": "Example nonrefundable"
+    }
+  },
+  "sources": [
+    {
+      "source_url": "https://example.com/booking",
+      "fetched_at": "2030-01-02T11:00:00+00:00",
+      "variant_key": "example-flight-standard-one-bag",
+      "evidence_grade": "E1",
+      "selected": true,
+      "transport_id": "synthetic-browser"
+    },
+    {
+      "source_url": "https://example.com/booking",
+      "fetched_at": "2030-01-02T11:00:00+00:00",
+      "variant_key": "example-flight-standard-one-bag",
+      "evidence_grade": "E1",
+      "selected": true,
+      "transport_id": "synthetic-api"
+    }
+  ]
+}

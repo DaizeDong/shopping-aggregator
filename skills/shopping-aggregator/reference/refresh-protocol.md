@@ -56,8 +56,9 @@ Beyond the generic MCP-registry + GitHub + community surfaces in market-intel, a
    and flag any channel CLASS or canonical retailer missing from the shards. A missing channel is a
    coverage gap even when no tool exists for it. `coverage_gap` events in the private
    `live-runs.jsonl` (emitted by real runs per SKILL.md guardrail #9 / Step 7) feed this audit
-   directly. Known STRUCTURAL gaps (login-walled channels, quote-only brands) are already written up
-   in `source-reliability.md`, check there before re-litigating one as a new finding.
+   directly. Check `source-reliability.md` for known access limitations, and use `login-handoff.md`
+   to distinguish session gates from structural limits. A login wall is not structural when an
+   operator-supplied session can unlock the channel.
 
 ### Apply the same quality guardrails
 
@@ -127,8 +128,9 @@ For every tool ADDed or REPLACEd:
 
 For every tool deleted/tombstoned:
 - Mark its doc `⚠ Avoid (dead/superseded)` (never silent-delete).
-- Drop its index row.
-- Update registry.
+- Retain its index row with explicit `Avoid` or inactive status.
+- Retain the registry entry with the same status and clear any `top_pick` designation.
+  The THREEWAY gate requires every retained per-tool document, including tombstones, in both indexes.
 
 ### Record the diff
 
@@ -140,25 +142,30 @@ In `CHANGELOG.md` at the repo root: date + per-domain added/removed/changed. Bum
 To whichever Git remote this skill repo lives at. The heartbeat workflow checks for monthly
 activity, see `.github/workflows/heartbeat.yml`.
 
-## What's NOT in this protocol (defer to market-intel)
+## Validation and related protocols
 
-- Anti-regression gate, this skill **ships its own** `tools/verify_matrix.py` + `.github/workflows/
-  gate.yml` (as of v0.3.0): 6 deterministic artifact/contract checks (THREEWAY registry↔docs↔index ·
-  FRESH last_verified · TEMPLATE Coverage-gaps+Ev · VERSION CHANGELOG↔plugin sync · RENAME no
-  leaked legacy tier token · LIVERUNS metrics JSONL valid). Run `python tools/verify_matrix.py` before any
-  matrix change; CI runs it on push + PR. market-intel's RICHER judgement checks
-  (REPO/STAR/GHACTIVE/COVER/CHURN/DELETE) are **not yet ported**, those remain the gap.
-- CONSTITUTION-injection-as-hard-constraints, the skill now ships its own `CONSTITUTION.md` at the
-  repo root (I.1 to VII). A refresh sweep updates the matrix and may NOT relax the constitution (see
-  CONSTITUTION VII).
-- Horizon-scan for new domains, read market-intel's protocol section "Horizon scan."
+Run `python tools/verify_matrix.py --no-net` for local artifact and DATA checks.
+The matrix also implements REPO, STAR, GHACTIVE, COVER, CHURN and DELETE checks;
+network mode requires verified PRIVATE storage for its observations. Baseline-dependent
+checks report when the selected Git baseline is unavailable. Read the script's current
+check list rather than relying on a fixed count in this document.
+
+A refresh may not relax `CONSTITUTION.md`; changes to the constitution need a reasoned
+review. Use market-intel's horizon-scan protocol when considering a new domain.
 
 ## Feedback loop
 
-The skill writes one line per source touched to the **private** `live-runs.jsonl` during real runs
-(see SKILL.md Step 7). That file is DATA, it lives in `~/.shopping-aggregator-config/data/metrics/`
-(or `$SHOPPING_AGGREGATOR_DATA_DIR`), never in this public repo, because its lines record what a real
+The skill writes each source outcome and in-scope channel gap to the **private** `live-runs.jsonl` during real runs
+(see SKILL.md Step 7). That file is DATA, it lives under `metrics/` in the verified PRIVATE
+versioned companion data directory resolved by `guards/tools/datadir.py`, because its lines record what a real
 person priced and where it shipped. The repo ships the shape only (`metrics/live-runs.jsonl.example`).
+
+Every `outcome: coverage_gap` record MUST include `gap_reason`, with exactly one of:
+`session-gated-declined`, `session-gated-unattended`, `structurally-unreachable`, `tool-outage`,
+or `not-attempted`. Preserve that same reason in the report's Coverage gaps row and the private
+record. Use `detail` for supporting observations, never as a substitute for the enum field.
+Other outcomes do not require a gap reason. Missing or invalid reasons are validation errors;
+reconcile them against the private evidence rather than guessing from free text.
 
 The refresh-protocol **must** read this file as a prioritization input. Run the ranking tool (replaces
 the old hand-run `jq | sort | uniq -c` one-liner, one deterministic, weighted definition shared by
@@ -170,8 +177,8 @@ python tools/refresh_priority.py --by domain   # aggregate by domain
 python tools/refresh_priority.py --json        # machine-readable, for scripted sweeps
 ```
 
-Exit code 2 means there is no data dir: the skill is uninitialized (a fresh clone is *supposed* to
-look like this) and there is nothing to prioritize. That is a state, not a failure.
+An uninitialized reader reports that no live-run data exists and exits 0. Initialize the
+PRIVATE companion before writing observations; missing storage never authorizes a public fallback.
 
 **Then distil.** A sweep is where an observation becomes tool knowledge. When the SAME failure
 signature recurs across unrelated products, a route that returns `$0`, an aggregator that answers
@@ -180,8 +187,8 @@ empty for niche SKUs, a retailer that hides per-store stock, promote it to
 product, price, and region stripped out. One run is an anecdote; a repeat is a fact about the tool.
 The private file keeps the life; the public repo gets the lesson.
 
-Work top-down through the ranking in the next sweep. The tool scores each `(domain, source)` by a
-weighted sum of its problem events, **highest weight first**:
+Work top-down through the ranking in the next sweep. The default ranking aggregates by source;
+`--by domain` aggregates by domain. Both use the weighted sum of problem events, highest weight first:
 
 - `user_correction` (weight 100), the user manually fixed something we were wrong about. This is a
   JSON **key present on the line** (non-null value), **NOT an `outcome` value**; a line can carry it
@@ -190,7 +197,10 @@ weighted sum of its problem events, **highest weight first**:
 - `price_mismatch` (weight 5), the source's price diverged from the live authorized listing.
 - `coverage_gap` (weight 3), a real run hit an in-scope channel it could not take to E1 depth. This
   is the path by which a **missing CHANNEL** (not just a dead tool) reaches the refresh loop; route
-  these to the channel-completeness audit above.
+  these to the channel-completeness audit above. Both ranking formats preserve counts by reason
+  (`gap_reasons` in JSON), including when several reasons affect the same source or domain. Keep
+  that distinction when planning retries: a declined or unattended login is different from a
+  structural limit, a tool outage, or an unattempted channel. Reason counts do not change the weights.
 
 A single event can contribute multiple weights (e.g. a `price_mismatch` line that also carries a
 non-null `user_correction`). Non-problem outcomes (`verified`, `created`, ...) carry no weight unless

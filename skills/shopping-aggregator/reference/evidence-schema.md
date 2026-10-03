@@ -1,8 +1,6 @@
 # Evidence unit + tiering / grade rules (read at Step 5)
 
-This is the on-demand detail behind SKILL.md Step 5 (the structured evidence unit) and guardrails
-**#5 / #5b / #7 / #9**. SKILL.md carries the bare schema + one-line imperatives; the long rules,
-field commentary, and the real-run war-stories live here so the always-loaded file stays thin.
+Use this schema and the rules below to reduce source observations into comparable evidence.
 
 ## The structured evidence unit (annotated)
 
@@ -55,10 +53,6 @@ required on every L1 to L4 retailer live-fetch unit, but a **missing seller_name
 L3, it does NOT reject the unit** (L5 leads legitimately lack a seller field). Don't rank L4/L5 as
 winners without explicit user override. Mark every retailer's tier in the output.
 
-> **War-story:** a conspicuously cheap listing on a big-box retailer's own domain was actually a
-> 3.7★ Marketplace 3P seller, caught only by reading the Sold-by field. Domain alone would have
-> mis-stamped it L1, and price alone would have ranked it #1.
-
 ## #5b, Evidence grade (E1/E2/E3): HOW the price was obtained, gates ranking FIRST
 
 Evidence grade is **ORTHOGONAL to seller tier and gates ranking FIRST.** Tag every price:
@@ -74,9 +68,6 @@ Rules:
 - A clean first-party domain does **NOT** upgrade an E3 snippet, evidence_grade is checked before
   seller_tier.
 
-> **Run B war-story:** the "$1,450" figure was an E3 SERP snippet; the real E1 PDP was
-> $1,199.99, neither the same number nor the same SKU.
-
 ## #7, Disagreement handling (cross-snapshot AND cross-source)
 
 - **(a) Cross-snapshot (same page, two pulls):** if two playwright pulls of the same page disagree
@@ -88,9 +79,6 @@ Rules:
   the closed set `{different seller, stale/aggregated (E2/E3), coverage-gap}`, and resolve by
   evidence grade (E1 wins; an E2/E3 that can't be lifted to E1 corroborates or is discarded, **never
   averaged**).
-
-> **Run B war-story:** codex ~$1.0 to 1.3k vs Newegg E1 PDP $1,199.99 vs a $1,450 E3 snippet were
-> never reconciled, that is exactly the (b) gap this rule closes.
 
 ## #8, Disconfirmation mandate (esp. for cheapest-source recommendations)
 
@@ -110,10 +98,13 @@ exclusive link," cross-check against the same retailer's public price before cre
 ## #9, Failures AND never-tried become explicit gaps (coverage floor)
 
 - **(a) Failures:** any subagent that returns `failed/empty` triggers one query rewrite + retry; if
-  still empty, list it in an explicit "Not covered" section.
+  still empty, classify the access state using `login-handoff.md` and list the unresolved gap in
+  the final "Coverage gaps" section. The private record uses `outcome: coverage_gap` and the matching
+  enum `gap_reason` from `refresh-protocol.md`; an empty result alone does not prove a structural limit.
 - **(b) Coverage floor (never-tried):** a channel class that is IN SCOPE per `channel-classes.md`
-  but was **never attempted** is also a gap, record it `status: not-attempted` with a reason, emit a
-  `coverage_gap` line (Step 7), and the report's "Coverage gaps" section MUST list every in-scope
+  but was **never attempted** is also a gap. Record `outcome: coverage_gap` with
+  `gap_reason: not-attempted` (Step 7), explain why in `detail`, and preserve that reason in the report.
+  The report's "Coverage gaps" section MUST list every in-scope
   class not taken to `E1` depth. Completeness-by-omission (silence about a channel you never queried
 , e.g. a category-specialist or local-pickup class) is a bug. A report may not look complete while
   a buyer channel was never checked.

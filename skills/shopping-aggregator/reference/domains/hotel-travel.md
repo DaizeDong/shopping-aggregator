@@ -12,16 +12,18 @@ Rental cars, trains, cruises and package tours are **OUT of scope**. **Flights n
 
 | source | route | capability | detect | tier / risk |
 |---|---|---|---|---|
-| **Booking.com** ([booking.com](https://www.booking.com/)) | ④ playwright | **the reliable spine.** search→property→room-select→Your-Details reads **total + tax + cancellation verbatim**; Genius member discount often the **lowest PUBLIC** price | booking.com | **L2** OTA high-trust; total **EXCLUDES parking** (pay-at-property) |
+| **Booking.com** ([booking.com](https://www.booking.com/)) | ④ playwright | search→property→room-select→Your-Details reads **total + tax + cancellation verbatim**; compare the public rate, then any Genius rate for which the user is eligible | booking.com | **L2** OTA high-trust; check separately for parking payable at the property |
 | **Google Hotels** ([google.com/travel](https://www.google.com/travel/search)) | ④ discovery only | aggregates Booking/Expedia/Hotels.com/Priceline/brand-official → use for **RELATIVE channel ordering** only | google.com/travel | **L5** meta-recall; `ts=`/`qs=` URL **LOCKS dates**, on-page date change does NOT apply → never trust its date-specific numbers |
-| **Brand-direct** (Hilton/Marriott/IHG) | ④ (login) | only beats OTA parity with a **loyalty MEMBER rate** (needs an account/login) | brand.com | **L1**; with no membership it does not beat Booking parity |
-| **Other OTAs** (Expedia/Hotels.com/Priceline) | ④ | rate-parity, usually within **~$10** of Booking (session-observed) | the site | **L2 to L3**; *general OTA risk, not from session:* watch phantom inventory / opaque bed-banks (treat as L4 if encountered) |
+| **Brand-direct** (Hilton/Marriott/IHG) | ④ public rate; login for member rates | always check the **public brand-direct rate without requiring membership**; evaluate loyalty discounts separately after confirming eligibility | brand.com | **L1**; compare live total-stay cost and matching terms against OTAs |
+| **Other OTAs** (Expedia/Hotels.com/Priceline) | ④ | check live rates and terms independently; do not assume parity with Booking or brand-direct | the site | **L2 to L3**; watch phantom inventory / opaque bed-banks (treat as L4 if encountered) |
 | **Parking research** (hotel site / SpotHero / ParkWhiz / TripAdvisor forums) | ④ web search | fills the fee Booking omits; a WebSearch subagent gathers many hotels in parallel | separate search | material, **reorders rankings** |
 
-**Default pick:** **Booking.com ④** is typically the lowest legitimate channel **with no loyalty membership**
-(Genius > public OTA parity); confirm brand-direct only if the user has a loyalty account. Observed
-(an illustrative session, not a standing quote): Homewood Suites Booking **$152** < Hilton
-official ~$163 < Expedia/Hotels.com/Priceline ~$175. Re-price live every run, never carry these numbers forward.
+**Default comparison:** check Booking.com, the public brand-direct rate, and other relevant OTAs for the
+same dates, occupancy, room, board, cancellation and payment terms. Rank by live total-stay cost, including
+taxes and mandatory fees; no channel is a standing winner. Membership is not a prerequisite for the
+public brand-direct check. Show loyalty or Genius discounts as separate eligible rates, and use them only
+after confirming the user's eligibility. If login is needed for a member rate, finish the available public
+reads first, then follow the blocking login handoff. Do not assume access to the discount.
 
 ## Booking.com route (tested selectors, the spine)
 
@@ -46,7 +48,9 @@ DIFFERENT SKUs, list separately). Rules:
   rate from memory (e.g. a large US metro ~14%); same no-hardcoded-rate guardrail as the rest of the skill
   (#3 / CONSTITUTION I.7). The live-read tax line must carry `snapshot_ts` + the Booking `source_url` so it
   stays auditable under guardrails #1/#3 (it is an E1 live read, not a `data/` row, so it must be stamped).
-- **Parking reorders rankings.** NOT in Booking's total (paid at property). A **$152 room + $20 self-park beats a $150 room + $55 valet.** Downtown valet observed **$30 to 65/nt**; some downtown hotels FREE (e.g. Hampton Inn & Suites); suburban usually free. Research separately (hotel site / SpotHero / ParkWhiz / TripAdvisor).
+- **Parking can reorder rankings.** Check whether the quoted total includes parking and add any separate
+  charge for the stay. Research the hotel's current parking terms and relevant alternatives (hotel site /
+  SpotHero / ParkWhiz / TripAdvisor); do not carry a prior property's fee into a new comparison.
 - **Distance filter**, `order=distance_from_search` on the venue; ~10-min drive ≈ ≤4 to 5 mi in a mid-size US city.
 
 ## Google Hotels caveat (do not trust its dates)
@@ -63,12 +67,13 @@ recommend by how firm the user's dates are, firm dates → non-ref saves; soft d
 
 ## HARD operating rule (mandatory)
 
-**Drive the browser all the way to the Booking "Your Details" confirm page** (room selected; total + tax +
-cancellation + parking surfaced), then **STOP and hand off** name + payment entry to the user. **NEVER enter
+**Drive the browser to the selected channel's final review page**, such as Booking's "Your Details"
+(room selected; total + tax + cancellation + parking surfaced), then **STOP and hand off** name + payment entry to the user. **NEVER enter
 payment card or personal info**, matches the standing principle (agent configures tools; hand off at
 login/payment). The deliverable is the ranked total-stay table + the confirm-page URL, not a completed booking.
 
 **Install guidance:** no install, Booking / Google Hotels / OTAs are all ④ playwright live reads; parking via a
-WebSearch subagent. Loyalty accounts are the user's; the agent prices the live cart and stops at Your-Details.
+WebSearch subagent. Loyalty accounts are the user's; the agent reads the live total and stops before
+personal details or payment entry.
 
 ## Last verified: 2026-07
