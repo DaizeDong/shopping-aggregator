@@ -10,17 +10,21 @@ companion" produced the same output.
 
 So the property under test is stated both ways:
 
-  1. With a companion, the cache lives under <companion>/data/cache/, never under the repo.
-  2. With no companion, there is no cache path at all. None, not an in-repo default.
+  1. With a verified private companion, the cache lives under <companion>/data/cache/.
+  2. With no companion, resolving a cache path fails before any directory is created.
 
 Run: python test_cache_path.py     (also collectable by pytest)
 """
 import os
+from pathlib import Path
 import sys
-import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from make_fixtures import storage_repository_fixture, storage_visibility_fixture  # noqa: E402
 import verify_matrix  # noqa: E402
+import evaluation_store  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,49 +33,47 @@ def _inside_repo(path):
     return os.path.commonpath([os.path.abspath(path), REPO]) == REPO
 
 
-def test_companion_cache_lives_outside_the_repo():
-    with tempfile.TemporaryDirectory() as comp:
-        original = verify_matrix.resolve_companion_root
-        verify_matrix.resolve_companion_root = lambda skill: comp
-        try:
-            path = verify_matrix._cache_path("gh-api-cache.json")
-        finally:
-            verify_matrix.resolve_companion_root = original
-        assert path == os.path.join(comp, "data", "cache", "gh-api-cache.json"), path
-        assert not _inside_repo(path), path
+@pytest.fixture
+def private_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
+    storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json")
+    data, _ = storage_repository_fixture(tmp_path / "companion")
+    monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(data))
+    return data
 
 
-def test_no_companion_means_no_cache_path():
-    original = verify_matrix.resolve_companion_root
-    verify_matrix.resolve_companion_root = lambda skill: None
-    try:
-        path = verify_matrix._cache_path("gh-api-cache.json")
-    finally:
-        verify_matrix.resolve_companion_root = original
-    assert path is None, "no companion must mean no cache, got %r" % (path,)
+def test_companion_cache_lives_outside_the_repo(private_cache):
+    path = verify_matrix._cache_path("gh-api-cache.json")
+    assert path == private_cache / "cache/gh-api-cache.json", path
+    assert not _inside_repo(path), path
 
 
-def test_the_real_resolver_is_the_one_consulted():
+def test_no_companion_means_no_cache_path(tmp_path, monkeypatch):
+    missing = tmp_path / "missing/data"
+    monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(missing))
+    with pytest.raises(evaluation_store.StorageError):
+        verify_matrix._cache_path("gh-api-cache.json")
+    assert not missing.parent.exists()
+
+
+def test_the_real_resolver_is_the_one_consulted(private_cache, monkeypatch):
     # The original bug: the resolver was looked up by a file path that no longer existed, so the
     # companion branch never ran. Prove the function consults the imported resolver by making that
     # resolver unmistakable.
     calls = []
-    original = verify_matrix.resolve_companion_root
+    original = evaluation_store.prepare_store
 
-    def spy(skill):
-        calls.append(skill)
-        return None
+    def spy():
+        store = original()
+        calls.append(store.base)
+        return store
 
-    verify_matrix.resolve_companion_root = spy
-    try:
-        verify_matrix._cache_path("gh-api-cache.json")
-    finally:
-        verify_matrix.resolve_companion_root = original
-    assert calls == ["shopping-aggregator"], calls
+    monkeypatch.setattr(evaluation_store, "prepare_store", spy)
+    path = verify_matrix._cache_path("gh-api-cache.json")
+    assert calls == [private_cache], calls
+    assert path == private_cache / "cache/gh-api-cache.json"
 
 
 if __name__ == "__main__":
-    test_companion_cache_lives_outside_the_repo()
-    test_no_companion_means_no_cache_path()
-    test_the_real_resolver_is_the_one_consulted()
-    print("ok: 3 cache-path tests passed")
+    raise SystemExit(pytest.main([str(Path(__file__).resolve()), "-q"]))

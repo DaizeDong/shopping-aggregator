@@ -26,11 +26,11 @@
     "deal-aggregator",
     "mcp",
     "orchestration",
-    "skill",
     "flights",
     "airfare",
     "air-travel",
     "google-flights",
-    "consolidator"
+    "consolidator",
+    "skill"
   ]
 }

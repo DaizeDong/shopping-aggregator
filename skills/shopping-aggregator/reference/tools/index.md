@@ -20,7 +20,7 @@ index points to the **how-to**. To use a tool, find its slug here and read **onl
 - [BigGo MCP](biggo-mcp.md), ④ free · covers eBay + AliExpress + more
 - [Oxylabs E-Commerce](oxylabs.md), ② paid · scale anti-bot Walmart/eBay/Target/+100
 - [ScraperAPI](scraperapi.md), ② paid · budget hosted anti-bot scrape; free 1K credits/mo, Hobby $49/mo (credits≠requests)
-- [AliExpress (Open Platform / Affiliate API)](aliexpress.md), ① free · official signed catalog/affiliate API (⚠ +~35% US duty, 真伪 risk)
+- [AliExpress (Open Platform / Affiliate API)](aliexpress.md), ① free · official signed catalog/affiliate API (verify current origin/classification-specific duties and authenticity)
 - [Bright Data Web Unlocker](bright-data.md), ② paid · success-based anti-bot unblocker (free 5K/mo, ~$1.3-1.5/1K), Oxylabs peer
 
 ## taobao-tmall

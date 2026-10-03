@@ -1,102 +1,29 @@
-# Cross-validation back-end: Codex MCP (GPT, independent model + web search)
+# Independent evidence review through the installed interface
 
-> **Not a price source, a cross-model verification + discovery delegate.** Same category as
-> `deep-research` / `market-intel`: a back-end this skill DELEGATES to (PHILOSOPHY P5), NOT a
-> retailer or price API. That is why it lives here under `reference/` and is **not** in
-> `reference/tools/`, the source matrix, or `registry.json`.
+The compatibility filename is retained for existing links. For model or agent
+work, use the installed `llmcall` interface and its current policy:
+`llmcall.call(prompt, mode="agent")` for an agent investigation, or the default
+judge mode for a text decision. Do not launch provider CLIs, select a fixed
+provider/model ladder, or duplicate timeout/fallback policy in this skill.
 
-> **General rule for any external agentic delegate (codex today; future MCPs):** invoke it with its
-> own browser / sub-MCP tools stripped (sandboxed to its built-in search) and treat it as
-> **best-effort**, skip on hang/timeout per guardrail #9. The codex-specific flags below are this
-> rule's first concrete instance.
+Give a fresh reviewer the buyer's public decision constraints and selected
+source evidence only after authorizing submission of any private data. Ask it
+to identify missed channels, seller/variant mismatches, counterfeit indicators,
+and claims unsupported by dated selected-source evidence. Keep the transcript
+and output in the versioned PRIVATE companion.
 
-## Why use it
+Model recollection and search summaries are E3 leads. Re-open the cited selected
+retailer offer and verify price, variant, stock, seller, and retrieval time
+before a lead enters the ranking. A reviewer cannot convert an E2 aggregate
+into E1 by agreeing with it.
 
-A second, genuinely independent opinion: a different model (OpenAI GPT) with its **own** web-search
-backend. Strong for the **soft** layer of a buy decision, weak for authoritative live prices:
+Record actual backend metadata and whether the reviewer received prior
+verdicts. A fresh prompt alone does not prove a different model or provider.
+Treat independence as unestablished unless the effective execution policy and
+backend records prove it. If the interface is unavailable, report that review
+as not run and keep the gap in the final report.
 
-- ✅ discover authorized channels / cheaper authentic sources your fixed retailer list missed
-- ✅ cross-check the provisional cheapest pick (does an independent search agree?)
-- ✅ authenticity / counterfeit reputation, retailer-trust sanity, "is this brand exclusive to one store?"
-- ❌ NOT an authoritative live price. GPT web-browse returns stale / cached / approximate prices for
-  anti-bot retail pages (Sephora / Ulta / Target / Amazon). Treat every price it gives as an
-  **L5 lead** that must re-pass the live-fetch + citation gate (SKILL.md Step 6 / guardrail #1)
-  before it can enter the landed-cost ranking.
-
-## ⚠️ CRITICAL: disable Codex's own browser/MCP tools, or it hangs for HOURS
-
-The user's `~/.codex/config.toml` registers Codex's OWN MCP servers (e.g. `[mcp_servers.playwright]`).
-If you call the Codex MCP without disabling them, Codex will try to **drive its own headless browser**
-to fetch a live retail page, and on an anti-bot page (Newegg / Best Buy / Amazon Cloudflare) that
-`browser_navigate` call **hangs with no timeout**. **Real incident 2026-06-17:** a single Codex
-`mcp__playwright browser_navigate` to Newegg ran **38,037 s (~10.5 hours)** before the user aborted.
-It also collides with Claude's own playwright instance (two `npx @playwright/mcp` fighting over the
-browser profile).
-
-**The fix, ALWAYS pass these when calling `mcp__codex__codex`:**
-- `config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "..." }`
-, `mcp_servers: {}` strips Codex's browser/MCP tools so it can ONLY use the built-in web_search.
-- `sandbox: "read-only"` + `approval-policy: "never"` (headless, nobody can answer an approval prompt).
-- In the **prompt** also say: *"Use ONLY web_search. Do NOT use any browser / playwright / navigate /
-  page / shell tool."* (belt-and-suspenders.)
-- This reinforces the doctrine: Codex does **web_search soft cross-val**, NOT live-browser price fetch;
-  live fetch is THIS skill's Bright Data / playwright job.
-
-Verified 2026-06-17: with `mcp_servers:{}` + web_search-only, the same query returned in **<1 min**
-(vs the 10.5 h hang). Canonical call:
-
-```
-mcp__codex__codex({
-  prompt: "Use ONLY web_search; no browser/playwright/shell. <buy-intent + ask for price+URL+date>",
-  model: "gpt-5.6-sol",
-  config: { "mcp_servers": {}, "tools": { "web_search": true }, "model_reasoning_effort": "max" },
-  sandbox: "read-only",
-  "approval-policy": "never"
-})
-```
-
-## Call it via the MCP server, NOT `codex exec`
-
-Use the connected **Codex MCP** (`mcp__codex__*`). Do **not** shell out to `codex exec` from the
-agent: in the Claude Code Bash sandbox, `codex exec` fails at startup with
-`Error: timed out waiting for cloud config bundle after 15s` (reproduced 2026-06-16, persists even
-with the Bash sandbox disabled, that cloud-config endpoint is unreachable from the agent shell).
-The **MCP-server route works** because Claude's harness spawns it on the working network path:
-
-```
-claude mcp add codex -s user -- codex mcp-server      # one-time; ChatGPT-login auth, NO key in cmd
-# verify:  claude mcp list   ->  "codex … ✔ Connected"
-```
-
-A newly added MCP only exposes its tools after a **full session restart**, a `/mcp` reconnect
-connects the server but does not always register its tools for ToolSearch. Once live, a subagent
-loads it with `ToolSearch select:mcp__codex__codex` and calls it.
-
-### Gotchas
-- `codex exec` does **not** accept `--search` (that flag exists only on the interactive top-level
-  `codex`). For exec, web search is `-c tools.web_search=true`. The MCP server has web search via
-  the native Responses tool.
-- Model: use the current strongest per `~/.codex/config.toml` / user memory `feedback_codex_best_model`
-  (2026-07 = `gpt-5.6-sol`, reasoning effort `max`). Auth is the user's ChatGPT subscription, so cost
-  is plan-rate, not per-token, no reason to downgrade.
-
-## How to fold results
-1. Give Codex the parsed buy intent (product + specs + region/ZIP + authentic-channel rules).
-2. Ask for: cheapest authorized retailer + price + **source URL + date seen**, runner-ups,
-   ships-to-ZIP / nearby pickup, authenticity caveats, and which prices it confirmed live vs approximate.
-3. Merge: any NEW channel Codex surfaced -> re-fetch live via Bright Data / playwright (Step 5) and
-   verify before ranking. Any price DISAGREEMENT vs your run -> re-fetch, don't average (guardrail #7)
-   and surface as a divergence note. Authenticity flags -> fold into the Risks section (L5 corroboration).
-4. If the Codex MCP is not connected, skip and note "codex cross-check unavailable" (guardrail #9).
-   It is **best-effort**, never block the buy decision on it.
-
-## Empirical note (2026-06-16 → 06-17)
-- 2026-06-16: `codex mcp-server` -> `✔ Connected`; `codex exec` via Bash -> cloud-config timeout
-  (blocked). MCP route is the supported one. Tools exposed only after a full session restart.
-- 2026-06-17: first real `mcp__codex__codex` run (a high-end GPU price check, xhigh, MCP tools NOT
-  disabled) **hung ~10.5 h**, Codex drove its own playwright `browser_navigate` to an anti-bot
-  retailer (Cloudflare) with no timeout. Re-run with `config.mcp_servers={}` + web_search-only
-  returned in <1 min. **Lesson is now the CRITICAL section above.** Cross-val data point: Codex
-  web_search quoted the part roughly **15 to 30% BELOW** the live authorized listings (which were also
-  out of stock), exactly why its prices are L5 leads, not authoritative. Direction matters: a
-  model-summarized price errs *low*, which is precisely the direction that wins a naive ranking.
+For rubric-based transcript grading, use `tools/scenario_eval.py` and read
+`reference/scenario-eval/judge-protocol.md`. That explicit evaluation path
+verifies private storage before reading transcripts and distinguishes an
+unavailable judge from a completed failing grade.

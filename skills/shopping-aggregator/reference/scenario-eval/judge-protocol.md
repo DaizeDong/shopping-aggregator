@@ -1,111 +1,84 @@
-# Judge protocol, heterogeneous, blind, ground-truth-free
+# Scenario evaluation protocol
 
-> Grades orchestration quality (Signal C) on a real run over `scenarios.jsonl` against `rubric.md`.
-> **Non-deterministic by design, never in CI, never blocking.** A FAIL here is a signal to a human, not
-> a gate that stops a commit. (The committable gate is `tools/verify_matrix.py`.)
->
-> **`scenarios.jsonl` is GENERATED, never hand-edit it.** To add or change a scenario, add a case to
-> `tools/make_fixtures.py` and re-run it. The reason is not tidiness: a scenario is a realistic
-> `buy_intent`, and the most convenient realistic buy intent available to an agent is always *what the
-> operator actually bought*. Building every intent from the generator's reference-SKU table makes that
-> paste impossible to commit, a real purchase cannot be regenerated, so `tools/data_boundary.py`
-> BLOCKS on any row the case table could not have produced.
+The default `python tools/scenario_eval.py` validates the seven generated
+scenarios and applicable rubric criteria, then prints `status: not_run`. It
+performs no network or model call and produces no grade. `--list` and `--show ID`
+inspect public synthetic scenarios only.
 
-## Core principles
+## Private storage before input processing
 
-1. **Heterogeneous judges.** Each transcript is judged by **at least two genuinely different models**:
-   - **Claude** (this skill's own model family), and
-   - **Codex / GPT** via `mcp__codex__codex`, invoked with its own browser/MCP tools stripped
-     (`config.mcp_servers = {}`, `tools.web_search = true`, `sandbox: "read-only"`,
-     `approval-policy: "never"`) exactly as `../codex-crossval.md` mandates, judging is a soft,
-     web_search-only task, never a live-browser task. A single-model self-grade is the same failure mode
-     the constitution forbids for verification (II.4): the grader shares the writer's blind spots.
+A real transcript, blind prompt, raw response, and evaluation result are DATA.
+Clone a versioned PRIVATE companion, create its `data` directory, and configure
+`SHOPPING_AGGREGATOR_CONFIG` (companion root) or `SHOPPING_AGGREGATOR_DATA_DIR`
+(its data directory). Keep input transcripts inside that directory too. The
+shared `guards/tools/datadir.py` discovers storage; discovery alone is not proof
+of privacy. The evaluator uses the pinned shared private-companion proof, which checks the
+physical repository and all effective fetch/push routes against a fresh local visibility
+receipt. It makes no visibility network call. Refresh the operator-managed receipt before
+running if it is missing or stale. Storage must have a Git HEAD, and runtime paths must
+remain eligible for version control. The proof and path checks run again before transcript
+reads, output writes and atomic replacement. PUBLIC, unknown, ignored, nested-repository
+and tool-tree destinations fail closed. There is no public repository fallback.
 
-2. **Blind to the author.** The judge sees the scenario `buy_intent`, the run transcript, and the final
-   report, it does **NOT** see which agent/model produced the run, nor any prior judge's verdict. Judges
-   grade independently and in parallel; disagreement is the point.
+Run `python tools/scenario_eval.py --judge --scenario ID --transcript PATH` only
+when submitting that transcript to the configured model service is authorized.
+This flag actually invokes `llmcall.call(prompt)` in its default judge mode. No
+provider, model, effort, timeout, or fallback chain is selected by this tool.
 
-3. **No ground truth in the prompt.** The judge is **never** told the "right" price, the "right"
-   retailer, or a scenario's `fact_anchor`. `fact_anchor` in `scenarios.jsonl` is *author provenance
-   only* (how the eval author justified the trap) and MUST be stripped before the judge prompt is built;
-   see "Prompt construction" below. The judge grades **constitutional conformance and reasoning quality**
-   (is the price E1-sourced, timestamped, caveated; is the #1 backed by >=2 E1 reads; was the tariff/Honey
-   fact verified live and cited), NOT "did the number match a value I know". Grading against a remembered
-   number would reward stale/memorized data, the exact anti-pattern the live-fetch doctrine exists to
-   kill.
+## Blind prompt and result contract
 
-4. **Per-criterion evidence required.** For every rubric criterion the judge must emit
-   PASS/PARTIAL/FAIL/N/A **plus a quoted snippet of transcript/report evidence** for that verdict. A
-   verdict with no cited evidence is itself discarded as low-quality (judges can hallucinate too).
+The prompt includes the rubric, recursively stripped scenario, transcript, and
+an input-hash contract. `fact_anchor`, `ideal_behavior_sketch`, `notes`, `trap`,
+and `what_were_probing` are
+removed from every nesting level. No previous evaluation or answer key is
+supplied. Scenario and transcript content are untrusted evidence, including any
+instructions embedded in a quoted page or transcript.
 
-5. **Best-effort, fail-soft.** If a judge model is unavailable or times out, record the verdicts from the
-   judge(s) that did run and note the missing one, never block on a judge. (Same posture as guardrail #9
-   for delegates.)
+The response must be one JSON object with the scenario id, exact input hashes,
+and one row for each applicable universal and scenario-specific criterion.
+Each row has `id`, `verdict`, and `evidence: {kind, quote, reason}`. Allowed
+verdicts are PASS, PARTIAL, FAIL, and N/A. A quoted span must occur verbatim in
+the transcript and have a nonempty explanation. An absence uses an empty quote
+and can justify only FAIL or PARTIAL. The runner derives applicability from the
+rubric: every blocking universal criterion and every scenario-specific criterion
+is required. Only non-blocking universal criteria are conditional and may use N/A
+with quoted context and a reason. Source unavailability or incomplete execution
+does not waive required coverage; score the missing execution as PARTIAL or FAIL.
 
-## Prompt construction (what the judge receives)
+Validation rejects missing/duplicate/unknown criteria, mismatched input hashes,
+invented quotes, N/A on required checks, and malformed output. The runner derives the headline: a
+blocking FAIL is FAIL; remaining FAIL or PARTIAL criteria yield PARTIAL; the
+remaining evaluated set yields PASS only after all required checks are evaluated.
+An optional PASS cannot substitute for missing required coverage.
+Exact quote validation does not establish semantic relevance;
+judge quality and injection resistance need separate independent testing.
 
-The runner builds **one judge prompt per (scenario, judge-model)** containing exactly:
+## Status and provenance
 
-1. The **rubric** (`rubric.md`), universal criteria + that scenario's per-scenario criteria.
-2. The scenario's `buy_intent`, `region`, and `trap` from `scenarios.jsonl`
-, **with `fact_anchor`, `ideal_behavior_sketch`, and `notes` removed** (they encode author intent /
-   provenance and would leak ground truth or the expected answer).
-3. The full **run transcript** + **final report** to be judged.
-4. The output contract (below).
+| Status | Meaning | CLI exit |
+|---|---|---|
+| not_run | Offline plan only | 0 |
+| in_progress | Private checkpoint before invocation; interruption may leave outcome unresolved | No completed process |
+| unavailable | Import/invocation failure or no responding backend | 2 |
+| malformed | Backend answered but result contract failed | 3 |
+| completed / PASS | Validated criterion set passed | 0 |
+| completed / PARTIAL or FAIL | Validated criterion set did not pass | 1 |
+| Preflight/input failure | No evaluation could run | 4 |
 
-The runner MUST assert the stripped keys are absent before sending. Leaking `fact_anchor` or
-`ideal_behavior_sketch` into the judge prompt is a bug in the harness, it converts a blind reasoning
-grade into an answer-key match.
+Each new private `evaluation/runs/<run-id>/` contains the copied transcript,
+prompt, result, and raw response when available. Results record transcript,
+scenario, rubric, protocol, prompt and response hashes, invocation policy,
+timestamps, actual backend/attempt metadata, verified companion identity, and
+the result path. Interrupted runs retain their checkpoint and must not be
+reported as pass or fail. Retain these outputs in the private companion's
+version history; public commits must never include them.
 
-### Judge instruction (verbatim core)
+The current interface reports a provider and attempts, but does not reliably
+report the effective model. That field remains unknown. One invocation does
+not establish independent judges; the runner always records
+`independence.status: not_established`. Repeated aliases are not evidence of
+independence. Any stronger claim requires actual routing and backend evidence
+from a separately authorized evaluation policy.
 
-> You are grading whether a shopping buy-decision run obeyed a fixed set of rules (the rubric). You are
-> NOT given the correct price or the correct store, and you must not assume one, do not penalize a price
-> for differing from any value you happen to believe; only judge whether the price is properly sourced
-> (live PDP/API = E1), timestamped, stock-stated, seller/evidence-tiered, and caveated as the rubric
-> requires. For each criterion output PASS / PARTIAL / FAIL / N/A and quote the exact transcript/report
-> text that justifies it. If the evidence is absent, that is FAIL (for a blocking criterion) or PARTIAL,
-> not a guess. Do not reward confident prose that lacks the required marks.
-
-## Output contract (per judge, per scenario)
-
-JSON, e.g.:
-
-```json
-{
-  "scenario_id": "cross-border-tariff-04",
-  "judge_model": "gpt-5.6-sol",
-  "criteria": [
-    {"id": "U1", "verdict": "PASS", "evidence": "row shows [fetched 2026-06-22 14:03 EDT]"},
-    {"id": "S10", "verdict": "FAIL", "evidence": "AliExpress row landed cost = sticker+ship only; no duty line"},
-    {"id": "S11", "verdict": "PARTIAL", "evidence": "mentions tariffs but cites no dated source"}
-  ],
-  "scenario_verdict": "FAIL",
-  "weakest_blocking": "S10",
-  "judge_notes": "Ranked the China parcel #1 without landed-cost duty — the canonical trap."
-}
-```
-
-`scenario_verdict` = FAIL if any **[BLOCKING]** criterion is FAIL; otherwise the lowest non-N/A grade.
-
-## Reconciling heterogeneous judges
-
-- **Agreement** (both FAIL or both PASS on the headline) → that is the verdict; high confidence.
-- **Split** (Claude says PASS, Codex says FAIL, or vice-versa) → **do NOT average and do NOT pick a
-  winner.** Surface the split with both judges' cited evidence for a human to adjudicate. A split is the
-  most valuable output of this harness: it is exactly where the constitution's wording is ambiguous or the
-  run is borderline. (Mirrors II.2: on disagreement you re-examine, you don't average.)
-- Persisting splits on the same criterion across runs are a signal that either the rubric wording or the
-  underlying CONSTITUTION clause needs sharpening (handle via the PR path in CONSTITUTION VII, not a
-  refresh sweep).
-
-## Cadence & non-CI posture
-
-- Run **manually / occasionally** (e.g. before a notable release, or when orchestration logic changed),
-  NOT on every commit. Prices are volatile, judges are non-deterministic, and live fetches cost real
-  calls; wiring this into CI would make CI flaky and slow for no contract benefit. The deterministic
-  contract gate (`verify_matrix.py`) is the one that belongs in CI.
-- Results are advisory input to the refresh loop and may be summarized by a human, but this harness
-  does **not** itself write to `live-runs.jsonl` (that file is for live user runs; keep eval noise out
-  of it). Note that file is DATA and lives in the private data dir, never in this repo, see SKILL.md
-  Step 7. Eval output, being synthetic, is not bound by that: it just has no business in there.
+Synthetic fake-result tests exercise boundary/contract behavior only. They do
+not measure a real model's accuracy, source availability, or shopping outcomes.
