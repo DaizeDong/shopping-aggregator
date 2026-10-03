@@ -113,7 +113,8 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
 
 - **V.1** API keys (Apify, Keepa, Oxylabs, eBay) MUST NEVER enter the transcript. See
   `reference/install-guide.md` Secret-handling hygiene for the exact procedure.
-- **V.2** `~/.claude.json` MUST NEVER be committed or screenshotted. Keys land plaintext there.
+- **V.2** Configuration and credentials MUST NEVER enter a public repository or screenshot.
+  An explicitly authorized, verified PRIVATE versioned configuration backup may contain them.
 - **V.3** `browser_snapshot` on a page that displays an API key is a bug (the DOM contains the
   plaintext key; the screenshot captures it).
 - **V.4** The agent MUST NEVER authenticate on the operator's behalf: no usernames, passwords, SMS
@@ -122,8 +123,10 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   session is a **PII surface**: snapshots MUST be scoped to product content, never account, order
   history, address book, saved payment, or messaging views. Post-login access is **read-only**, no
   order, bid, offer, message, or settings change without a fresh per-action instruction; a cart used
-  to reveal a tax line MUST be emptied and re-read to confirm. A persisted session file is a bearer
-  credential and MUST live outside any tree that is committed or backed up. `[S]`
+  to reveal a tax line MUST preserve the pre-probe cart: record its items and quantities, remove
+  only probe-added items or quantities, and re-read to confirm restoration. Use a disposable cart
+  or session where available. A persisted session file is a bearer credential: keep it outside
+  public trees and include it only in an authorized, verified PRIVATE versioned backup. `[S]`
 
 ## VI, Honey and similar trust-event tools `[S]`
 

@@ -43,3 +43,8 @@ __pycache__/
 skills/shopping-aggregator/metrics/live-runs.jsonl
 skills/shopping-aggregator/metrics/gh-api-cache.json
 !skills/shopping-aggregator/metrics/*.example
+
+# Evaluation DATA belongs only in the versioned PRIVATE companion.
+evaluation/
+skills/shopping-aggregator/evaluation/
+skills/shopping-aggregator/reference/scenario-eval/.judge-prompt.*
