@@ -33,7 +33,8 @@ PORTED from market-intel (richer judgement; network gates honour --no-net):
   REPO      documented github.com/<owner>/<repo> + registry `repo` slugs exist (gh api, fail-closed).
             A doc'd repo that 404s => BLOCK; a bare/heuristic slug that 404s => WARN.
   GHACTIVE  every documented repo is alive (not archived) and pushed within 12mo (archived/404 BLOCK,
-            stale WARN, rate-limited bypass-as-WARN). Cached to metrics/gh-api-cache.json (7d TTL).
+            stale WARN, rate-limited bypass-as-WARN). Cached in the private companion's
+            data/cache/gh-api-cache.json (7d TTL); with no companion it is not cached at all.
   STAR      where a repo and an (NNk★) annotation co-occur, the count is within 25% (BLOCK on lie).
   DOCCOVER  a github repo in a LIVE (non-tombstone) shard row with no per-tool doc => WARN (anti-lost).
   STALE     a tool doc not re-verified in >9 months => WARN (anti-rot nomination).
@@ -81,7 +82,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # same tools/ directory are still imported by bare name.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "guards", "tools"))
-from datadir import resolve_data_dir  # noqa: E402
+from datadir import resolve_companion_root, resolve_data_dir  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, "skills")
@@ -538,11 +539,12 @@ def run_checks():
     # The API cache goes to the COMPANION, not into skills/<name>/metrics/ inside this public repo.
     # `metrics/*.jsonl` under a skill directory is the literal shape of the 2026-07 leak, and a
     # cache of what this tool asked GitHub about is a record of what the operator was checking.
-    # Falls back to the in-repo path only when no companion resolves, where check 4 will catch it:
-    # being caught is a better failure than being silent.
+    # With no companion there is no cache: a run re-asks GitHub and writes nothing, and says so.
     GH_CACHE = _cache_path("gh-api-cache.json")
+    if GH_CACHE is None and not NO_NET:
+        warn("GHACTIVE", "activity cache disabled: no private companion resolved, so nothing is cached")
     gh_cache = {}
-    if os.path.exists(GH_CACHE):
+    if GH_CACHE and os.path.exists(GH_CACHE):
         try:
             gh_cache = json.loads(read(GH_CACHE))
         except Exception:
@@ -612,12 +614,13 @@ def run_checks():
                              "checked_at": _now_iso}
             ghactive_results.append(entry)
             gh_cache[r] = entry
-        try:
-            os.makedirs(os.path.dirname(GH_CACHE), exist_ok=True)
-            with open(GH_CACHE, "w", encoding="utf-8") as f:
-                json.dump(gh_cache, f, ensure_ascii=False, indent=2, sort_keys=True)
-        except Exception:
-            pass
+        if GH_CACHE:
+            try:
+                os.makedirs(os.path.dirname(GH_CACHE), exist_ok=True)
+                with open(GH_CACHE, "w", encoding="utf-8") as f:
+                    json.dump(gh_cache, f, ensure_ascii=False, indent=2, sort_keys=True)
+            except Exception:
+                pass
         if ghactive_results:
             _v = {v: 0 for v in ("PASS", "WARN", "BLOCK", "RATE_LIMITED")}
             for e in ghactive_results:
@@ -909,22 +912,21 @@ def run_checks():
 
 
 def _cache_path(name):
-    """<companion>/data/cache/<name>, or the historical in-repo path when no companion resolves."""
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dd = os.path.join(root, "tools", "datadir.py")
-    if os.path.isfile(dd):
-        import importlib.util
-        spec = importlib.util.spec_from_file_location("_dd_for_vm", dd)
-        if spec is not None and spec.loader is not None:
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            fn = getattr(mod, "resolve_companion_root", None)
-            comp = fn("shopping-aggregator") if fn else None
-            if comp:
-                d = os.path.join(str(comp), "data", "cache")
-                os.makedirs(d, exist_ok=True)
-                return os.path.join(d, name)
-    return os.path.join(SKILL, "metrics", name)
+    """<companion>/data/cache/<name>, or None when no companion resolves. Never a path in this repo.
+
+    This used to load tools/datadir.py by file path and fall back to skills/<name>/metrics/ when
+    that file was absent. datadir.py then moved into the guards submodule, the file check went
+    false on every run, and every authenticated run wrote its GitHub cache into the public worktree,
+    where data_boundary blocks the next push. A missing resolver read as "no companion", and "no
+    companion" meant "write into the repo", the in-repo fallback .dataclass.json exists to forbid. It
+    now asks the resolver this module already imports, and with no companion it caches nothing.
+    """
+    comp = resolve_companion_root("shopping-aggregator")
+    if not comp:
+        return None
+    d = os.path.join(str(comp), "data", "cache")
+    os.makedirs(d, exist_ok=True)
+    return os.path.join(d, name)
 
 
 def main():

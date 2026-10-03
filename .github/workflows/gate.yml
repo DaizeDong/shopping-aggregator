@@ -43,4 +43,4 @@ jobs:
           # names the wrong cause costs more than no error.
           python -m pip install --quiet pytest
           test -f tools/test_data_freshness.py || { echo "::error::tools/test_data_freshness.py is MISSING from this repo. It is not part of the guards submodule; it belongs here."; exit 1; }
-          python -m pytest tools/test_data_freshness.py -q
+          python -m pytest tools/test_data_freshness.py tools/test_cache_path.py -q
