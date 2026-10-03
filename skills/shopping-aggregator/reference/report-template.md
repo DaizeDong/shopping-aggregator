@@ -16,20 +16,36 @@
 
 ## Landed-cost ranking (the answer)
 
-> One row per `variant_key`. **Ev** = evidence grade: E1 live PDP/API · E2 aggregator · E3 snippet
+> One row per `variant_key` and purchase path. **Ev** = evidence grade: E1 live PDP/API · E2 aggregator · E3 snippet
 > (a lead, never the ranked winner). Only an E1 row may be #1 (guardrail #5b).
+> Each purchase path of an offer (one-time, subscription, ...) is its own row, ranked on the amount charged at
+> checkout after its tested discount stack (guardrail #16): Landed = Sticker + Ship + Tax - Discounts, where
+> Discounts holds only cart-tested lines. Value paid later (cash back, portal) goes in its own column and is
+> never subtracted. The headline answer is the #1 row, never a sticker the run did not try to beat.
 
-| Rank | Retailer | Variant (key) | Sticker | Ship | Tax | Coupon | Cashback est. | **Landed** | Seller / tier | **Ev** | Stock | Snapshot |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | <retailer.com> | <brand model color edition / new> | $X | $Y | $Z | -$C | -$K | **$L** | <name>, L1 | E1 | in_stock | <ts> |
-| 2 | ... | | | | | | | | | | | |
-| ... | | | | | | | | | | | | |
+| Rank | Retailer | Variant (key) | Path | Sticker | Ship | Tax | Discounts (#16) | **Landed** | Paid later | Seller / tier | **Ev** | Stock / delivery | Snapshot |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <retailer.com> | <brand model color edition / new> | <subscription, every N months> | $X | $Y | $Z | -$D | **$L** | +$K <form> | <name>, L1 | E1 | in_stock / <promise> | <ts> |
+| 2 | <same retailer> | <same key> | one-time | $X | $Y | $Z | -$0 | **$L2** | | <name>, L1 | E1 | in_stock / <promise> | <ts> |
+| ... | | | | | | | | | | | | | |
 
 **But actually** (footnote on top picks):
 - Top pick has <warranty / return policy / shipping speed> better than #2; if user values that, it's
   worth the $X premium.
 - #2 ships from <region> in <time>, confirm shipping speed before defaulting to "cheapest."
 - (Etc.)
+
+## Discount stack behind the headline (guardrail #16)
+
+| Discount | Amount | Condition (commitment, minimum, expiry, eligibility) | Mark (CONSTITUTION I.5) |
+|---|---|---|---|
+| <subscription / auto-replenish> | -$S | <cancel anytime, no fee, no minimum deliveries; interval; next charge date> | ✓ cart-tested |
+| <coupon, incl. first-order coupon> | -$C | <clip required; renders only after selecting the path> | ✓ cart-tested |
+| <code from cart or deal site> | -$P | <one per order; expiry> | ⚠ unverified / ✗ expired-failed |
+| <cash back / portal / rewards earned> | +$K later | <form: cash or store credit; expiry; one portal per order> | paid later, not subtracted |
+
+Where the run looked: <each purchase path selected, coupon page, cart, code sites>. Discounts that need a sign-up
+(membership, trial, email list, store card) are listed as the buyer's option with their cost, never applied by the agent.
 
 ## History note (decision-grade)
 

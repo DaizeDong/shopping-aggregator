@@ -16,7 +16,14 @@ Every subagent returns this, not free prose. Field-by-field commentary:
   prices: [{
     sticker, currency,
     shipping, tax_estimate, coupon_applied, cashback_estimate,
-    landed_cost,
+    discount_stack: [{ type: subscription|coupon|first_order|code|member|loyalty|portal,
+                       value, condition, path,
+                       mark: cart_tested|unverified|expired_failed|paid_later }],
+                    // EVERY eligible discount on this offer, applied or not, see #16;
+                    // marks follow CONSTITUTION I.5, plus paid_later for value that never reaches checkout
+    discount_checked: ["<each purchase path selected>", "coupon page", "cart", "code sites"],
+                    // REQUIRED: an empty discount_stack without this means NOT CHECKED, never "no stack"
+    landed_cost,    // charged at checkout on this path's best tested stack; each path is its own price entry
     stock_state: in_stock|low_stock|out_of_stock|preorder,
     seller_name,      // REQUIRED for L1–L4 retailer units — see #5
     seller_rating, condition: new|refurb|used,
@@ -108,3 +115,13 @@ exclusive link," cross-check against the same retailer's public price before cre
   class not taken to `E1` depth. Completeness-by-omission (silence about a channel you never queried
 , e.g. a category-specialist or local-pickup class) is a bug. A report may not look complete while
   a buyer channel was never checked.
+
+## #16, Discount stack: the answer is the price the buyer can actually get
+
+A worker that reports only the sticker has reported half an offer. For every offer and purchase path, list in `discount_stack` every discount available to this buyer now without joining or signing up for anything, whether or not the run could apply it: a subscription or auto-replenish price cancellable without fee, clip coupons (some render only after a subscription is selected, so look again after selecting it), first-order offers, codes from the cart and from coupon and deal sites, member pricing, loyalty rewards and cashback portals. Discounts that need a sign-up are conditional rows, not part of the stack. List in `discount_checked` every place you looked; an empty stack without it reads as "not checked", and that offer may not be reported as having no stack.
+
+Mark each line with its CONSTITUTION I.5 status. Only `cart_tested` lines, in a combination that was tested together, reduce `landed_cost`, which is the amount charged at checkout. Product-page-only lines are a labelled "if applied" figure. `paid_later` value (cash back, portal cashback, rewards earned by this order) is shown beside the total with its form and expiry and is never subtracted; at most one portal or extension tracks an order. Store credit, gift-card balances and rewards already earned are the buyer's money and never a discount.
+
+The headline answer is the path whose tested stack charges least, with its conditions written next to it; each other path of the same offer, including plain one-time, is its own row. A multi-pack is a different `variant_key` with its own total and per-unit price, ranked only when the buyer's quantity covers it. A sticker headline is acceptable only when the stack was tried and failed, could not be tested (labelled under #3), or was declined by the buyer.
+
+> **War-story:** a run headlined the one-time price of the winning offer and listed the cheaper path, a fee-free cancellable subscription plus a first-order coupon on the same listing, as an aside. When the buyer said "buy it", the one-time option was what got bought. The buyer had to point out the subscription and the coupon, the order was cancelled before shipment and placed again, and the same item came out about a tenth cheaper. The aside was correct and useless: whatever the headline says is what gets executed.

@@ -7,7 +7,7 @@
 [![数据源矩阵](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90%E7%9F%A9%E9%98%B5-14%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![数据表](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E8%A1%A8-%E7%A8%8E%20%7C%20%E5%85%B3%E7%A8%8E%20%7C%20FX%20%7C%20%E8%BF%90%E8%B4%B9-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![语言](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-EN%20%2F%20CN-blue?style=flat)](#语言)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.8.1-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.9.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
@@ -201,7 +201,7 @@ git clone --recurse-submodules https://github.com/DaizeDong/shopping-aggregator.
   [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md)。
 - **非卖家侧/搬砖工具**, FBA / 批发 / 市场调研请用
   [`market-intel`](https://github.com/DaizeDong/market-intel)。
-- **不自动下单**, skill 产出推荐，下单由你点。
+- **只在你明确让它下单时才下单**：仅限零售商品，按叠满全部可用优惠的路径（guardrail #16）买，在最终页逐条核对优惠后只点一次；酒店和机票仍交给你。没有下单指令时只出推荐，下单由你点。
 
 剩余路线缺口：demo 对话 + 与替代品对比文档（v0.5 打包质量），heartbeat issue 自动关闭 +
 discovery-state 日志（v0.3 闭环）。详见 [ROADMAP.md](ROADMAP.md)。

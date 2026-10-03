@@ -7,7 +7,7 @@ Triage any buy intent across 14 shopping domains, rank by landed cost (not stick
 [![Source Matrix](https://img.shields.io/badge/Source%20Matrix-14%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.8.1-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.9.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
@@ -228,7 +228,7 @@ by design:
   "unreachable". See [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md).
 - **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
-- **No auto-purchase**, the skill produces a recommendation; you click buy.
+- **Buys only when you say so**: retail orders only, on an explicit per-action instruction, at the full discount stack (guardrail #16), verified line by line on the final page before a single click. Lodging and flights stay hand-off. Without that instruction it produces a recommendation and you click buy.
 
 Remaining roadmap gaps: demo conversations + comparison-vs-alternatives docs (v0.5 packaging),
 heartbeat issue auto-close + discovery-state log (v0.3 loop-closing). See [ROADMAP.md](ROADMAP.md).
