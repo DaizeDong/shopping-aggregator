@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.1], 2026-10-02
+
+**BigGo was never weak for US products; it was pointed at Taiwan.** Two earlier runs recorded BigGo as weak for US-specific SKUs: one returned zero rows for a niche US part, another returned only Taiwan merchants. A third run hit the same wall and this time read the server's settings class. `BIGGO_MCP_SERVER_REGION` selects which BigGo site every search hits, and upstream defaults it to `TW`. Sending the same query to the search API under both regions settled it: 10 USD rows from US merchants under `US`, a single TWD row under `TW`. A control query passes under either region, which is why the default looked like a coverage limit for three months.
+
+- **`tools/biggo-mcp.md` replaces the "weak for US-specific SKUs" claim with the region rule**: the install line sets the region, the gotchas say one server holds one region, and the `currency` field on the first returned row is the check, because a TWD price read as dollars is off by roughly 30x. Correctly configured BigGo is still a partial index, so empty still means fall back, never "no results exist".
+- **`source-reliability.md` BigGo row and the `claude-mcps` shard row** say the same in one line each.
+- **The Bright Data row now records whole-session silent outages.** On four separate runs SERP and scrape both returned empty bodies for every URL, `example.com` included, while the MCP reported Connected. The row says to probe once with a known-good URL before routing a fan-out through it, and that an empty probe voids every empty it returned.
+- **NEW retailer-class fact: the default store comes from the egress IP, and big-box prices are store-zoned.** Three chains in one run showed a different shelf price, the opposite stock state and delivery dates for the wrong ZIP at the IP-default store. Set the buyer's ZIP or store before reading any price, stock or promise.
+- bump 0.8.0 to 0.8.1.
+
 ## [0.8.0], 2026-08-28
 
 **The run that priced a flight, got it wrong twice, and could not tell.** A consumer asked whether a WeChat consolidator's quote for a New York to Beijing one-way was worth taking. The run recommended shifting the date to fly nonstop for less. The nonstop it named cost **160 to 340 USD more** than the quote. So did the second one. Both numbers came out of a hand-rolled Google Flights parser that matched a price to an itinerary by **proximity**, taking the nearest `aria-label="NNN US dollars"` after the `itinerary=` anchor.

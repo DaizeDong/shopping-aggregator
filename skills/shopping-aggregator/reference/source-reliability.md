@@ -16,7 +16,7 @@
 > things that make an observation *someone's*. If you cannot state the lesson without naming what was
 > bought, it is not a lesson yet; leave it in the private file.
 
-`last_verified: 2026-08`
+`last_verified: 2026-10`
 
 ## The one-paragraph version
 
@@ -30,9 +30,9 @@ authoritative read is the retailer's own product page, fetched now.
 
 | source | route | holds up for | fails at | do this instead |
 |---|---|---|---|---|
-| **Bright Data** (SERP + retailer scrape) | ③ scrape | The workhorse. Reaches live authorized PDP prices at `E1` across mainstream and niche retail alike. First choice when a listing must enter the ranking. | Pages that render the price in JS (see below), it returns the empty DOM, not the price. | Nothing; it *is* the fallback for most other sources. When it hits a JS page, drop to the retailer's own category/SERP listing + a price-history source and mark the row `E2`. |
+| **Bright Data** (SERP + retailer scrape) | ③ scrape | The workhorse. Reaches live authorized PDP prices at `E1` across mainstream and niche retail alike. First choice when a listing must enter the ranking. | Pages that render the price in JS (see below), it returns the empty DOM, not the price. **Whole-session silent outages:** on four separate runs between 2026-07 and 2026-10, SERP and scrape both returned empty bodies for every URL, `example.com` included, while the MCP reported Connected. | Probe it once with a known-good URL before routing a fan-out through it; an empty probe means the route is dead for the session and every empty it returned is void. Then go straight to the retailer's own server-rendered HTML, a reader/fetch tool, or an isolated browser context. When it hits a JS page, drop to the retailer's own category/SERP listing + a price-history source and mark the row `E2`. |
 | **Bright Data PDP read** on a marketplace | ③ scrape | Returns the **Sold-by / Shipped-by** field, which is what lets you settle `seller_tier` (first-party vs 3P) instead of guessing from the price. Read it every time, it is the input to the seller-identity gate. | none | n/a |
-| **BigGo MCP** | ② MCP | Commodity SKUs with broad multi-store presence. | **Niche or low-volume SKUs: it returns ZERO.** An empty result is the same shape as "nobody sells this," and it is not the same fact. | Never read empty as *unavailable*. Fall back to a direct SERP + retailer scrape before concluding a product has no listings. |
+| **BigGo MCP** | ② MCP | Commodity SKUs with broad multi-store presence, once its region matches the buyer's market. | **A region left at the upstream default (TW) answers a US query with TWD-priced Taiwan rows or nothing, while a control query still passes.** Correctly configured it is still a partial index. An empty result is the same shape as "nobody sells this," and it is not the same fact. | Read the `currency` field on the first call: TWD on a US query means fix `BIGGO_MCP_SERVER_REGION` and reconnect, not "BigGo has nothing". Never read empty as *unavailable*; fall back to per-retailer reads before concluding a product has no listings. |
 | **Cross-model web search** (Codex `web_search` crossval) | ② MCP | A cheap breadth sweep, surfacing channels or retailers you did not think to check. | **Prices.** Observed on independent runs, in unrelated categories, to quote well *below* the live authorized listings. Model-summarized prices are stale by construction. | Fold results in as `L5` leads and re-verify each one at the PDP. Never let a crossval price enter the ranking or set the "cheapest" claim. |
 | **Codex MCP** (as a call) | ② MCP | none | **It can hang indefinitely** (observed: a single call still open after ~2h, run abandoned). | Give it a wall-clock budget and treat it as **fail-soft**: crossval is a nice-to-have, never a blocking dependency. A run that cannot finish is worth less than a run with one fewer cross-check, say so in Coverage gaps and move on. |
 | **Price-history sources** (Keepa / camelcamelcamel / 慢慢买) | ②/③ | The time axis, and a serviceable `E2` price when the live PDP is unreachable. | They are history, not stock. | Pair with a live read; never answer "is it in stock" from history. |
@@ -41,6 +41,7 @@ authoritative read is the retailer's own product page, fetched now.
 
 These are properties of the storefront, not of any one product.
 
+- **The default store comes from the egress IP, and big-box prices are store-zoned.** Mass retailers and pharmacy chains pick the default store, ZIP and delivery promise from the requesting IP, which for an automated read is a proxy's location rather than the buyer's. Observed across three chains in one run: the same PDP showed a different shelf price at the IP-default store than at the buyer's store, store stock read out of stock at the default and in stock at the buyer's stores, and delivery dates were computed for the wrong ZIP. Set the buyer's ZIP or store before reading any price, stock or promise, and record which location each read used.
 - **JS-rendered prices.** A number of brand-direct storefronts (and some manufacturer stores) inject
   the price client-side. A plain scrape returns **`$0` or an empty price node**, and `$0` is not a
   price, it is a failed read. Detect that signature explicitly, never let it into a table, and fall
