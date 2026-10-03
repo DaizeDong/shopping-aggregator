@@ -1,8 +1,8 @@
 # Roadmap
 
-Current: **v0.8.1**
+Current: **v0.9.0**
 
-`shopping-aggregator` is at v0.8.1. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
+`shopping-aggregator` is at v0.9.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
 gap and the v0.4 domain expansion in one batch (see **Shipped** below), on top of the v0.2.0
 structural/framework batch (CONSTITUTION, demand-side channel-class primitive, the evidence-unit
 schema `variant_key` / `seller_tier` / `evidence_grade`, seller-identity gate, codex-crossval) and
@@ -109,7 +109,7 @@ next; completed work is in **Shipped**.
 
 - ❌ **Build a full shopping orchestrator like Perplexity Shopping**, out of scope per P5 (thin
   layer doctrine). If the user wants that, recommend Perplexity Pro.
-- ❌ **Auto-execute purchases / "buy this now" flow**, out of scope per autonomy / consent
+- ❌ **Unattended or speculative auto-purchase**, out of scope per autonomy / consent. Buying on the buyer's explicit per-action instruction is supported since v0.9.0, retail only, through `reference/purchase-execution.md`
   considerations. The skill produces a recommendation; the user clicks buy.
 - ❌ **In-skill cashback redemption**, not the skill's role; user manages their own Capital
   One Shopping / Karma / Rakuten accounts.

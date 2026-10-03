@@ -1,6 +1,6 @@
 ---
 name: shopping-aggregator
-description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, cheapest flight, is this ticket a good deal, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价, 机票比价, 查机票, 这个机票值不值."
+description: "Triggers: compare prices, cheapest to buy, good deal, should I wait for a sale, book a hotel, cheapest hotel, cheapest flight, is this ticket a good deal, 比价, 查历史价, 全网最低价, X 在哪里买便宜, 凑单, 订酒店, 差旅住宿, 酒店比价, 机票比价, 查机票, 这个机票值不值, buy it for me, place the order, 帮我买, 帮我下单."
 ---
 
 # shopping-aggregator
@@ -37,7 +37,7 @@ Capture these fields before delegating; resolve material ambiguities with the us
 | Region | Buying/shipping market; cross-border origin and destination where relevant |
 | Budget and urgency | Spending limit, delivery deadline, willingness to wait |
 | Sensitivity | Warranty, returns, refurbishment, seller reputation and authenticity needs |
-| Existing access | Accounts, extensions and connected sources that can be used |
+| Existing access | Accounts, memberships and their perks (member price, cash back, free shipping), store credit, extensions and connected sources that can be used |
 
 For flights also capture airport sets, travel-date windows, cabin, passenger
 count, baggage needs, stop/duration limits, refund needs and payment currency.
@@ -112,7 +112,7 @@ are E3 leads requiring a live selected-offer read before ranking.
 
 Workers return bounded structured evidence units described in
 [evidence schema](reference/evidence-schema.md): status; retailer; matched title,
-SKU and `variant_key`; price/currency/shipping/tax/coupon/cashback/landed cost;
+SKU and `variant_key`; price/currency/shipping/tax/discount stack (#16)/landed cost;
 stock, seller, condition, timestamp, source URL, seller tier and evidence grade;
 history source and range; coupon attempts; and notes. Reduce those units instead
 of copying raw pages into the main context. Add a combiner if more than about
@@ -165,6 +165,10 @@ payment terms make offers non-comparable. Verify the selected fare's terms and
 use `python tools/flight_cost.py <private-quote-path>` to check declared evidence
 and total completeness. A successful arithmetic check still requires the fresh
 selected-source verification described in the flight shard.
+
+Rank each offer at its best achievable discount stack (#16), not at its sticker. Eligible means available to this buyer now without joining or signing up for anything; list the rest as conditional rows. Look where discounts live, not only on the product page: after selecting each purchase path (some coupons render only then), the retailer's coupon or deals page, the cart and checkout, and the retailer's current codes on coupon and deal sites, cart-testing each. Enumerate: a subscription or auto-replenish price cancellable without fee, clip coupons, first-order offers, codes, member pricing, loyalty rewards and cashback portals. A member price shown only when signed in is S2 content for the login handoff, or a typed gap beside that offer, never the anonymous price. Record in `discount_checked` where you looked, so an empty stack means none found rather than not checked. A multi-pack is its own row with total and per-unit price, only when the buyer's quantity covers it. Keep the one-time sticker path as its own row.
+
+Rank on the amount charged at checkout: subtract only lines confirmed there in a tested combination (#4), and show product-page-only lines as a labelled "if applied" figure. Value paid later (cash back, portal cashback, rewards earned) sits beside the total with its form and expiry and is never subtracted; count at most one portal or extension per order, and say so if it would change the #1. Store credit, gift-card balances and rewards already earned are the buyer's money, never a discount.
 
 Test coupons in the cart/confirmation flow without submitting an order; state
 what was actually applied and any stacking conditions. Exclude marketplace
@@ -229,11 +233,17 @@ Keep these IDs stable; the rubric and evidence schema cite them.
 - **#15 Fare product:** state fare brand, needed bag allowance and refund/change
   restrictions. An identical flight number does not imply equivalent fares.
   Unknown terms remain unverified and cannot support a lowest-total claim.
+- **#16 Discount stack:** the headline answer and every purchase use the purchase path whose own stack charges the least at checkout, with every eligible discount stacked and each condition stated. Try every top candidate's stack at the confirmation page; a sticker headline is acceptable only after the stack was tried and failed, could not be tested (label it under #3), or the buyer declined the commitment, never because it was not tried. A discount advertised on the product page but absent from the confirmation page has not been applied.
+
+## Purchasing on instruction
+
+Retail product orders only; lodging and flights stay hand-off-only per their shards. Buy only on the buyer's explicit, per-action instruction, and read [purchase execution](reference/purchase-execution.md) first. Buy the #16 stack, not the sticker; with no report covering the offer, build its stack first. Activate every portal, offer and code the stack needs, select the discounted path, clip the coupons that render after it, and stop on the final page to confirm each expected discount line before the single submitting click. A fee-free cancellable subscription may be bought on announcement; any other added commitment, quantity change or sign-up needs the buyer's yes. Read logged-in pages by scoped extraction of named fields, never snapshots. Confirm the order in order history, restore cart side effects, and handle a later correction as that file says.
 
 ## Output and final check
 
 Use [the report template](reference/report-template.md) for intent, timestamp,
 ranking, history, coupons, Risks & counter-evidence, sources and final Coverage gaps.
+The headline price is the #16 stack; show the discount lines that produce it.
 Check each applicable guardrail before delivery. Claims of booking, model
 execution or source verification require evidence that the action occurred.
 
@@ -262,10 +272,11 @@ For transcript evaluation read
 
 Load the source index first, then selected domain/tool shards. Load channel
 classes for coverage, reliability for retrieval trouble, login guidance for S2,
-the evidence schema for worker results, and only applicable cost tables. Never
+the evidence schema for worker results, and only applicable cost tables. Load
+purchase execution only when the buyer has instructed a purchase. Never
 load an entire reference directory. For recurring alerts recommend an existing
 price tracker with its current verified setup; this one-shot workflow does not
-create an unattended purchase loop.
+create an unattended purchase loop; a subscription bought on instruction is the one exception, and its next charge date is always reported.
 
 For a requested source refresh, follow the refresh protocol and monthly cadence.
 Update evidence and versions together, preserve source tombstones/death codes,
