@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.10.0], 2026-10-03
+## [Unreleased]
+
+### Fixed
+- Both READMEs and the design rationale rank by checkout cost: sticker price plus shipping, tax and duty, minus verified checkout discounts. Delayed cashback remains a separate conditional note, consistent with the existing workflow and historical correction.
+
+## [0.10.0] - 2026-10-03
 
 **Who is buying is now configuration: defined once, stored once, switchable.** Every run asked for the same facts about the buyer (market, ZIP and state, memberships, store credit), and nothing gave the answers a defined home. Copies ended up wherever a run happened to keep them, where no check could see them and a switch of person did not move them. The fix is a schema in this repository, real values only in a private config root, and one selection that moves a person's profile and ledgers together.
 
@@ -16,7 +21,7 @@
 - **NEW `tools/test_config.py`** (61 test cases) covers init, the doctor, switching by selection and under `people/`, empty, unusable and conflicting selections, value-free reporting, the privacy scan and its false positives, closed objects, malformed types, ledger isolation and encoding, overlapping writers, row-file placement, forwarder tables and the CONFIGROOT check. The guarded checks were mutation-tested: disabling one turns its test red.
 - bump 0.9.0 to 0.10.0.
 
-## [0.9.0], 2026-10-03
+## [0.9.0] - 2026-10-03
 
 **The headline is the price that gets bought, so it has to be the lowest one.** A run ranked offers at their one-time price and mentioned, as an aside, that the winning listing also offered a fee-free cancellable subscription and a first-order coupon. When the buyer said "buy it", the one-time option is what got bought. The buyer had to name the subscription and the coupon themselves, the order was cancelled before shipment and placed again, and the same item came out about a tenth cheaper. The aside was accurate and did nothing, because whatever the headline says is what gets executed. The fix is to change what the headline means, and what "buy it" executes.
 
@@ -28,7 +33,7 @@
 - Reviewed before release by three read-only reviewers (consistency, public-repo privacy, loopholes); their blocker and majors are folded in above.
 - bump 0.8.1 to 0.9.0.
 
-## [0.8.1], 2026-10-02
+## [0.8.1] - 2026-10-02
 
 **BigGo was never weak for US products; it was pointed at Taiwan.** Two earlier runs recorded BigGo as weak for US-specific SKUs: one returned zero rows for a niche US part, another returned only Taiwan merchants. A third run hit the same wall and this time read the server's settings class. `BIGGO_MCP_SERVER_REGION` selects which BigGo site every search hits, and upstream defaults it to `TW`. Sending the same query to the search API under both regions settled it: 10 USD rows from US merchants under `US`, a single TWD row under `TW`. A control query passes under either region, which is why the default looked like a coverage limit for three months.
 
@@ -39,7 +44,7 @@
 - **FIX: `verify_matrix` had been writing its GitHub cache into the public worktree on every authenticated run since the guards migration.** `_cache_path` found the companion by loading `tools/datadir.py` by file path and fell back to `skills/shopping-aggregator/metrics/` when that file was absent. `datadir.py` moved into the guards submodule, so the file check went false every time and the fallback became the only path. Running the matrix gate before a push was enough to make data_boundary block that push, which is how it surfaced. `_cache_path` now asks the resolver the module already imports and returns `None` with no companion: no cache, a WARN line, and nothing written to the repo. **NEW `tools/test_cache_path.py`** pins both directions and that the real resolver is the one consulted; restoring the old function turns all three red. CI runs it next to the data-freshness tests.
 - bump 0.8.0 to 0.8.1.
 
-## [0.8.0], 2026-08-28
+## [0.8.0] - 2026-08-28
 
 **The run that priced a flight, got it wrong twice, and could not tell.** A consumer asked whether a WeChat consolidator's quote for a New York to Beijing one-way was worth taking. The run recommended shifting the date to fly nonstop for less. The nonstop it named cost **160 to 340 USD more** than the quote. So did the second one. Both numbers came out of a hand-rolled Google Flights parser that matched a price to an itinerary by **proximity**, taking the nearest `aria-label="NNN US dollars"` after the `itinerary=` anchor.
 
@@ -64,7 +69,7 @@ This release makes airfare a first-class domain and makes that class of error st
 - **`14 CFR 399.84` and `399.85(b)` are recorded as the reason the landed-cost formula is not optional**: the first guarantees an advertised fare is the entire price payable, the second obliges a seller only to say bag fees *may* apply. The gap between them is why ranking on displayed price is wrong, and it is a property of the regime rather than of any one site.
 - bump 0.7.1 to 0.8.0. Gates: `dash_guard` clean, `verify_matrix` PASS, `flight_probe selftest` PASS (16 assertions) with all five poison-tests RED, shard-provenance poison-test BLOCK as designed.
 
-## [0.7.1], 2026-08-20
+## [0.7.1] - 2026-08-20
 
 **Distilling a run into the tool, and one entry that says a dead MCP is not a dead capability.** A cross-border consumer run produced failures that were all about *reading* rather than pricing, so they graduate into `reference/source-reliability.md` per the Step 7 rule: source and retailer-class properties only, with the shopping list stripped.
 
@@ -75,7 +80,7 @@ This release makes airfare a first-class domain and makes that class of error st
 - No freight or forwarding entries in this release, by request; that section is unchanged.
 - bump 0.7.0 to 0.7.1. Gates: `dash_guard`, `pii_guard`, `data_boundary` clean; `load_budget` ok; `verify_matrix` PASS; 4/4 test suites pass.
 
-## [0.7.0], 2026-08-19
+## [0.7.0] - 2026-08-19
 
 **The refresh that re-verified every row and still got the answer wrong.** `reference/data/README.md` had said for months that cross-border de-minimis "must be re-verified against the primary government source on every refresh, never from memory." That sentence was an intention with no mechanism. `cross-border-duty.json` then sat two months past its refresh still describing **IEEPA as live US tariff authority**, months after the Supreme Court had struck that authority down, while `verify_matrix` printed a clean DATA section on every single run. The gate asked whether `last_verified` EXISTED, and whether it was in the FUTURE. **Nothing ever asked whether it was OLD.** A gate that reassures is this fleet's signature defect, and this one had been reassuring since June.
 
@@ -92,7 +97,7 @@ The harder half is that a TTL alone would not have saved it. The 2026-06 refresh
 - **NEW channel class, offer-brokerage / name-your-price** (`channel-classes.md`), surfaced by the operator rather than by triage, which is itself the finding: it was unenumerable because no row described it. It is the only channel that legitimately transacts **below MAP with the full manufacturer warranty**, because MAP binds the *advertised* price and not the transacted one, and it therefore exists in exactly the categories where every visible retailer quotes an identical number and a run looks finished at that number. Three rules ship with it. Its own "lowest online" comparison table is an **affiliate placement** subject to guardrail #10, observed citing a first-party retailer $300 under that retailer's live price on a link carrying the broker's own affiliate tag. An offer is a **firm, irrevocable commitment** that auto-charges on acceptance, with a restocking fee the accepting retailer sets, so **this class cannot be taken to E1 without spending the operator's money**: a named broker plus a calibrated offer band plus the commitment caveat IS the covered state, and per CONSTITUTION V.4 the agent never submits the offer.
 - bump 0.6.0 to 0.7.0. Gates: `dash_guard` clean, `pii_guard` clean, `data_boundary` clean, `load_budget` 0.82 pct, `verify_matrix` PASS, 4/4 tool test suites pass.
 
-## [0.6.0], 2026-07-29
+## [0.6.0] - 2026-07-29
 
 **The login handoff, the third access state.** The matrix modelled every source as two-state: anonymously readable, or unavailable. Real consumer marketplaces have a third state, and it is the one the operator cares most about: **session-gated**, fully readable the moment a human logs in once, returning nothing at all until then. With no vocabulary for that state the skill did the only thing it could and filed the channel as a permanent `coverage_gap`, while the person who wanted the answer sat right there and could have opened the door in ten seconds. A real run spent eleven keyword retries and about an hour of wall-clock re-discovering that a C2C marketplace was walled, then reported it as unreachable. That is not a coverage limit. It is **a handoff that was never designed**, and this release designs it.
 
@@ -114,7 +119,7 @@ The harder half is that a TTL alone would not have saved it. The 2026-06 refresh
 - CONSTITUTION NEW **II.6, II.7, II.8, V.4**. Per CONSTITUTION VII these are a reasoned change routed to human review, not a refresh sweep; `verify_matrix` flags the baseline diff by design.
 - bump 0.5.0 → 0.6.0. Gates: `dash_guard` clean, `data_boundary` clean, `pii_guard` clean.
 
-## [0.5.0], 2026-07-13
+## [0.5.0] - 2026-07-13
 
 **Data boundary, the skill stops writing its user's life into a public repo.** `metrics/live-runs.jsonl` was git-tracked and append-only: SKILL.md Step 7 told every real run to add one line per source touched. It worked exactly as designed, and what it accumulated was a shopping history, which products got priced, which retailers got bought from, which region they ship to. **`pii_guard` passed it clean on every commit**, because there is no email or phone in a domain slug. That is the whole lesson of this release: a content scanner is a sieve at the exit, and it cannot see a leak that is merely *someone's life, correctly formatted*. The fix is not a better sieve, it is a pipe that does not point at the public repo.
 
@@ -131,7 +136,7 @@ The harder half is that a TTL alone would not have saved it. The 2026-06 refresh
 - **Docs repointed:** SKILL.md Step 7 + progressive loading, `reference/refresh-protocol.md` (×4, plus a new "then distil" step), `reference/scenario-eval/judge-protocol.md`, ROADMAP. `.gitignore` ignores the DATA paths, allows the `.example`s.
 - bump 0.4.1 → 0.5.0. Gate: PASS.
 
-## [0.4.1], 2026-07-06
+## [0.4.1] - 2026-07-06
 
 **Hotel/travel domain (minimal), matrix 12 → 13.** Adds the first lodging capability as ONE new domain shard + the smallest possible wiring: no new data tables, no new tool docs, no new registry entries. Flights / rental cars / trains explicitly OUT of scope (future extension).
 
@@ -140,7 +145,7 @@ The harder half is that a TTL alone would not have saved it. The 2026-06 refresh
 - **Coupled updates (applied same commit):** `reference/channel-classes.md` gains a **travel-booking / OTA** class row + its X1-map row naming `hotel-travel` as the primary shard, and its Last-verified bumped 2026-06 → 2026-07; README.md + README_CN.md `12 domains` counts and shields badges → 13 plus a hotel-travel source-matrix row in each; `.claude-plugin/plugin.json` 0.4.0 → 0.4.1 (+ its description domain list). NO `tools/registry.json` / `tools/index.md` change, channels are a tool-only axis and no MCP/tool was added.
 - bump 0.4.0 → 0.4.1. Gate expected PASS after the coupled plugin.json + channel-classes.md edits (both applied here); re-run the gate to confirm green before merge.
 
-## [0.4.0], 2026-06-22
+## [0.4.0] - 2026-06-22
 
 **Self-evolve round**, the single largest batch since v0.2.0. Run as parallel specialist subagents (data-tables / shards / tool-docs / gate-port / refresh-automation / scenario-eval) with a serial integrator finalizing version + docs + CI. Closes the entire v0.2 enforcement gap, the v0.4 domain expansion, and the landed-cost data gap at once. Matrix **9 → 12 domains**, tool docs **22 → ~32**, gate **6 → ~18 checks**, and the skill gains its first source-cited landed-cost data layer.
 
@@ -166,14 +171,14 @@ The harder half is that a TTL alone would not have saved it. The 2026-06 refresh
 
 **Docs + version.** docs: unify repo structure (Skill Repo Spec v1), README/README_CN re-ordered to the philosophy-first section order (philosophy → what-it-is → install → quick start → how to invoke → example output → limitations → languages → roadmap), top badge block normalized to the standard order/colors, CN sections kept 1:1 with EN. `ROADMAP.md` restructured, completed work moved to a **Shipped** section (v0.4.0 self-evolve + earlier), stale "RICHER checks not ported" / "more tool docs (currently 22)" / "tax tables" claims removed as now-done; remaining roadmap is v0.3 loop-closing + v0.5 packaging. README/README_CN badges: **Tool docs → ~32 per-tool**, NEW **Data tables** badge (tax | duty | FX | shipping); Status sections de-staled. `.claude-plugin/plugin.json` bump **0.3.3 → 0.4.0**. Gate: **PASS** (`python tools/verify_matrix.py --no-net`, exit 0).
 
-## [0.3.3], 2026-06-17
+## [0.3.3] - 2026-06-17
 
 Documentation-consistency sweep (no skill-logic change). Grep-audited the whole repo for stale version strings, wrong counts, broken links, and pre-0.2.0 feature descriptions; only the two READMEs were stale.
 - **`README.md` + `README_CN.md`**, version badge 0.1.0 → 0.3.3; fixed a broken **doubled `SKILL.md` link** (`skills/shopping-aggregator/skills/shopping-aggregator/SKILL.md` → `skills/shopping-aggregator/SKILL.md`); rewrote Status/roadmap to reflect what shipped since v0.1.0 (channel-class primitive, seller_tier+evidence_grade split, variant_key, coverage floor, CONSTITUTION, codex-crossval, the executable gate), corrected tool-doc count **17 → 22**, re-scoped remaining gaps to market-intel's richer judgement checks; added the new headline guardrails (evidence-grade-gates-ranking, seller-identity-not-domain, variant pinning, coverage floor) to the guardrails list and the channel-class mapping to the intent-parse step.
 - Verified the rest is NOT stale: ROADMAP / refresh-protocol / CONSTITUTION / PHILOSOPHY / shards already current as of 0.3.2; remaining `source_tier` mentions are the gate's own definition (exempt) + the live-runs genesis line (historical record); the two `guardrail #5` shard refs correctly point to seller-tier (genuinely #5).
 - bump 0.3.2 → 0.3.3. Gate: PASS.
 
-## [0.3.2], 2026-06-17
+## [0.3.2] - 2026-06-17
 
 Structure-audit cleanup. A 6-lens structural audit returned **MINOR-ONLY (leaning CONVERGED)**, the architecture is sound (thin layer, layered-DRY canonical-home+pointer, scoped gate, no orphans/double-homing; DRY lens converged outright). Landed only the 3 genuine items + doc-honesty; explicitly did NOT re-open structure (no new shards, no SKILL.md re-split, no brittle gate checks, those were named churn/net-negative).
 
@@ -183,7 +188,7 @@ Structure-audit cleanup. A 6-lens structural audit returned **MINOR-ONLY (leanin
 - **`ROADMAP.md`**, version → 0.3.2; checked off the now-shipped gate bullet.
 - bump 0.3.1 → 0.3.2. Gate: PASS (6 checks). README version/count refresh deferred (human-only cosmetic). **Structure declared converged, stop.**
 
-## [0.3.1], 2026-06-17
+## [0.3.1] - 2026-06-17
 
 Iteration-loop round-1 cleanup. A 4-lens review of 0.3.0 CONVERGED (4/4 lenses converged, zero critical/major regression, the restructure dropped no rule, all evidence-schema.md pointers resolve, the gate is genuine enforcement). These are the residual minors it surfaced:
 - **`reference/report-template.md`**, the ranking-table note pointed the "only an E1 row may be #1" rule at guardrail #5, but the 0.3.0 split moved that rule to **#5b** (#5 is now seller-tier). Fixed.
@@ -191,7 +196,7 @@ Iteration-loop round-1 cleanup. A 4-lens review of 0.3.0 CONVERGED (4/4 lenses c
 - **`tools/verify_matrix.py`**, THREEWAY docstring clarified as EXISTENCE-only (per-domain placement is advisory, not gated), removes a slight overclaim.
 - bump 0.3.0 → 0.3.1. Gate: PASS.
 
-## [0.3.0], 2026-06-17
+## [0.3.0] - 2026-06-17
 
 APPRAISAL-driven batch from an honest 6-lens self-evaluation of v0.2.0. Overall finding: the skill was 思路-correct but had written many advisory "MUST" rules with **NO executable gate** behind them, violating its own PHILOSOPHY P2 (mechanism, not intention), and `SKILL.md` (332 lines) had outgrown its thin always-loaded budget against the parent market-intel (299). This batch closes the P2 gap with the skill's first real gate, repairs a dead feedback loop, and slims the entry-point doc.
 
@@ -204,7 +209,7 @@ APPRAISAL-driven batch from an honest 6-lens self-evaluation of v0.2.0. Overall 
 
 **Still advisory** (judgement-dense, not mechanizable): seller-identity reasoning, evidence-grade assignment, cross-source reconciliation cause-sets, channel-class matching, these remain MUST-prose because they require model judgement, not a regex. **Now enforced** (by `verify_matrix.py`): registry/index/tool-doc three-way consistency, freshness stamps (warn), report-template Coverage-gaps + Ev contract, CHANGELOG ⟷ plugin version sync, no `source_tier` leak.
 
-## [0.2.0], 2026-06-17
+## [0.2.0] - 2026-06-17
 
 STRUCTURAL / framework batch from a multi-round, 6-lens consensus reflection on WHY the skill kept missing tool-less channels (Micro Center) and produced internally inconsistent retrieval, root causes, not source expansion. Root causes found: (1) the only machine-readable artifact (`registry.json`) + the CONSTITUTION's consistency rules are TOOL-shaped, so a channel with no tool is structurally un-representable and invisible to triage/refresh; (2) discovery enumerates TOOLS, never MISSING CHANNELS; (3) a "price" was a scalar with no SKU-variant key, no evidence-provenance grade, no cross-source reconciliation, and coverage had ceilings but no floor. This batch upgrades those from prose intent to schema/guardrail MECHANISM (PHILOSOPHY P2). Owner decision deferred to ROADMAP: whether closing the coverage/reconciliation loop ultimately needs the skill's first executable lint gate (the fixes here are advisory / by-construction on already-enforced artifacts, since the skill has no gate yet).
 
@@ -215,7 +220,7 @@ STRUCTURAL / framework batch from a multi-round, 6-lens consensus reflection on 
 - **`reference/refresh-protocol.md`**, Discovery gains a coverage-driven **channel-completeness audit** (not just tool hunting); feedback jq now prioritizes the new `coverage_gap` outcome (how a MISSING CHANNEL reaches the refresh loop) and corrects the `user_correction` orphan (it is a JSON key, not an outcome value); fixed a stale line that claimed no CONSTITUTION.md ships (it now does).
 - bump 0.1.6 → 0.2.0. DROPPED as scope creep (per multi-lens consensus): per-retailer scraper/price engine; channels-in-registry.json; auto channel-discovery crawler; numeric confidence/reconciliation scoring; shard rename; a `channel_gap` synonym (reuse parent skill's `coverage_gap`); a new BLOCKING workflow step (the skill has no executable gate, so a BLOCKING step would be empty intent, the very P2 anti-pattern).
 
-## [0.1.6], 2026-06-17
+## [0.1.6] - 2026-06-17
 
 Skill-improvement batch (Tier 1) from a 9-agent skeptical evaluation of two end-to-end runs across different product categories (buyer details redacted in 0.5.0). Closes the three decision-grade misses those runs exposed. (Tier 2, a store-pickup `fulfillment` schema field + a single-page-overflow note, deferred to 0.1.7; `codex-stale-price-note` dropped as already-documented; `bounded-external-delegate` folded into codex-crossval.md as one generalizing line.)
 
@@ -226,14 +231,14 @@ Skill-improvement batch (Tier 1) from a 9-agent skeptical evaluation of two end-
 - **`reference/codex-crossval.md`**, added one generalizing line: any external agentic delegate (codex today; future MCPs) is invoked with its browser/sub-MCP tools stripped + best-effort skip per guardrail #9.
 - bump 0.1.5 → 0.1.6. No matrix/registry/tool-doc additions (Micro Center documented in-shard, not as a new tool primitive).
 
-## [0.1.5], 2026-06-17
+## [0.1.5] - 2026-06-17
 
 Harden the Codex cross-val back-end after a real **10.5-hour hang**. First live `mcp__codex__codex` run (a GPU price check, MCP tools not disabled) drove Codex's OWN playwright `browser_navigate` to an anti-bot retailer (Cloudflare), which hung with no timeout for **38,037 s** until the user aborted, NOT a network/auth problem (model calls succeeded, Pro plan, tokens counted). Root cause: the user's `~/.codex/config.toml` registers `[mcp_servers.playwright]`, so Codex tries to drive a headless browser to live retail pages (and collides with Claude's own playwright). 
 
 - **`reference/codex-crossval.md`**, new **⚠️ CRITICAL** section: ALWAYS call `mcp__codex__codex` with `config.mcp_servers={}` (strips Codex's browser/MCP tools → web_search only) + `sandbox:read-only` + `approval-policy:never` + a prompt instruction to use only web_search. Verified 2026-06-17: same query then returned in <1 min. Reinforces the doctrine, Codex does web_search soft cross-val, NOT live-browser price fetch (that's this skill's Bright Data/playwright job). Empirical note updated with the incident + a cross-val data point (Codex's ~$1.0 to 1.3k undershot the live authorized $1.20 to 1.45k listings → why its prices are L5 leads).
 - No SKILL.md / matrix / registry changes.
 
-## [0.1.4], 2026-06-16
+## [0.1.4] - 2026-06-16
 
 Add **Codex MCP as an optional cross-model cross-validation + channel-discovery back-end** (NOT a price source). Prompted by a user question + an empirical test: a different model (GPT) with its own web search is a genuinely independent second opinion for the *soft* layer (authorized channels, missed cheaper authentic sources, counterfeit reputation, cross-checking the cheapest pick), but unreliable for authoritative live prices on anti-bot retail pages, so its prices are **L5 leads** that must re-pass the live-fetch + citation gate before ranking. Doctrine: Codex is a delegation back-end like `deep-research` / `market-intel` (PHILOSOPHY P5), so it is documented under `reference/`, **not** added to `reference/tools/` or the source matrix / registry, no matrix/registry churn.
 
@@ -242,7 +247,7 @@ Add **Codex MCP as an optional cross-model cross-validation + channel-discovery 
 - **`SKILL.md` guardrail #8**, the disconfirmation reverse-search may also run through the Codex MCP as an independent cross-model check (L5 corroboration).
 - No tool / matrix / registry changes.
 
-## [0.1.3], 2026-06-16
+## [0.1.3] - 2026-06-16
 
 Sync to market-intel v0.12.0 spec change: `companion-config-spec` v1 now formally
 recognizes two storage modes for a companion repo's secrets, Mode A (committed to private
@@ -251,7 +256,7 @@ shopping-aggregator install-guide's L3 row already delegates to market-intel's s
 formal contract; no shopping-aggregator-side doc changes required (the cross-reference
 picks up the new section automatically). Bump for traceability only.
 
-## [0.1.2], 2026-06-16
+## [0.1.2] - 2026-06-16
 
 `install-guide.md` slimmed from 133 → 93 lines (30% smaller) by delegating L0 install
 mechanics (prerequisites, MCP transport types, `claude mcp add` procedure, secret-handling
@@ -269,7 +274,7 @@ to maintain Keepa subscription + browser-extension install state outside this ma
 
 No tool/matrix changes.
 
-## [0.1.1], 2026-06-16
+## [0.1.1] - 2026-06-16
 
 - **`reference/install-guide.md`**, secret-handling hygiene now lists clipboard commands for
   all three OSes (PowerShell `Get-Clipboard`, macOS `pbpaste`, Linux `xclip -o`/`wl-paste`)
@@ -280,7 +285,7 @@ No tool/matrix changes.
 
 No tool/matrix changes. Forkability cleanup only.
 
-## [0.1.0], 2026-06-15
+## [0.1.0] - 2026-06-15
 
 Initial public release. Hand-curated matrix derived from a 5-subagent shopping landscape survey
 done 2026-06-15 (US + CN consumer-shopping coverage), paired with patterns inherited unchanged

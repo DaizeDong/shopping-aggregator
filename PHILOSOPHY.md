@@ -26,15 +26,17 @@ every decision that follows.
   output.
 - **The root:** the **ranking primitive itself was wrong**. Sticker price is not the consumer's
   question; **landed cost** is. So we reclassified the ranking unit from "$X sticker" to "$Y
-  landed (sticker + ship + tax + coupon − cashback)" everywhere in the workflow + report
-  template + tool docs.
+  checkout (sticker + shipping + tax + duty − verified checkout coupons)" everywhere in the workflow + report
+  template + tool docs. Delayed cashback is conditional and separate: eligibility, attribution,
+  exclusions and payout can fail after checkout, so it cannot determine the ranked winner.
 - **Why it matters:** the patch (a note in the output) would leave the bad default in place; the
   next session would re-rank by sticker and someone would re-discover the same trap. Fixing the
   framing reroutes every comparison the skill ever makes.
 
 > - **补丁：** 标价排序误导用户 → 输出里加一行"包邮吗？"备注。
 > - **根本：** **排序原语本身错了**。标价不是消费者的问题，**到手价**才是。于是把整个 workflow +
->   report 模板 + 工具文档里的排序单位从「$X 标价」改成「$Y 到手价 = 标价+运费+税-券-返利」。
+>   report 模板 + 工具文档里的排序单位从「$X 标价」改成「$Y 结账价 = 标价+运费+税费+关税-已核验结账优惠」。
+>   延迟返利有资格、归因、排除项和到账条件，结账后仍可能失败，因此单独说明，不用它决定排名冠军。
 > - **为何重要：** 补丁让错误默认值留着；改框架重塑了 skill 以后做的每一次比较。
 
 ## P2, Mechanisms, not intentions · 机制，而非意图
