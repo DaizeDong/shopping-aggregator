@@ -1,16 +1,16 @@
 # Report template (shopping-aggregator)
 
-> Snapshot: <YYYY-MM-DD HH:MM TZ> · Depth: <quick|standard|deep> · Region: <US|CN|cross-border>
+> Snapshot: <YYYY-MM-DD HH:MM TZ> · Profile: <profile_id | none> · Depth: <quick|standard|deep> · Region: <US|CN|cross-border>
 > Currency: <USD|CNY|...> · Sources used this run: <playwright | BigGo | Keepa | 慢慢买 | ...>
 > Fallbacks used: <e.g. "BigGo MCP not connected → playwright per-retailer"> · Coverage gaps: <list>
 
 ## Buy intent (confirmed with user)
 
 - **Product**: <brand + model + spec + condition>
-- **Region / market**: <US (NJ) | CN mainland | cross-border>
+- **Region / market**: <US (ship-to state) | CN mainland | cross-border>
 - **Budget / urgency**: <"<$X" | "willing to wait for sale" | "need by Wed">
 - **Sensitivity**: <warranty / refurb-OK / seller-rating cutoff / shipping speed>
-- **Existing accounts / extensions**: <e.g. Amazon Prime + Capital One Shopping>
+- **Existing accounts / extensions**: <from the profile, plus what the buyer added this run; e.g. a membership with free shipping + a cashback extension>
 
 > If the report misunderstood the intent above, stop reading, tell me and I'll re-run.
 

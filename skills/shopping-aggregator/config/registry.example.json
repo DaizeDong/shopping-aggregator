@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "skill": "shopping-aggregator",
+  "tools": [
+    {
+      "slug": "playwright-mcp",
+      "installed": true,
+      "transport": "stdio",
+      "notes": "Browser reads; checkout may need a non-automation browser."
+    },
+    {
+      "slug": "biggo-mcp",
+      "installed": true,
+      "transport": "stdio",
+      "notes": "Region must match profile.market.country."
+    },
+    {
+      "slug": "keepa",
+      "installed": false,
+      "transport": "rest"
+    }
+  ]
+}

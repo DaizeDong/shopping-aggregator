@@ -28,7 +28,15 @@ def _guards_module(name):
 
 
 def resolve_base():
-    """Discover only; the shared resolver's result is not visibility proof."""
+    """Discover only; the shared resolver's result is not visibility proof.
+
+    A selection variable that is set but empty or missing would let the resolver fall through to
+    the next candidate, possibly another person's root, so it is refused before discovery.
+    """
+    from config_selection import environment_problem
+    problem = environment_problem()
+    if problem:
+        raise StorageError(problem)
     return _guards_module("datadir").resolve_data_dir("shopping-aggregator", create=False)
 
 
@@ -40,6 +48,11 @@ def _prove(path):
         return proof
     except guard.GitError as exc:
         raise StorageError("Cannot prove a versioned PRIVATE companion: " + str(exc)) from exc
+
+
+def prove_private(path):
+    """Public form of the proof for callers that only need to know, such as the config doctor."""
+    return _prove(Path(path))
 
 
 def _plain_path(path):
@@ -133,12 +146,18 @@ class PrivateStore:
             stream.write(contents)
 
 
-def prepare_store():
-    """Verify storage before opening any private transcript or creating output."""
-    try:
-        base = resolve_base()
-    except (OSError, RuntimeError) as exc:
-        raise StorageError("Cannot resolve private evaluation storage; initialize the companion") from exc
+def prepare_store(base=None):
+    """Verify storage before opening any private transcript or creating output.
+
+    `base` is an explicitly selected data directory (scripts/ledger.py passes <config root>/data for
+    the root the buyer selected). It gets exactly the same proof as a discovered one; omitting it
+    keeps the shared resolver as the only discovery path.
+    """
+    if base is None:
+        try:
+            base = resolve_base()
+        except (OSError, RuntimeError) as exc:
+            raise StorageError("Cannot resolve private evaluation storage; initialize the companion") from exc
     if base is None or not Path(base).is_dir():
         raise StorageError("Uninitialized: clone a PRIVATE companion, create data/, and configure "
                            "SHOPPING_AGGREGATOR_CONFIG or SHOPPING_AGGREGATOR_DATA_DIR")

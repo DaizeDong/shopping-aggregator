@@ -9,8 +9,9 @@ Compare purchases using current evidence and the price/coverage rules below.
 Delegate retrieval, history and side research to available tools. Follow
 [PHILOSOPHY](../../PHILOSOPHY.md) and [CONSTITUTION](../../CONSTITUTION.md).
 
-Resolve `reference/` relative to this file; run `tools/` commands from the
-package root two levels above. Discover and probe tools on the current host.
+Resolve `reference/` relative to this file; run `tools/` and `scripts/` commands
+from the package root two levels above its real path (resolve a linked skill
+directory first). Discover and probe tools on the current host.
 
 ## Scope
 
@@ -30,6 +31,8 @@ Rental cars, rail, cruises and package tours need a separate workflow.
 ## Step 1: Parse the buy intent
 
 Capture these fields before delegating; resolve material ambiguities with the user.
+
+Start from the buyer's config root ([CONFIG.md](../../CONFIG.md)). Run `python scripts/verify_config.py`; it prints the root it selected. When buying for someone else, select their root (usually `<companion>/people/<id>/`) and keep it selected for the whole run: environment variables do not carry from one tool call to the next, so pass the same `--config-dir <root>` to every `scripts/` command and put `SHOPPING_AGGREGATOR_CONFIG=<root>` on the command line of every `tools/` command (`$env:SHOPPING_AGGREGATOR_CONFIG='<root>'; python ...` in PowerShell; quote Windows paths or use forward slashes). If its `profile.json conforms` check passes, read `<root>/profile.json` and prefill Region from `market` and `ship_to`, Existing access from `memberships`, `not_held`, `store_credit`, `accounts` and `home_stores`, the run defaults from `purchase_defaults`, `risk` and `travel`, the platforms to leave alone from `off_limits`, and category tastes from `preferences`; ask only for what it leaves open, and report any other failing doctor check. An instruction in the conversation overrides the profile for this run without editing it. If no root resolves or the profile check fails, ask for every field below. Change a profile only when its owner states a new fact (CONFIG.md, Changing a profile), never by inference. Name the `profile_id` in the report header.
 
 | Field | Required detail |
 |---|---|
@@ -63,7 +66,7 @@ any hard cap. Quick is the default for a mainstream in-stock SKU in one region.
 |---|---|---|---|---|
 | quick | 3 | 1 | 1 | One mainstream SKU without history needs |
 | standard | 6 | 2 | 3 | Multiple retailers and material channel spread |
-| deep | 12 | 3 | 5 | Explicit comprehensive research or high-ticket purchase of at least $500 |
+| deep | 12 | 3 | 5 | Explicit comprehensive research or a purchase of at least `risk.deep_depth_usd` (default $500) |
 
 Declare the chosen scope before collection and achieved coverage in the report. A limited
 search cannot justify an unqualified market-wide minimum. Use unique listing
@@ -151,7 +154,10 @@ cannot support an unqualified verified-lowest-total claim.
 
 Read [sales tax](reference/data/us-sales-tax.json),
 [shipping](reference/data/shipping-baselines.json), and
-[cross-border duty](reference/data/cross-border-duty.json) as relevant. Confirm
+[cross-border duty](reference/data/cross-border-duty.json) as relevant; the tax
+row is the profile's `ship_to.state` unless the buyer names another destination. When the profile
+names a forwarder for the route, price its leg from that forwarder's private rate table
+(`forwarders[].rate_table`, CONFIG.md); `duty_inclusive: true` means no duty line on top. Confirm
 current legal treatment and selected checkout charges; do not infer duty-free
 status from a remembered threshold. Missing region or HTS treatment remains an
 explicit uncertainty. Follow [FX sourcing](reference/data/fx-source-of-record.md)
@@ -172,7 +178,8 @@ Rank on the amount charged at checkout: subtract only lines confirmed there in a
 
 Test coupons in the cart/confirmation flow without submitting an order; state
 what was actually applied and any stacking conditions. Exclude marketplace
-offers below 95 percent rating or 500 ratings unless the user accepts the risk.
+offers below the profile's `risk` cutoffs (default 95 percent rating or 500
+ratings) unless the user accepts the risk.
 Show the sorted verified totals, differentiators for the top two (warranty,
 returns, shipping), and a sourced history note. A wait recommendation requires
 history evidence or an explicit low-confidence label.
@@ -239,6 +246,8 @@ Keep these IDs stable; the rubric and evidence schema cite them.
 
 Retail product orders only; lodging and flights stay hand-off-only per their shards. Buy only on the buyer's explicit, per-action instruction, and read [purchase execution](reference/purchase-execution.md) first. Buy the #16 stack, not the sticker; with no report covering the offer, build its stack first. Activate every portal, offer and code the stack needs, select the discounted path, clip the coupons that render after it, and stop on the final page to confirm each expected discount line before the single submitting click. A fee-free cancellable subscription may be bought on announcement; any other added commitment, quantity change or sign-up needs the buyer's yes. Read logged-in pages by scoped extraction of named fields, never snapshots. Confirm the order in order history, restore cart side effects, and handle a later correction as that file says.
 
+The selected profile supplies the buyer's standing answers: `purchase_defaults.subscriptions` (`accept-fee-free` keeps the announcement rule above, `ask` turns it into a question, `decline` leaves subscriptions out of the stack) and `subscription_interval`, and the retailer's `accounts[]` entry for who may submit. Only `checkout: agent` lets the agent click; `owner-browser`, a missing entry or a run without a conforming profile means prepare the cart and hand the final click to the owner, and `none` means no order through that account at all. Record every order action (placed, cancelled, replaced, returned) by piping one row to `python scripts/ledger.py append purchases --row-file - --config-dir <root>`; the row carries that root's `profile_id` and the fields in purchase execution. An invalid row is fixed and appended again; any other refusal is reported in the reply, never written elsewhere.
+
 ## Output and final check
 
 Use [the report template](reference/report-template.md) for intent, timestamp,
@@ -249,15 +258,7 @@ execution or source verification require evidence that the action occurred.
 
 ## Step 7: Keep real observations private
 
-Append source outcomes and every in-scope channel gap to the PRIVATE companion's
-`metrics/live-runs.jsonl`, following
-[the published schema](metrics/live-runs.jsonl.example) and
-[refresh protocol](reference/refresh-protocol.md). Use the shared
-[resolver](../../guards/tools/datadir.py), then verify the destination belongs
-to a PRIVATE remote before writing. Missing/unverifiable storage is an
-uninitialized writer failure: report it and retain observations in the current
-reply pending private initialization. Never fall back to the public tool tree.
-The companion is versioned; real run history belongs in its private commits.
+Append each source outcome and every in-scope channel gap by piping one JSON row to `python scripts/ledger.py append live-runs --row-file - --config-dir <root>` (never a row file inside this repository). It validates the row against [the published schema](metrics/live-runs.jsonl.example), checks the selected root against the shared [resolver](../../guards/tools/datadir.py) and proves it PRIVATE before writing; the [refresh protocol](reference/refresh-protocol.md) defines the fields. An invalid row is fixed and appended again. Any other refusal is a writer failure: report it and keep the observations in the reply pending private initialization. Never fall back to the public tool tree. The companion is versioned; real run history belongs in its private commits.
 Every `outcome: coverage_gap` record requires an enum `gap_reason` from the
 [refresh protocol](reference/refresh-protocol.md#feedback-loop). Preserve the same
 reason in the report and private record; explanatory `detail` does not replace it.
@@ -270,7 +271,9 @@ For transcript evaluation read
 
 ## Progressive loading and maintenance
 
-Load the source index first, then selected domain/tool shards. Load channel
+Load the source index first, then selected domain/tool shards. Read CONFIG.md
+only to set up or change a config root; Step 1 needs just the doctor and the
+profile. Load channel
 classes for coverage, reliability for retrieval trouble, login guidance for S2,
 the evidence schema for worker results, and only applicable cost tables. Load
 purchase execution only when the buyer has instructed a purchase. Never

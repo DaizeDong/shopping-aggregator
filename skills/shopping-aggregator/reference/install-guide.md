@@ -21,7 +21,7 @@ Same scheme as market-intel:
 | **L0 overview** (this file + market-intel's install-guide) | mechanics inherited + shopping-specific deltas below | how to install anything in general (market-intel's) + the shopping-specific tool kinds (here) |
 | **L1 per-domain** | `reference/volatile/pricing-install.md` + each `domains/<domain>.md` "Install guidance" line | exact install command + price per shopping source |
 | **L2 per-tool** | `reference/tools/<slug>.md` → `## Install` | install + auth + usage + gotchas for one specific tool. Find the slug in `reference/tools/index.md`. |
-| **L3 ops state (recommended)** | per-user private companion repo (see market-intel's [companion-config-repo.md](https://github.com/DaizeDong/market-intel/blob/main/skills/market-intel/reference/companion-config-repo.md)) | which tools *you* installed, *your* tier, *your* key rotation history |
+| **L3 ops state (recommended)** | your config root in a private companion repo ([CONFIG.md](../../../CONFIG.md)): `registry.json` and `profile.json` | which tools *you* installed, *your* memberships and store credit, which retailers the agent may check out at |
 
 ## Tools at THIS layer (shopping-specific kinds)
 
@@ -42,7 +42,8 @@ from market-intel's mix because consumer shopping has more retail-specific tooli
 ## User-side tool detection (no automation)
 
 For browser extensions / apps / accounts (Capital One Shopping, Honey, 慢慢买 App, Keepa
-subscription), the skill **cannot detect**. Ask the user:
+subscription), the skill **cannot detect**. Read the selected config root first (`registry.json`
+tools, `profile.json` memberships and accounts) and ask only about what it does not list:
 
 > "Do you already have any of these installed: Capital One Shopping / Karma / Honey / 慢慢买
 > App / a Keepa subscription? If yes, I'll use them; if no, I may recommend installing one
@@ -72,9 +73,9 @@ Windows notes are all identical. The few differences:
   Depot) firecrawl handles fine.
 - **playwright MCP is the default for live e-commerce price reads**; market-intel's matrix
   also favors it but for different reasons (acting human / cookie state).
-- The **L3 companion repo** pattern works for shopping-aggregator too: replicate the same
-  private-companion-repo layout with a `shopping-aggregator-config/` companion holding Keepa
-  subscription, browser-extension install state, etc.
+- The **L3 config root** has its own schema here, not market-intel's: [CONFIG.md](../../../CONFIG.md)
+  defines `profile.json` (memberships, ship-to, accounts, purchase defaults), `registry.json`
+  (installed tools) and the run ledgers, and `python scripts/init_config.py` creates one.
 
 Everything else: read market-intel's install-guide.
 
@@ -87,7 +88,7 @@ Everything else: read market-intel's install-guide.
 | `claude mcp add` two-ways procedure (with vs without key) | market-intel install-guide § Adding an MCP |
 | Verifying an install (`claude mcp list` parsing) | market-intel install-guide § Verify an install |
 | Windows-specific gotchas | market-intel install-guide § Windows-specific notes |
-| Bootstrap a private companion config repo | market-intel [companion-config-repo.md](https://github.com/DaizeDong/market-intel/blob/main/skills/market-intel/reference/companion-config-repo.md) |
+| Bootstrap a private config root | `python scripts/init_config.py`, then [CONFIG.md](../../../CONFIG.md); the companion contract is [guards/COMPANION.md](../../../guards/COMPANION.md) |
 | Shopping-tool categories (browser ext, mobile app, OSS) | this file ↑ |
 | Per-retailer install entry points (Amazon / Taobao / JD / etc.) | `domains/<domain>.md` |
 | Per-tool install + gotchas | `tools/<slug>.md` (slug in `tools/index.md`) |

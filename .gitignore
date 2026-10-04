@@ -12,6 +12,9 @@ desktop.ini
 *.log
 .env
 .env.*
+*.env
+!*.env.template
+!env.template
 tmp/
 scratch/
 scratchpad/
@@ -31,10 +34,10 @@ settings.local.json
 __pycache__/
 *.pyc
 
-# DATA class (see .dataclass.json) — real-run output. It lives in the private companion config
-# (~/.shopping-aggregator-config/data/, resolved by tools/datadir.py) and is PHYSICALLY ABSENT from
-# this repo. The repo ships only the `.example` schema, so a fresh clone is a usable, uninitialized
-# tool with nothing real inside it to copy.
+# DATA class (see .dataclass.json): real-run output and real config. It lives in a config root in the
+# PRIVATE companion (CONFIG.md; found by guards/tools/datadir.py or selected with
+# SHOPPING_AGGREGATOR_CONFIG) and is PHYSICALLY ABSENT from this repo. The repo ships only generated
+# `.example` schemas, so a fresh clone is a usable, uninitialized tool with nothing real inside it.
 #
 # live-runs.jsonl is why this section exists. It is append-only telemetry of REAL runs — one line per
 # source touched — so it accumulated which products were priced, which retailers were bought from and
@@ -43,6 +46,22 @@ __pycache__/
 skills/shopping-aggregator/metrics/live-runs.jsonl
 skills/shopping-aggregator/metrics/gh-api-cache.json
 !skills/shopping-aggregator/metrics/*.example
+
+# A config root's files, if one were ever created or copied in here. CONFIG.md, Storage.
+/profile.json
+/registry.json
+/people/
+/data/
+/reference/
+/row.json
+# The same names one level down are refused by verify_matrix (CONFIGROOT); ignoring them here keeps
+# a copied root out of a plain `git add`.
+profile.json
+purchases.jsonl
+skills/shopping-aggregator/config/profile.json
+skills/shopping-aggregator/config/registry.json
+skills/shopping-aggregator/config/purchases.jsonl
+skills/shopping-aggregator/config/forwarder-table.json
 
 # Evaluation DATA belongs only in the versioned PRIVATE companion.
 evaluation/

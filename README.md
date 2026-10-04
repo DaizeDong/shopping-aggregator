@@ -7,7 +7,7 @@ Triage any buy intent across 14 shopping domains, rank by landed cost (not stick
 [![Source Matrix](https://img.shields.io/badge/Source%20Matrix-14%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.9.0-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.10.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
@@ -103,6 +103,21 @@ installation with `python tools/refresh_priority.py --help` and
 
 ---
 
+## Config
+
+Each buyer's standing facts (market, ship-to ZIP and state, memberships, store credit, which retailers the agent may check out at, purchase defaults) live in a **config root** inside a private companion repository, and the run ledgers (observations and purchases) are written there too. [CONFIG.md](CONFIG.md) defines every file and field, and nothing is stored outside that schema: not in agent memory, not in script defaults.
+
+```bash
+python scripts/init_config.py        # find the companion, or create ~/.shopping-aggregator-config
+python scripts/verify_config.py      # doctor: prints the selected root; NOT READY until the profile is filled
+```
+
+Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the pinned `guards/tools/datadir.py` order: `$SHOPPING_AGGREGATOR_DATA_DIR`, a sibling `shopping-aggregator-config/` next to this repository, `~/.shopping-aggregator-config`, then `~/.shopping-aggregator-data`. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
+
+To switch to another person, point `SHOPPING_AGGREGATOR_CONFIG` at their root, or keep them under `<companion>/people/<id>/` and select that directory; their profile, purchases and observations switch together, and every report names the `profile_id` it used. `--config-dir` selects a root for one `scripts/` command only, while the `tools/` commands follow only the environment variable. Without any config the skill still compares prices, asking for the same facts in Step 1, but it never submits an order itself: the final click goes to you.
+
+---
+
 ## 60-second tour
 
 You say:
@@ -125,8 +140,8 @@ What runs:
 5. **Delegate** → fans out subagents: playwright on amazon.com / amazon WHD / ebay.com / Walmart /
    Best Buy / Target; one subagent on Camelcamelcamel for history; one on Slickdeals for "is
    there a deal megathread"; one reverse-search subagent on counterfeit / refurb-fraud reports.
-6. **Guardrails** → independent verifier re-fetches prices; landed cost computed with NJ sales
-   tax + Prime ship vs flat ship; coupon-cart-test verifies "$10 off" code claim; surfaces
+6. **Guardrails** → independent verifier re-fetches prices; landed cost computed with the sales tax
+   of the profile's ship-to state + member free shipping vs flat ship; coupon-cart-test verifies "$10 off" code claim; surfaces
    disagreement between snapshot times if Buy Box rotated; reverse-search yields "BoseRefurb on
    eBay had several DOA reports last 90 days, recommend skipping."
 7. **Report** → landed-cost ranked table, history note ("$X above 90-day low, drops historically
@@ -228,7 +243,7 @@ by design:
   "unreachable". See [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md).
 - **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
-- **Buys only when you say so**: retail orders only, on an explicit per-action instruction, at the full discount stack (guardrail #16), verified line by line on the final page before a single click. Lodging and flights stay hand-off. Without that instruction it produces a recommendation and you click buy.
+- **Buys only when you say so**: retail orders only, on an explicit per-action instruction, at the full discount stack (guardrail #16), verified line by line on the final page before a single click, and only at retailers where the selected profile lets the agent check out. Lodging and flights stay hand-off. Without that instruction or that permission it produces a recommendation and you click buy.
 
 Remaining roadmap gaps: demo conversations + comparison-vs-alternatives docs (v0.5 packaging),
 heartbeat issue auto-close + discovery-state log (v0.3 loop-closing). See [ROADMAP.md](ROADMAP.md).

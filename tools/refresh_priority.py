@@ -12,7 +12,7 @@ WHERE THE FILE LIVES (this used to be wrong, and the wrongness was the leak)
 live-runs.jsonl is DATA, not TOOL: every line is an observation from a REAL run, so the file
 accumulated which products got priced, which retailers got bought from, and which region they
 ship to. It was git-tracked in a public repo, and every content scan passed it — there is no
-email or phone in a domain slug. It now resolves from the PRIVATE data dir (tools/datadir.py),
+email or phone in a domain slug. It now resolves from the PRIVATE data dir (guards/tools/datadir.py),
 and there is deliberately NO in-repo fallback: a fallback into the repo is not a convenience,
 it IS the leak. Uninitialized, this tool raises DataDirNotInitialized with instructions.
 
@@ -65,12 +65,20 @@ if not os.path.isfile(os.path.join(GUARDS_TOOLS, "datadir.py")):
                      "from the shopping-aggregator plugin directory.")
 sys.path.insert(0, GUARDS_TOOLS)
 from datadir import DataDirNotInitialized, resolve_data_dir  # noqa: E402
+from config_schema import loads_strict  # noqa: E402
+from config_selection import environment_problem  # noqa: E402
 
 SKILL_SLUG = "shopping-aggregator"
 
 
 def _liveruns_file():
     """The private live-runs.jsonl. Never a path inside the repo — see the module docstring."""
+    # A selection variable that is set but unusable would make the resolver fall through to the
+    # next candidate, possibly another person's root. That is a misconfiguration, not an
+    # uninitialized tool, so it stops the run instead of ranking someone else's observations.
+    problem = environment_problem()
+    if problem:
+        raise SystemExit("refresh_priority: " + problem)
     d = resolve_data_dir(SKILL_SLUG)
     if d is None:
         raise DataDirNotInitialized(
@@ -137,13 +145,16 @@ def load_records(path):
     except OSError as e:
         raise SystemExit(f"refresh_priority: cannot read {path}: {e}")
     out = []
-    for i, ln in enumerate(raw.splitlines(), 1):
+    # Split on newline only: str.splitlines() also breaks at U+2028, U+2029 and U+0085, which a
+    # JSON string may legally contain, and would cut one valid row into invalid halves. Rows are
+    # parsed strictly (no duplicate keys, no NaN), exactly as the writer and the doctor parse them.
+    for i, ln in enumerate(raw.split("\n"), 1):
         ln = ln.strip()
         if not ln:
             continue
         try:
-            rec = json.loads(ln)
-        except json.JSONDecodeError as e:
+            rec = loads_strict(ln)
+        except (ValueError, RecursionError) as e:
             raise SystemExit(
                 f"refresh_priority: {path} line {i} is not valid JSON: {e}"
             )

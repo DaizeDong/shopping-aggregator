@@ -7,7 +7,7 @@
 [![数据源矩阵](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90%E7%9F%A9%E9%98%B5-14%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![数据表](https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E8%A1%A8-%E7%A8%8E%20%7C%20%E5%85%B3%E7%A8%8E%20%7C%20FX%20%7C%20%E8%BF%90%E8%B4%B9-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
 [![语言](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-EN%20%2F%20CN-blue?style=flat)](#语言)
-[![Roadmap](https://img.shields.io/badge/Roadmap-v0.9.0-purple?style=flat)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/Roadmap-v0.10.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
@@ -92,6 +92,21 @@ git clone --recurse-submodules https://github.com/DaizeDong/shopping-aggregator.
 
 ---
 
+## 配置
+
+每位买家长期不变的事实（购买市场、收货邮编和州、会员、礼品卡这类储值、哪些零售商允许代理下单、默认购买方式）存在私有伴生仓里的一个**配置根**里，运行时记的两本账（观测记录和购买记录）也写在那里。每个文件、每个字段都由 [CONFIG.md](CONFIG.md) 定义，schema 以外的地方一律不存：不进代理的记忆，也不写成脚本里的默认值。
+
+```bash
+python scripts/init_config.py        # 找到伴生仓；找不到就创建 ~/.shopping-aggregator-config
+python scripts/verify_config.py      # 体检：打印选中的配置根；profile 没填完就报 NOT READY
+```
+
+查找顺序：先看 `--config-dir`（初始化时是 `--out`），再看 `$SHOPPING_AGGREGATOR_CONFIG`（别名 `$SHOPPING_AGGREGATOR_CONFIG_DIR`），最后按锁定版本的 `guards/tools/datadir.py` 找，依次是 `$SHOPPING_AGGREGATOR_DATA_DIR`、本仓旁边的 `shopping-aggregator-config/`、`~/.shopping-aggregator-config`、`~/.shopping-aggregator-data`。如果还留着 `SHOPPING_AGGREGATOR_DATA_DIR`，它必须正好指向选中配置根的 `data/`，否则体检不通过。配置根必须先放进有版本管理的私有仓，才能写入真实信息。
+
+切换到另一个人：把 `SHOPPING_AGGREGATOR_CONFIG` 指向这个人的配置根，或者把对方放在 `<伴生仓>/people/<id>/` 下再选中这个目录。对方的 profile、购买记录和观测记录会一起切过去，每份报告都会写明用的是哪个 `profile_id`。`--config-dir` 只对它所在的那一条 `scripts/` 命令生效，`tools/` 下的命令只认环境变量。完全没有配置也能比价，Step 1 会照旧在对话里逐项询问，只是不会替你点下单，最后一步交给你自己。
+
+---
+
 ## 60 秒上手
 
 你说：
@@ -112,7 +127,7 @@ git clone --recurse-submodules https://github.com/DaizeDong/shopping-aggregator.
 5. **委托** → fan-out subagents：playwright on amazon.com / amazon WHD / ebay / Walmart /
    Best Buy / Target；一个 Camelcamelcamel 查历史；一个 Slickdeals 看有无社区帖；一个反向
    搜索 subagent 查"翻新假冒/DOA"投诉。
-6. **护栏** → 独立 verifier 重抓价；用 NJ 销售税 6.625% + Prime ship vs flat ship 算到手价；
+6. **护栏** → 独立 verifier 重抓价；按 profile 收货州的销售税 + 会员包邮 vs 固定运费算到手价；
    playwright 购物车实测"$10 off"码；如果 Buy Box 在两次快照间轮换，surface 价格区间；反向
    搜索若发现"BoseRefurb on eBay 近 90 天多次 DOA 报告"，标"不推荐"。
 7. **报告** → 按到手价排名表 + 历史备注（"距 90 天低 $X，黑五历史平均跌 25%"）+ 优惠码列表

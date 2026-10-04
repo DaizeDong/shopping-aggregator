@@ -40,7 +40,9 @@ def test_original_offline_cli_enforces_fact_schema(tmp_path, variant, rejected):
     root = Path(__file__).resolve().parents[1]
     package = tmp_path / "package"
     matrix_package_fixture(package)
-    for relative in ("tools/verify_matrix.py", "tools/delivery_check.py", "guards/tools/datadir.py"):
+    for relative in ("tools/verify_matrix.py", "tools/config_schema.py", "tools/config_selection.py",
+                     "tools/delivery_check.py",
+                     "guards/tools/datadir.py"):
         destination = package / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / relative, destination)

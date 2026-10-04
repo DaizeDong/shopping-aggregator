@@ -334,6 +334,113 @@ def render_live_run_examples():
     return "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in live_run_examples())
 
 
+# ---------------------------------------------------------------------------------------------
+# CONFIG EXAMPLES -- the published shape of a config root (CONFIG.md). Real roots live in the
+# PRIVATE companion; these are the only profile, registry and purchase rows this repo may hold.
+# Every value is invented: the synthetic ZIP, invented program ids, a reference SKU. A profile is a
+# person's shopping life in one file, which is exactly why the example is OUTPUT, not an edit.
+# ---------------------------------------------------------------------------------------------
+CONFIG_DIR = os.path.join("skills", "shopping-aggregator", "config")
+
+
+def profile_example(profile_id="buyer-a", zip_code=SYNTHETIC_ZIP):
+    """A complete, conforming synthetic profile. Tests derive their A/B roots from this."""
+    return {
+        "schema_version": 1,
+        "profile_id": profile_id,
+        "label": "Synthetic buyer %s" % profile_id,
+        "market": {"country": "US", "currency": "USD", "locale": "en-US"},
+        "ship_to": {"zip": zip_code, "state": "NY", "city": "New York", "effective_from": "2000-01-01"},
+        "memberships": [
+            {"program": "acme-plus", "tier": "standard", "perks": ["free-shipping", "cash-back"],
+             "cash_back_pct": 2, "confirmed_on": "2000-01-01"},
+            {"program": "acme-warehouse-club", "perks": ["member-price"], "confirmed_on": "2000-01-01"},
+        ],
+        "not_held": ["acme-store-card"],
+        "store_credit": ["acme-gift-card"],
+        "purchase_defaults": {"subscriptions": "accept-fee-free", "subscription_interval": "page-default"},
+        "risk": {"marketplace_min_rating_pct": 95, "marketplace_min_ratings": 500, "deep_depth_usd": 500},
+        "accounts": [
+            {"retailer": "example-retailer.com", "session": "session-store:example", "checkout": "agent",
+             "identity": "primary"},
+            {"retailer": "example-warehouse.com", "checkout": "owner-browser"},
+        ],
+        "home_stores": [{"retailer": "example-retailer.com", "store": "store-0001"}],
+        "travel": {"home_airports": ["AAA", "AAB"], "cabin": "economy", "checked_bags": 1,
+                   "payment_currency": "USD", "hotel_adults": 2},
+        "off_limits": ["example-social-market"],
+        "forwarders": [{"name": "example-forwarder", "zone": "1", "duty_inclusive": True,
+                        "rate_table": "reference/forwarder-example-forwarder.json"}],
+        "preferences": {"example-category": "Synthetic preference text."},
+    }
+
+
+def registry_example():
+    return {"schema_version": 1, "skill": "shopping-aggregator", "tools": [
+        {"slug": "playwright-mcp", "installed": True, "transport": "stdio",
+         "notes": "Browser reads; checkout may need a non-automation browser."},
+        {"slug": "biggo-mcp", "installed": True, "transport": "stdio",
+         "notes": "Region must match profile.market.country."},
+        {"slug": "keepa", "installed": False, "transport": "rest"},
+    ]}
+
+
+def purchase_examples(profile_id="buyer-a"):
+    """Three invented order actions, one per path; none mirrors any real order's shape."""
+    base = {"profile_id": profile_id, "retailer": "example-retailer.com", "paid_with": "card"}
+    return [
+        {"ts": "2000-01-01T00:00:00Z", **base, "order_ref": "EX-0001", "item": REFERENCE_SKUS["headphones"],
+         "variant_key": "example|headphones|black|new", "path": "one-time", "quantity": 1,
+         "items_total": 300.0, "tax": 24.0, "discounts": [{"type": "code", "amount": 30.0, "mark": "cart_tested"}],
+         "charged_total": 294.0, "status": "placed", "notes": "Synthetic row."},
+        {"ts": "2000-01-02T00:00:00Z", **base, "order_ref": "EX-0002", "item": REFERENCE_SKUS["multicooker"],
+         "variant_key": "example|multicooker|6qt|new", "path": "subscription", "quantity": 1,
+         "items_total": 80.0, "tax": 0.0,
+         "discounts": [{"type": "subscription", "amount": 12.0, "mark": "cart_tested"},
+                       {"type": "portal", "amount": 2.0, "mark": "paid_later"}],
+         "charged_total": 68.0, "status": "placed",
+         "subscription": {"interval": "6-weeks", "next_delivery": "2000-02-13"}, "notes": "Synthetic row."},
+        {"ts": "2000-01-03T00:00:00Z", **base, "order_ref": "EX-0003", "item": REFERENCE_SKUS["multicooker"],
+         "variant_key": "example|multicooker|6qt|new|2-pack", "path": "multi-pack", "quantity": 1,
+         "items_total": 150.0, "tax": 0.0, "discounts": [], "charged_total": 150.0, "status": "returned",
+         "notes": "Synthetic row."},
+    ]
+
+
+def forwarder_table_example(name="example-forwarder"):
+    """A synthetic forwarder rate table; the example profile's rate_table points at this shape."""
+    def tiers(base):
+        return [{"min_kg": 1, "max_kg": 10, "rate_per_kg": base},
+                {"min_kg": 10, "max_kg": None, "rate_per_kg": base - 2}]
+    return {
+        "schema_version": 1,
+        "name": name,
+        "currency": "USD",
+        "duty_inclusive": True,
+        "zone_by": "zip-first-digit",
+        "zones": {"1": ["0", "1", "2", "3", "4"], "2": ["5", "6", "7", "8", "9"]},
+        "classes": {"general": {"1": tiers(10), "2": tiers(12)},
+                    "sensitive": {"1": tiers(15), "2": tiers(17)}},
+        "volumetric_divisor_cm": 6000,
+        "min_billable_kg": 1,
+        "notes": "Synthetic table. Billable weight is the larger of actual and volumetric weight.",
+        "source": "Synthetic example generated by tools/make_fixtures.py",
+        "verified_date": "2000-01-01",
+    }
+
+
+def render_config_examples():
+    """Basename -> text for every config example, in a fixed order."""
+    return {
+        "profile.example.json": json.dumps(profile_example(), indent=2, ensure_ascii=False) + "\n",
+        "forwarder-table.example.json": json.dumps(forwarder_table_example(), indent=2,
+                                                   ensure_ascii=False) + "\n",
+        "registry.example.json": json.dumps(registry_example(), indent=2, ensure_ascii=False) + "\n",
+        "purchases.jsonl.example": "".join(json.dumps(row, ensure_ascii=False) + "\n"
+                                           for row in purchase_examples()),
+    }
+
+
 def flight_search_fixture(card_count=0):
     """Generate a large response with zero, thin, or healthy synthetic flight cards."""
     cards = "".join(
@@ -465,6 +572,11 @@ def main():
     os.makedirs(os.path.dirname(live_dest), exist_ok=True)
     with open(live_dest, "w", encoding="utf-8", newline="\n") as f:
         f.write(render_live_run_examples())
+    config_dest = a.out if a.out else os.path.join(repo_root(), CONFIG_DIR)
+    os.makedirs(config_dest, exist_ok=True)
+    for name, contents in render_config_examples().items():
+        with open(os.path.join(config_dest, name), "w", encoding="utf-8", newline="\n") as f:
+            f.write(contents)
     print("make_fixtures: wrote %d scenario(s) -> %s" % (len(CASES), dest))
     return 0
 

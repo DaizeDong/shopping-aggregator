@@ -31,8 +31,10 @@ def test_cold_and_warm_cache_have_same_severity(tmp_path, verdict, exit_code):
     root = Path(__file__).resolve().parents[1]
     package = tmp_path / "package"
     matrix_package_fixture(package)
-    for relative in ("tools/verify_matrix.py", "tools/evaluation_store.py", "tools/delivery_check.py",
-                     "guards/tools/datadir.py", "guards/tools/data_boundary.py", "guards/tools/pii_guard.py"):
+    for relative in ("tools/verify_matrix.py", "tools/config_schema.py", "tools/config_selection.py",
+                     "tools/evaluation_store.py",
+                     "tools/delivery_check.py", "guards/tools/datadir.py", "guards/tools/data_boundary.py",
+                     "guards/tools/pii_guard.py"):
         destination = package / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / relative, destination)

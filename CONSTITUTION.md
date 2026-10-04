@@ -32,9 +32,11 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   when explicitly stated "actively reverse-searched, none found"; absence is a bug.
 - **I.7** **Landed-cost provenance.** Every `tax`, `duty`, `shipping`, and `FX` value used in a
   landed-cost computation or ranking MUST resolve to a specific row in `reference/data/` (carrying
-  that row's `source_url` + `verified_date`), or, when no row covers the case, be explicitly stamped
+  that row's `source_url` + `verified_date`) or, for a forwarder the buyer's profile names, to that
+  forwarder's private rate table (citing its `source` + `verified_date`, CONFIG.md), or, when neither
+  covers the case, be explicitly stamped
   `(assumed)` inline next to the number. A bare rate, threshold, or FX figure typed from memory (e.g.
-  "NJ 6.625%", "$800 de-minimis", "≈7 CNY/USD") with neither a data-table citation nor an `(assumed)`
+  "a 7% state rate", "$800 de-minimis", "≈7 CNY/USD") with neither a data-table citation nor an `(assumed)`
   stamp is a provenance bug. The `reference/data/*.json` tables (us-sales-tax, cross-border-duty,
   shipping-baselines) + `reference/data/fx-source-of-record.md` are the single source-of-record; SKILL
   prose and shards MUST read them, never restate the numbers inline. `[S]`
@@ -53,12 +55,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
   **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
   **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
-- **II.5** Live-run observations MUST be appended to the **private** `live-runs.jsonl`, resolved by
-  `tools/datadir.py` to `~/.shopping-aggregator-config/data/metrics/live-runs.jsonl` (or
-  `$SHOPPING_AGGREGATOR_DATA_DIR`), and **MUST NOT** be written into this repo, which is public.
-  If there is no data dir (the skill is uninitialized) or the file is not writable, the run MUST
-  instead note the observations in its reply. Dropping the observations entirely, neither appended
-  nor reported, is a bug (refresh-protocol depends on them). `[S]`
+- **II.5** Live-run observations MUST be appended to the **private** `data/metrics/live-runs.jsonl` of the selected config root (CONFIG.md) through `scripts/ledger.py`, which resolves the root with `guards/tools/datadir.py` and proves it PRIVATE before writing, and **MUST NOT** be written into this repo, which is public. If no root resolves (the skill is uninitialized) or the write is refused, the run MUST instead note the observations in its reply. Dropping the observations entirely, neither appended nor reported, is a bug (refresh-protocol depends on them). `[S]`
 - **II.5a** An observation is DATA: it records what a real person priced, which retailer they bought
   from, and where it ships. It has **no in-repo fallback path**, by construction, a fallback into
   the repo is not a convenience, it is the leak. The repo publishes only the shape
@@ -66,6 +63,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what, MAY be distilled
   into `reference/source-reliability.md`, stripped of product, price, and region. If the lesson
   cannot be stated without naming what was bought, it is not yet a lesson and stays private. `[S]`
+- **II.5b** Every order action taken on instruction (placed, cancelled, replaced, returned) MUST be appended to the selected root's private `data/purchases.jsonl` through `scripts/ledger.py`, carrying that root's `profile_id`; a row for another profile is refused, so one person's order cannot land in another person's ledger. A refused write is reported in the reply, under the same no-fallback rule as II.5a. `[S]`
 - **II.6** A channel that is **session-gated** (loads, but needs a login the operator could supply)
   MUST NOT be recorded as unreachable until the operator has been asked and has declined or is
   absent. The ask is a **blocking handoff**: open the login page, stop emitting tool calls against
@@ -127,6 +125,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   only probe-added items or quantities, and re-read to confirm restoration. Use a disposable cart
   or session where available. A persisted session file is a bearer credential: keep it outside
   public trees and include it only in an authorized, verified PRIVATE versioned backup. `[S]`
+- **V.5** A buyer's standing facts live only in the fields CONFIG.md defines, in a config root inside a verified PRIVATE repository. A fact without a field gets a schema change first; it never goes into a script default, a public example or a free-text note. A profile never holds identity, contact or payment data (street address, phone, email, date of birth, card or account numbers, credentials, balances); the schema refuses them by field name, and by value shape where the data has a recognisable shape. Guardrails are not profile settings: no field may switch off #16 or V.4. `[S]`
 
 ## VI, Honey and similar trust-event tools `[S]`
 

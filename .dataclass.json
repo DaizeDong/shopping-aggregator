@@ -3,11 +3,16 @@
     "TOOL: public code and generic documentation.",
     "FIXTURE: synthetic examples generated only by tools/make_fixtures.py.",
     "DATA: all real transcripts, judge prompts, responses, results and observations live in the versioned PRIVATE companion, never in the public tool tree.",
-    "The shared resolver discovers storage; evaluation_store.py uses the shared receipt-based proof for physical/effective PRIVATE Git routes and checks HEAD, ignore status and containment before reads and atomic writes."
+    "The shared resolver discovers storage; evaluation_store.py uses the shared receipt-based proof for physical/effective PRIVATE Git routes and checks HEAD, ignore status and containment before reads and atomic writes.",
+    "CONFIG.md defines a config root: profile.json, registry.json, data/ and people/<id>/. Real roots live only in the PRIVATE companion. The data entries under skills/shopping-aggregator/config/ sit beside their generated examples, which is where a copied real file would land; data_sealed lists the config-root names that must never appear at this repository's root."
   ],
   "data": [
     "skills/shopping-aggregator/metrics/live-runs.jsonl",
     "skills/shopping-aggregator/metrics/gh-api-cache.json",
+    "skills/shopping-aggregator/config/profile.json",
+    "skills/shopping-aggregator/config/registry.json",
+    "skills/shopping-aggregator/config/purchases.jsonl",
+    "skills/shopping-aggregator/config/forwarder-table.json",
     "cache/",
     "evaluation/",
     "skills/shopping-aggregator/evaluation/"
@@ -16,10 +21,21 @@
     "skills/shopping-aggregator/reference/scenario-eval/scenarios.jsonl",
     "skills/shopping-aggregator/reference/scenario-eval/evaluation-fixture.json",
     "skills/shopping-aggregator/reference/scenario-eval/flight-quote-fixture.json",
-    "skills/shopping-aggregator/metrics/live-runs.jsonl.example"
+    "skills/shopping-aggregator/metrics/live-runs.jsonl.example",
+    "skills/shopping-aggregator/config/profile.example.json",
+    "skills/shopping-aggregator/config/forwarder-table.example.json",
+    "skills/shopping-aggregator/config/registry.example.json",
+    "skills/shopping-aggregator/config/purchases.jsonl.example"
   ],
-  "_data_home": "Verified PRIVATE companion data directory, resolved by guards/tools/datadir.py; evaluations use evaluation/runs/<run-id>/ and network matrix observations use cache/",
+  "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by guards/tools/datadir.py or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl, purchases.jsonl, evaluation/runs/<run-id>/ and cache/",
   "data_sealed": [
+    "profile.json",
+    "registry.json",
+    "people/",
+    "data/",
+    "reference/",
+    "secrets/",
+    "row.json",
     "skills/shopping-aggregator/reference/scenario-eval/.judge-prompt.us-single-sku-01.txt",
     "skills/shopping-aggregator/reference/scenario-eval/.judge-prompt.us-multi-channel-02.txt",
     "skills/shopping-aggregator/reference/scenario-eval/.judge-prompt.cn-taobao-03.txt",
