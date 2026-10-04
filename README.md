@@ -6,14 +6,14 @@ Triage any buy intent across 14 shopping domains, rank by landed cost (not stick
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Source Matrix](https://img.shields.io/badge/Source%20Matrix-14%20domains-green?style=flat)](skills/shopping-aggregator/reference/sources-index.md)
 [![Data tables](https://img.shields.io/badge/Data%20tables-tax%20%7C%20duty%20%7C%20FX%20%7C%20shipping-green?style=flat)](skills/shopping-aggregator/reference/data/README.md)
-[![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](#languages)
+[![Languages](https://img.shields.io/badge/Languages-EN%20%2F%20CN-blue?style=flat)](README_CN.md)
 [![Roadmap](https://img.shields.io/badge/Roadmap-v0.10.0-purple?style=flat)](ROADMAP.md)
 
 [English](README.md) | [中文版](README_CN.md)
 
 ---
 
-## ⭐ Read this first, the design philosophy
+## ⭐ Design Philosophy
 
 shopping-aggregator inherits market-intel's organizing principle, **root-cause design, not
 incremental patching.** When something is wrong, change the assumption underneath it, not the
@@ -28,6 +28,11 @@ decision in this skill:
   Honey lawsuit). We verify via playwright cart test or label as ⚠ claim.
 - **Honey ≠ default-good in 2026**, the Rakuten/Impact/Awin terminations of Jan 2026 changed
   the trust landscape. The skill carries this forward proactively.
+
+Requiring stronger evidence can leave a candidate unranked or coverage incomplete.
+That is preferable to naming a winner from a snippet price or conditional rebate.
+Verify current price, stock, seller identity and checkout discounts together; show
+delayed cashback separately.
 
 📜 **[Read the full design philosophy → PHILOSOPHY.md](PHILOSOPHY.md)**.
 
@@ -205,7 +210,7 @@ hard rules applied during synthesis, full list in
 
 - **Snapshot timestamp is MANDATORY**, every price entry carries `[fetched YYYY-MM-DD HH:MM TZ]`.
 - **Stock state is part of the price**, OOS at $X ≠ in-stock at $X+5.
-- **Landed cost, not sticker price**, ship + tax + coupon - cashback.
+- **Rank by checkout cost:** sticker price + shipping + tax + duty - verified checkout coupon discounts. Delayed cashback stays a separate conditional note and is never deducted from the ranked price.
 - **Coupon verification gate**, playwright cart test, not extension badge.
 - **Retailer trust tiers** `seller_tier` L1 first-party → L5 unverifiable; don't rank L4/L5 as winners.
 - **Evidence grade gates ranking first**, `evidence_grade` E1 (live PDP/API) · E2 (aggregator) · E3
