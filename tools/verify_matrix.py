@@ -331,6 +331,21 @@ def run_checks():
     from delivery_check import delivery_errors
     for error in delivery_errors(ROOT):
         block("DELIVERY", error)
+    # ---- CONFIGROOT: no real config root is tracked anywhere in this public tree (CONFIG.md) ----
+    # .dataclass.json seals the config-root names at the top level only, and data_boundary's run
+    # shapes do not know a profile or a purchases ledger, so a root copied one level down would pass
+    # both. A tracked file with a config root's own name is refused wherever it sits; the published
+    # examples carry ".example" in their names and the tools registry is a different file.
+    _tracked = subprocess.run(["git", "-C", ROOT, "ls-files", "-z"], capture_output=True)
+    if _tracked.returncode != 0:
+        block("CONFIGROOT", "git ls-files failed; the tracked tree could not be checked")
+    for _rel in filter(None, _tracked.stdout.decode("utf-8", "replace").split("\0")):
+        _name = _rel.rsplit("/", 1)[-1]
+        if (_name in ("profile.json", "purchases.jsonl", "row.json")
+                or re.fullmatch(r"forwarder-[^.]+\.json", _name)
+                or _rel.startswith("people/") or "/people/" in _rel):
+            block("CONFIGROOT", f"{_rel} has the name of a config-root file; real roots live only in "
+                                f"the PRIVATE companion")
     # ================================================================= ORIGINAL CHECKS (unchanged)
     # ---- THREEWAY: registry.json <-> tools/<slug>.md files <-> tools/index.md rows ----
     if not os.path.isdir(TOOLS_DIR):
@@ -448,11 +463,10 @@ def run_checks():
     # (.dataclass.json). What the repo publishes is the SHAPE, live-runs.jsonl.example, and that is
     # the whole of what a fresh clone knows about the lines it is expected to produce. So the schema
     # is now the BLOCKING half of this check: an uninitialized tool still has to be a usable one.
-    REQUIRED_KEYS = {"ts", "domain", "source", "outcome", "detail", "user_correction"}
-    OUTCOME_OK = {"created", "verified", "unverifiable", "dead", "fallback_used",
-                  "price_mismatch", "coupon_fake", "coverage_gap"}
-    GAP_REASONS = {"session-gated-declined", "session-gated-unattended",
-                   "structurally-unreachable", "tool-outage", "not-attempted"}
+    # The row schema lives in tools/config_schema.py, shared with scripts/ledger.py (the writer) and
+    # scripts/verify_config.py (the doctor), so the gate and the writer cannot disagree about a row.
+    from config_schema import live_run_problems, loads_strict
+    from config_selection import environment_problem
 
     def _check_liveruns(path, label, required):
         if not os.path.exists(path):
@@ -460,25 +474,20 @@ def run_checks():
                 block("LIVERUNS", f"{label} is missing — the repo must publish the schema so the "
                                   f"skill is usable uninitialized (.dataclass.json)")
             return
-        for i, ln in enumerate(read(path).splitlines(), 1):
+        # Newline only (splitlines also breaks at U+2028/U+2029/U+0085 inside a valid row), and
+        # strict parsing (duplicate keys, NaN), exactly as the writer and the doctor read a row.
+        for i, ln in enumerate(read(path).split("\n"), 1):
             ln = ln.strip()
             if not ln:
                 continue
             try:
-                rec = json.loads(ln)
+                rec = loads_strict(ln)
             except Exception as e:
                 block("LIVERUNS", f"{label} line {i} is not valid JSON: {e}")
                 continue
-            missing = REQUIRED_KEYS - set(rec)
-            if missing:
-                block("LIVERUNS", f"{label} line {i} missing keys: {sorted(missing)}")
-            if rec.get("outcome") not in OUTCOME_OK:
-                warn("LIVERUNS", f"{label} line {i} outcome '{rec.get('outcome')}' not in the declared set")
-            if rec.get("outcome") == "coverage_gap":
-                reason = rec.get("gap_reason")
-                if not isinstance(reason, str) or reason not in GAP_REASONS:
-                    block("LIVERUNS", f"{label} line {i} requires a valid gap_reason "
-                                      "for coverage_gap (CONSTITUTION II.8)")
+            for severity, field, message in live_run_problems(rec):
+                (block if severity == "block" else warn)(
+                    "LIVERUNS", f"{label} line {i} {field}: {message}")
 
     _check_liveruns(os.path.join(SKILL, "metrics", "live-runs.jsonl.example"),
                     "metrics/live-runs.jsonl.example", required=True)
@@ -486,7 +495,12 @@ def run_checks():
     # And the operator's REAL file, on a machine that has one. A corrupt private file breaks the
     # refresh loop exactly as badly as a corrupt tracked one did, and it is now the only file that
     # actually feeds it. No data dir (fresh clone, CI) = uninitialized = correct: nothing to check.
-    _data_dir = resolve_data_dir("shopping-aggregator")
+    # A selection variable that is set but unusable makes the resolver fall through to another
+    # candidate, which may be another person's root: block instead of checking the wrong file.
+    _selection_problem = environment_problem()
+    _data_dir = None if _selection_problem else resolve_data_dir("shopping-aggregator")
+    if _selection_problem:
+        block("LIVERUNS", _selection_problem)
     if _data_dir is not None:
         _check_liveruns(os.path.join(str(_data_dir), "metrics", "live-runs.jsonl"),
                         "<private data dir>/metrics/live-runs.jsonl", required=False)

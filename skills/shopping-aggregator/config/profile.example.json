@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "profile_id": "buyer-a",
+  "label": "Synthetic buyer buyer-a",
+  "market": {
+    "country": "US",
+    "currency": "USD",
+    "locale": "en-US"
+  },
+  "ship_to": {
+    "zip": "10001",
+    "state": "NY",
+    "city": "New York",
+    "effective_from": "2000-01-01"
+  },
+  "memberships": [
+    {
+      "program": "acme-plus",
+      "tier": "standard",
+      "perks": [
+        "free-shipping",
+        "cash-back"
+      ],
+      "cash_back_pct": 2,
+      "confirmed_on": "2000-01-01"
+    },
+    {
+      "program": "acme-warehouse-club",
+      "perks": [
+        "member-price"
+      ],
+      "confirmed_on": "2000-01-01"
+    }
+  ],
+  "not_held": [
+    "acme-store-card"
+  ],
+  "store_credit": [
+    "acme-gift-card"
+  ],
+  "purchase_defaults": {
+    "subscriptions": "accept-fee-free",
+    "subscription_interval": "page-default"
+  },
+  "risk": {
+    "marketplace_min_rating_pct": 95,
+    "marketplace_min_ratings": 500,
+    "deep_depth_usd": 500
+  },
+  "accounts": [
+    {
+      "retailer": "example-retailer.com",
+      "session": "session-store:example",
+      "checkout": "agent",
+      "identity": "primary"
+    },
+    {
+      "retailer": "example-warehouse.com",
+      "checkout": "owner-browser"
+    }
+  ],
+  "home_stores": [
+    {
+      "retailer": "example-retailer.com",
+      "store": "store-0001"
+    }
+  ],
+  "travel": {
+    "home_airports": [
+      "AAA",
+      "AAB"
+    ],
+    "cabin": "economy",
+    "checked_bags": 1,
+    "payment_currency": "USD",
+    "hotel_adults": 2
+  },
+  "off_limits": [
+    "example-social-market"
+  ],
+  "forwarders": [
+    {
+      "name": "example-forwarder",
+      "zone": "1",
+      "duty_inclusive": true,
+      "rate_table": "reference/forwarder-example-forwarder.json"
+    }
+  ],
+  "preferences": {
+    "example-category": "Synthetic preference text."
+  }
+}

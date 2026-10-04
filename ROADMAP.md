@@ -1,8 +1,8 @@
 # Roadmap
 
-Current: **v0.9.0**
+Current: **v0.10.0**
 
-`shopping-aggregator` is at v0.9.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
+`shopping-aggregator` is at v0.10.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
 gap and the v0.4 domain expansion in one batch (see **Shipped** below), on top of the v0.2.0
 structural/framework batch (CONSTITUTION, demand-side channel-class primitive, the evidence-unit
 schema `variant_key` / `seller_tier` / `evidence_grade`, seller-identity gate, codex-crossval) and
@@ -10,6 +10,12 @@ the v0.1.0 base (orchestration core, philosophy inherited from market-intel). Th
 next; completed work is in **Shipped**.
 
 ## Shipped
+
+### v0.10.0, config roots: who is buying is configuration, not conversation
+
+- [x] **`CONFIG.md` defines a config root per person** (profile, registry, private reference tables, both ledgers, `people/<id>/`); real roots live only in the PRIVATE companion, and the schema refuses identity, contact and payment data.
+- [x] **`scripts/init_config.py`, `scripts/verify_config.py`, `scripts/ledger.py`**, with `tools/config_schema.py` as the one implementation every caller shares; switching people is one selection (`SHOPPING_AGGREGATOR_CONFIG`, or `--config-dir` per command) that moves profile and ledgers together.
+- [x] **Purchases are recorded** (`data/purchases.jsonl`) under the selected root's profile id, and the observation ledger finally has a writer.
 
 ### v0.6.0, the login handoff and the reading-a-result-page guardrails
 
@@ -28,8 +34,8 @@ next; completed work is in **Shipped**.
 ### v0.5.0, data boundary: the skill stops writing its user's life into a public repo
 
 - [x] **Every path declared TOOL / FIXTURE / DATA** (`.dataclass.json`); real-run output resolves
-      from a private companion dir via `tools/datadir.py`, with no in-repo fallback.
-- [x] **`tools/data_boundary.py` wired into both hooks and CI** as the primary control, with
+      from a private companion dir via the resolver (now `guards/tools/datadir.py`), with no in-repo fallback.
+- [x] **`guards/tools/data_boundary.py` wired into both hooks and CI** as the primary control, with
       `pii_guard` demoted to backstop; fixtures are generated, so a real record cannot pass.
 - [x] `reference/source-reliability.md`, the generalizable half of the removed observations,
       distilled with product, price and region stripped.
@@ -40,7 +46,7 @@ next; completed work is in **Shipped**.
       `cross-border-duty.json`, `shipping-baselines.json`, `fx-source-of-record.md`, each on the
       `{schema_version,last_verified,rows[{source_url,verified_date,...}]}` envelope, every figure
       source-cited (CBP / Federal Register / EU Council / USITC HTS / GACC primary). Landed-cost
-      compute no longer has to say "(NJ rate assumed)." **Closes the v0.2 tax/duty + currency-spec
+      compute no longer has to say "(state rate assumed)." **Closes the v0.2 tax/duty + currency-spec
       bullets.**
 - [x] **3 new domain shards (9 → 12)**, `cross-border` (US↔CN/EU duties + forwarders; duty figures
       source-of-record `reference/data/cross-border-duty.json`, CBP-primary), `grocery-cpg`
@@ -109,8 +115,7 @@ next; completed work is in **Shipped**.
 
 - ❌ **Build a full shopping orchestrator like Perplexity Shopping**, out of scope per P5 (thin
   layer doctrine). If the user wants that, recommend Perplexity Pro.
-- ❌ **Unattended or speculative auto-purchase**, out of scope per autonomy / consent. Buying on the buyer's explicit per-action instruction is supported since v0.9.0, retail only, through `reference/purchase-execution.md`
-  considerations. The skill produces a recommendation; the user clicks buy.
+- ❌ **Unattended or speculative auto-purchase**, out of scope per autonomy / consent. Buying on the buyer's explicit per-action instruction is supported since v0.9.0, retail only, through `reference/purchase-execution.md`.
 - ❌ **In-skill cashback redemption**, not the skill's role; user manages their own Capital
   One Shopping / Karma / Rakuten accounts.
 - ❌ **Build a custom MCP server**, defer to BigGo MCP / Apify / Keepa. P5 again.

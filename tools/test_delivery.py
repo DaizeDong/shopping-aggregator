@@ -77,7 +77,8 @@ def test_uninitialized_reader_is_an_empty_state(tmp_path):
     (tmp_path / "tools").mkdir()
     (tmp_path / "guards/tools").mkdir(parents=True)
     (tmp_path / ".git").mkdir()
-    for relative in ("tools/refresh_priority.py", "guards/tools/datadir.py"):
+    for relative in ("tools/refresh_priority.py", "tools/config_schema.py", "tools/config_selection.py",
+                     "guards/tools/datadir.py"):
         shutil.copyfile(root / relative, tmp_path / relative)
     env = {key: value for key, value in os.environ.items() if not key.startswith("SHOPPING_AGGREGATOR_")}
     env.update(HOME=str(tmp_path), USERPROFILE=str(tmp_path), PYTHONUTF8="1")

@@ -82,7 +82,8 @@ Applies when an **in-scope** channel class resolves to S2 and the operator is pr
   what the probe added, and re-read to confirm the original cart is restored. Prefer a disposable
   cart or session; preserve every unrelated item.
 - **Never a substitute for the operator's judgement about which platforms to touch.** If the
-  operator has said a platform is off-limits for automated logged-in use, that stands; do not
+  profile's `off_limits` lists a platform ([CONFIG.md](../../../CONFIG.md)), or the operator has said
+  a platform is off-limits for automated logged-in use, that stands; do not
   propose a handoff for it.
 
 ## Browser ownership during a handoff

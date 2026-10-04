@@ -1,7 +1,7 @@
 {
   "_comment": [
-    "Schema for metrics/gh-api-cache.json -- the GHACTIVE check's 7-day TTL cache of GitHub API reads.",
-    "The real file is DATA (a real run produced it) and resolves from the private data dir, never here.",
+    "Schema for <config root>/data/cache/gh-api-cache.json -- the GHACTIVE check's 7-day TTL cache of GitHub API reads.",
+    "The real file is DATA (a real run produced it) and lives in the selected config root's versioned data/cache/, never here.",
     "Rebuildable from scratch: delete it and run `python tools/verify_matrix.py` authenticated.",
     "Keyed by `owner/repo`. `checked_at` is when WE asked; `pushed_at` is what GitHub answered."
   ],

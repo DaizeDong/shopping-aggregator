@@ -156,9 +156,9 @@ review. Use market-intel's horizon-scan protocol when considering a new domain.
 ## Feedback loop
 
 The skill writes each source outcome and in-scope channel gap to the **private** `live-runs.jsonl` during real runs
-(see SKILL.md Step 7). That file is DATA, it lives under `metrics/` in the verified PRIVATE
-versioned companion data directory resolved by `guards/tools/datadir.py`, because its lines record what a real
-person priced and where it shipped. The repo ships the shape only (`metrics/live-runs.jsonl.example`).
+(see SKILL.md Step 7), through `scripts/ledger.py`, at `<config root>/data/metrics/live-runs.jsonl`
+([CONFIG.md](../../../CONFIG.md)). That file is DATA in the verified PRIVATE versioned companion, because its
+lines record what a real person priced and where it shipped. The repo ships the shape only (`metrics/live-runs.jsonl.example`).
 
 Every `outcome: coverage_gap` record MUST include `gap_reason`, with exactly one of:
 `session-gated-declined`, `session-gated-unattended`, `structurally-unreachable`, `tool-outage`,
@@ -169,7 +169,9 @@ reconcile them against the private evidence rather than guessing from free text.
 
 The refresh-protocol **must** read this file as a prioritization input. Run the ranking tool (replaces
 the old hand-run `jq | sort | uniq -c` one-liner, one deterministic, weighted definition shared by
-the protocol and the gate); it resolves the private path for you:
+the protocol and the gate). It reads the root the environment selects (a set `SHOPPING_AGGREGATOR_DATA_DIR` first, then
+`SHOPPING_AGGREGATOR_CONFIG`, else the resolver's default), so rank each person's root separately, with the variable or with
+`--file <root>/data/metrics/live-runs.jsonl`:
 
 ```bash
 python tools/refresh_priority.py            # ranked source table (default)

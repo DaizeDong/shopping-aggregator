@@ -50,11 +50,19 @@ def test_companion_cache_lives_outside_the_repo(private_cache):
 
 
 def test_no_companion_means_no_cache_path(tmp_path, monkeypatch):
+    # HOME moves to an empty directory, so no visibility receipt exists. That keeps the test true on
+    # a machine whose real companion sits next to this checkout: whatever the resolver finds, it
+    # cannot be proven PRIVATE, and nothing may be created.
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     missing = tmp_path / "missing/data"
     monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(missing))
     with pytest.raises(evaluation_store.StorageError):
         verify_matrix._cache_path("gh-api-cache.json")
     assert not missing.parent.exists()
+    monkeypatch.delenv("SHOPPING_AGGREGATOR_DATA_DIR")
+    with pytest.raises(evaluation_store.StorageError):
+        verify_matrix._cache_path("gh-api-cache.json")
 
 
 def test_the_real_resolver_is_the_one_consulted(private_cache, monkeypatch):
