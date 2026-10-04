@@ -147,8 +147,9 @@ If a cart was changed to reveal charges, restore it and verify the restoration.
 ## Step 6: Normalize landed cost
 
 Compare identical variants and condition on the actual fulfillment promise.
-Landed cost includes sticker, shipping, tax and duty, less verified coupon or
-cashback savings. Every tax/duty/shipping/FX input needs dated source provenance
+Landed cost includes sticker, shipping, tax and duty, less verified checkout
+discounts. Delayed cashback is shown separately and never deducted from the ranked
+checkout total. Every tax/duty/shipping/FX input needs dated source provenance
 from the applicable reference table or an explicit `(assumed)` label. Assumptions
 cannot support an unqualified verified-lowest-total claim.
 
