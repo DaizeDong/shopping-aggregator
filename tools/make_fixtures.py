@@ -581,5 +581,18 @@ def main():
     return 0
 
 
+def activity_cache_retention_case():
+    """Generate current, stale and malformed activity-cache observations."""
+    return {
+        "example-owner/current": {"verdict": "PASS", "checked_at": "2026-01-08T12:00:00"},
+        "example-owner/removed": {"verdict": "PASS", "checked_at": "2026-01-08T12:00:00"},
+        "example-owner/stale": {"verdict": "BLOCK", "checked_at": "2025-12-01T12:00:00"},
+        "example-owner/over-seven-days": {"verdict": "PASS", "checked_at": "2026-01-02T11:59:59"},
+        "example-owner/future": {"verdict": "PASS", "checked_at": "2026-02-01T12:00:00"},
+        "example-owner/invalid": {"verdict": "PASS", "checked_at": "invalid"},
+        "example-owner/failed": {"verdict": "RATE_LIMITED", "checked_at": "2026-01-08T12:00:00"},
+    }
+
+
 if __name__ == "__main__":
     sys.exit(main())

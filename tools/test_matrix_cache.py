@@ -1,5 +1,6 @@
 """Exercise cold and warm cache decisions through fresh native matrix CLI processes."""
 import json
+import datetime
 import os
 from pathlib import Path
 import runpy
@@ -11,7 +12,17 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_fixtures import (matrix_observation_fixture, matrix_package_fixture,
-                           storage_repository_fixture, storage_visibility_fixture)
+                            storage_repository_fixture, storage_visibility_fixture,
+                            activity_cache_retention_case)
+
+
+def test_cache_retention_drops_removed_stale_future_and_failed_observations():
+    from verify_matrix import retained_activity_cache
+    cache = activity_cache_retention_case()
+    repositories = set(cache) - {"example-owner/removed"}
+    retained = retained_activity_cache(cache, repositories, datetime.datetime(2026, 1, 9, 12))
+    assert set(retained) == {"example-owner/current"}
+    assert retained_activity_cache([], repositories, datetime.datetime(2026, 1, 9)) == {}
 
 
 def matrix_child(package, verdict):

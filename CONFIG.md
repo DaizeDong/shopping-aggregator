@@ -176,3 +176,13 @@ Inside one companion, add a person with `python scripts/init_config.py --out <co
 ## Changing a profile
 
 Edit the file, run the doctor, commit in the companion. The agent changes a profile only when its owner states a new fact ("I cancelled that membership", "I moved"), sets `confirmed_on` or `effective_from` to the date it was stated, and never infers a change from a page it read.
+
+## Storage lifecycle
+
+`storage.contract.json` maps the companion paths to retention decisions and references this document for their schemas. `scripts/verify_config.py` rejects undeclared root entries as well as invalid fields. PRIVATE storage and Git history do not imply indefinite retention.
+
+The online matrix discards cache keys for repositories no longer referenced, malformed or failed observations, future timestamps, and observations older than seven days before writing the refreshed cache. An inactive `data/cache/` can be removed and rebuilt. Offline verification does not touch it.
+
+Retain live observations and purchases. Keep a legacy ledger only while it has unique facts or corrections awaiting schema reconciliation; preserve those facts and a migration receipt before retiring it. Do not relabel unsupported old outcomes as fresh successful observations. Keep active or selected evaluation evidence, then retire redundant transcripts and checkpoints after its final conclusion and source hashes are retained. Compact lifecycle decisions may be stored in `data/retention/*.json`; they are not a raw-output archive.
+
+The shared storage checker is provided by skill-smith at `skills/skill-smith/scripts/storage_contract.py`; do not copy it into this repository.

@@ -158,6 +158,11 @@ def doctor(cfg, skill, check):
     check("config dir exists", os.path.isdir(cfg))
     if not os.path.isdir(cfg):
         return None
+    allowed = {".git", ".companion", "README.md", ".gitignore", "profile.json", "registry.json",
+               "data", "tools", "secrets", "reference", "people"}
+    unexpected = sorted(set(os.listdir(cfg)) - allowed)
+    check("root has only CONFIG.md layout entries", not unexpected,
+          "%d undeclared root entries" % len(unexpected) if unexpected else "")
     for name in ("README.md", ".gitignore"):
         check(name + " present", os.path.isfile(os.path.join(cfg, name)))
     for name in ("data", "tools", "secrets"):

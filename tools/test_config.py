@@ -121,6 +121,15 @@ def test_blank_profile_is_never_ready(home):
     assert "profile.json.profile_id" in output and "profile.json.purchase_defaults.subscriptions" in output
 
 
+def test_doctor_rejects_undeclared_root_group(home):
+    root = make_root(home / "companion", "example-owner/example-private", profile_example("buyer-a"))
+    (root / "retired-experiment").mkdir()
+    code, output = run("verify_config.py", "--config-dir", str(root))
+    assert code == 1, output
+    assert "root has only CONFIG.md layout entries" in output
+    assert "1 undeclared root entries" in output
+
+
 def test_two_people_switch_by_selection(home, monkeypatch):
     a = make_root(home / "people-a", "example-owner/example-private", profile_example("buyer-a"),
                   purchase_examples("buyer-a"))
