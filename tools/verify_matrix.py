@@ -115,6 +115,24 @@ GHACTIVE_STALE_MONTHS = 12 # a repo not pushed within this is doc-rot (WARN)
 STALE_MONTHS = 9           # a tool doc not re-verified within this is nominated for re-check (WARN)
 GH_CACHE_MAX_AGE_DAYS = 7
 
+
+def retained_activity_cache(cache, repositories, now):
+    """Keep only current, well-formed observations for repositories still in use."""
+    if not isinstance(cache, dict):
+        return {}
+    retained = {}
+    for name in repositories:
+        entry = cache.get(name)
+        if not isinstance(entry, dict) or entry.get("verdict") not in {"PASS", "WARN", "BLOCK"}:
+            continue
+        try:
+            age = now - datetime.datetime.fromisoformat(entry["checked_at"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            continue
+        if datetime.timedelta(0) <= age <= datetime.timedelta(days=GH_CACHE_MAX_AGE_DAYS):
+            retained[name] = entry
+    return retained
+
 NO_NET = "--no-net" in sys.argv
 BASE = "main"
 if "--base" in sys.argv:
@@ -635,6 +653,7 @@ def run_checks():
         except (OSError, ValueError):
             warn("GHACTIVE", "private cache could not be read; fetching fresh observations")
             gh_cache = {}
+    gh_cache = retained_activity_cache(gh_cache, repos, _now_ts)
     ghactive_results = []
     if NO_NET:
         warn("GHACTIVE", "skipped GitHub activity verification (--no-net)")
@@ -704,7 +723,7 @@ def run_checks():
                              "checked_at": _now_iso}
             ghactive_results.append(entry)
             gh_cache[r] = entry
-        _write_cache("gh-api-cache.json", gh_cache)
+        _write_cache("gh-api-cache.json", retained_activity_cache(gh_cache, repos, _now_ts))
         if ghactive_results:
             _v = {v: 0 for v in ("PASS", "WARN", "BLOCK", "RATE_LIMITED")}
             for e in ghactive_results:
