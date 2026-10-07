@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "tool": "shopping-aggregator",
+  "max_bytes": 67108864,
   "protected_paths": [
     "profile.json",
     "registry.json",
