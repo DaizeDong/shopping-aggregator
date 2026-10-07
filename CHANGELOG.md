@@ -2,7 +2,13 @@
 
 ## [Unreleased]
 
+### Storage review threshold
+- Set a 64 MiB companion working-data review threshold. Required observations and
+  recovery state stay protected when the threshold is exceeded.
+
 ### Fixed
+- Document the existing companion identity marker for convention-based discovery
+  when literal Git configuration cannot establish the intended PRIVATE root.
 - Both READMEs and the design rationale rank by checkout cost: sticker price plus shipping, tax and duty, minus verified checkout discounts. Delayed cashback remains a separate conditional note, consistent with the existing workflow and historical correction.
 
 ## [0.10.0] - 2026-10-03

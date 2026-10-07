@@ -6,6 +6,11 @@ A **config root** is one person's settings plus their run data. Real roots live 
 
 ## Layout
 
+An existing verified PRIVATE root may contain a `.companion` file with the single
+line `shopping-aggregator` when literal Git configuration cannot establish its
+identity. This declared marker supports discovery; it does not replace PRIVATE
+visibility or runtime write-admission checks.
+
 ```
 <root>/                          one person
   README.md                      required; generated pointer back to this file
