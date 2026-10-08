@@ -197,3 +197,5 @@ Before merging any PR / matrix update / new shard / new guardrail, answer:
 6. Will any **degradation be visible** in the output, or could it **silently mislead the user**?
 
 If you can answer all six yes, the change passes the philosophy bar.
+
+Configuration selection and retention follow the actual consuming capability. A PRIVATE boundary does not make every cache core, and a local readiness check does not prove a live integration. Exact storage ownership and lifecycle remain declared in CONFIG and the source contracts.

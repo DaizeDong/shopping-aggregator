@@ -6,7 +6,7 @@ import importlib.util
 import os
 from pathlib import Path
 import stat
-import tempfile
+import sys
 import uuid
 
 TOOL_ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +23,7 @@ def _guards_module(name):
         raise StorageError("Initialize the guards submodule before evaluating")
     spec = importlib.util.spec_from_file_location("shopping_" + name, module_path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -75,7 +76,7 @@ class PrivateStore:
         self.checked_at = datetime.now(timezone.utc).isoformat()
         self._proof = proof
 
-    def _validate(self, requested):
+    def _validate(self, requested, *, check_versioning=True):
         path = Path(requested).expanduser().absolute()
         _plain_path(path)
         path = path.resolve()
@@ -98,7 +99,7 @@ class PrivateStore:
                 relative.as_posix())
         except guard.GitError as exc:
             raise StorageError("Cannot verify private output versioning") from exc
-        if ignored.returncode == 0:
+        if ignored.returncode == 0 and check_versioning:
             raise StorageError("Private runtime paths must be eligible for version control")
         self.checked_at = datetime.now(timezone.utc).isoformat()
         return path
@@ -109,11 +110,21 @@ class PrivateStore:
             raise StorageError("Transcript must be a file within the verified private data directory")
         return path
 
-    def output_path(self, relative):
-        return self._validate(self.base / relative)
+    def output_path(self, relative, *, directory=False, transient=False):
+        path = self._validate(self.base / relative, check_versioning=not transient)
+        try:
+            admission = _guards_module('storage_contract').authorize_artifact_write(
+                TOOL_ROOT, self.repository, path.relative_to(self.repository).as_posix(),
+                directory=directory)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise StorageError('Artifact admission refused: ' + str(exc)) from exc
+        if (admission.proof.root, admission.proof.repositories, admission.proof.signature) != (
+                self._proof.root, self._proof.repositories, self._proof.signature):
+            raise StorageError('Private storage authority changed during artifact admission')
+        return admission.path
 
     def new_run(self):
-        path = self.output_path(Path("evaluation") / "runs" / uuid.uuid4().hex)
+        path = self.output_path(Path("evaluation") / "runs" / uuid.uuid4().hex, directory=True)
         path.mkdir(parents=True, exist_ok=False)
         return path
 
@@ -121,25 +132,31 @@ class PrivateStore:
     def atomic_writer(self, relative, *, binary=False):
         """Reprove before opening and replacing; a failed write preserves the old file."""
         path = self.output_path(relative)
+        temporary = self.output_path(Path('.write-staging') / (uuid.uuid4().hex + '.tmp'),
+                                     transient=True)
         path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = None
-        try:
-            options = {} if binary else {"encoding": "utf-8", "newline": "\n"}
-            with tempfile.NamedTemporaryFile(mode="wb" if binary else "w", dir=path.parent,
-                                             prefix="." + path.name + "-", suffix=".tmp",
-                                             delete=False, **options) as stream:
-                temporary = Path(stream.name)
-                self.output_path(relative)
-                yield stream
-                stream.flush()
-                os.fsync(stream.fileno())
+        temporary.parent.mkdir(parents=True, exist_ok=True)
+        options = {} if binary else {"encoding": "utf-8", "newline": "\n"}
+        # Failed publication retains staging bytes for the declared recovery review.
+        with temporary.open(mode='xb' if binary else 'x', **options) as stream:
+            opened = os.fstat(stream.fileno())
+            identity = (opened.st_dev, opened.st_ino)
+            if not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1:
+                raise StorageError('Atomic staging must be a single regular file')
+            self.output_path(temporary.relative_to(self.base), transient=True)
+            current = temporary.lstat()
+            if (current.st_dev, current.st_ino) != identity:
+                raise StorageError('Atomic staging changed before open')
             self.output_path(relative)
-            _plain_path(temporary)
-            temporary.replace(path)
-        finally:
-            if temporary is not None:
-                _plain_path(temporary)
-                temporary.unlink(missing_ok=True)
+            yield stream
+            stream.flush()
+            os.fsync(stream.fileno())
+        self.output_path(relative)
+        self.output_path(temporary.relative_to(self.base), transient=True)
+        current = temporary.lstat()
+        if (current.st_dev, current.st_ino) != identity:
+            raise StorageError('Atomic staging changed before publication')
+        temporary.replace(path)
 
     def write_bytes(self, relative, contents):
         with self.atomic_writer(relative, binary=True) as stream:
@@ -172,5 +189,5 @@ def prepare_store(base=None):
             or TOOL_ROOT.is_relative_to(repository)):
         raise StorageError("Evaluation requires a separate versioned companion")
     store = PrivateStore(base, proof)
-    store.output_path(Path("."))
+    store._validate(base)
     return store

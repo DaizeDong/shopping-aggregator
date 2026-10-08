@@ -236,6 +236,17 @@ def storage_visibility_fixture(path, states=None, refreshed=None):
     return path
 
 
+def person_retention_cases():
+    """Generated parallel roots; never use a real buyer or purchase."""
+    return [
+        ('profile.json', 'profile', 'core'),
+        ('data/purchases.jsonl', 'purchases', 'core'),
+        ('data/cache/activity.json', 'activity-cache', 'rebuildable'),
+        ('data/evaluation/runs/run-001/transcript.jsonl', 'evaluation-evidence', 'core'),
+        ('data/retention/review.json', 'storage-receipts', 'core'),
+    ]
+
+
 def storage_repository_fixture(root, identity="example-owner/example-private", *,
                                head=True, remote_name="origin"):
     """Create a disposable Git repository containing only generated synthetic input."""
