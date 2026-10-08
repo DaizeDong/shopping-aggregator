@@ -45,7 +45,8 @@ def test_cold_and_warm_cache_have_same_severity(tmp_path, verdict, exit_code):
     for relative in ("tools/verify_matrix.py", "tools/config_schema.py", "tools/config_selection.py",
                      "tools/evaluation_store.py",
                      "tools/delivery_check.py", "guards/tools/datadir.py", "guards/tools/data_boundary.py",
-                     "guards/tools/pii_guard.py"):
+                     "guards/tools/pii_guard.py", "guards/tools/storage_contract.py",
+                     "storage.contract.json"):
         destination = package / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / relative, destination)
@@ -64,15 +65,15 @@ def test_cold_and_warm_cache_have_same_severity(tmp_path, verdict, exit_code):
                                 env=environment, capture_output=True, text=True, encoding="utf-8")
         (tmp_path / (temperature + ".log")).write_text(result.stdout + result.stderr, encoding="utf-8")
         results.append(result)
-    cache = json.loads((data / "cache/gh-api-cache.json").read_text(encoding="utf-8"))
-    assert cache["example-owner/example-repo"]["verdict"] == verdict
     for result in results:
         assert result.returncode == exit_code, result.stdout + result.stderr
-        assert f"1 {verdict}" in result.stdout
+        assert f"1 {verdict}" in result.stdout, result.stdout + result.stderr
         if verdict in {"BLOCK", "WARN"}:
             assert any(line.startswith(verdict) and "[GHACTIVE]" in line
                        for line in result.stdout.splitlines())
     assert all("[DATA]" not in result.stdout for result in results)
+    cache = json.loads((data / "cache/gh-api-cache.json").read_text(encoding="utf-8"))
+    assert cache["example-owner/example-repo"]["verdict"] == verdict
 
 
 if __name__ == "__main__" and sys.argv[1:2] == ["--matrix-child"]:
