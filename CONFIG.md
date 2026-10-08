@@ -191,3 +191,10 @@ The online matrix discards cache keys for repositories no longer referenced, mal
 Retain live observations and purchases. Keep a legacy ledger only while it has unique facts or corrections awaiting schema reconciliation; preserve those facts and a migration receipt before retiring it. Do not relabel unsupported old outcomes as fresh successful observations. Keep active or selected evaluation evidence, then retire redundant transcripts and checkpoints after its final conclusion and source hashes are retained. Compact lifecycle decisions may be stored in `data/retention/*.json`; they are not a raw-output archive.
 
 The shared storage checker is provided by skill-smith at `skills/skill-smith/scripts/storage_contract.py`; do not copy it into this repository.
+
+Each `people/<id>/` root inherits separate per-kind ownership from the root layout: purchases and observations remain core, cache keeps its seven-day rebuildable policy, and evaluation runs keep the selected-evidence lifecycle. Unknown per-person files have no owner. The explicit native lifecycle adapter is [config.contract.json](config.contract.json).
+
+The generic evaluation and ledger store checks source artifact ownership before
+creating output. Undeclared and retired destinations are refused. Atomic writes
+use the declared `data/.write-staging/*.tmp` namespace (also under each person),
+and independently recheck the final versionable artifact before replacement.

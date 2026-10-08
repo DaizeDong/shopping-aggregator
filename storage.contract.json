@@ -7,7 +7,12 @@
     "registry.json",
     "data/purchases.jsonl",
     "data/metrics/live-runs.jsonl",
-    "data/metrics/live-runs.legacy.jsonl"
+    "data/metrics/live-runs.legacy.jsonl",
+    "people/*/profile.json",
+    "people/*/registry.json",
+    "people/*/data/purchases.jsonl",
+    "people/*/data/metrics/live-runs.jsonl",
+    "people/*/data/metrics/live-runs.legacy.jsonl"
   ],
   "artifacts": [
     {
@@ -115,19 +120,6 @@
       }
     },
     {
-      "artifact_id": "people",
-      "path_pattern": "people/**",
-      "purpose": "Current owner configuration, reference inputs or append-only observations.",
-      "schema": "CONFIG.md",
-      "producer": "Producer documented by CONFIG.md",
-      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
-      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
-      "retention_rule": {
-        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
-        "class": "core"
-      }
-    },
-    {
       "artifact_id": "observations",
       "path_pattern": "data/metrics/live-runs.jsonl",
       "purpose": "Current owner configuration, reference inputs or append-only observations.",
@@ -217,6 +209,257 @@
         "rule": "Keep current lossless/reconciliation receipts and unresolved decisions; do not use this directory as an indefinite raw-output archive.",
         "class": "core"
       }
+    },
+    {
+      "artifact_id": "person-profile",
+      "path_pattern": "people/*/profile.json",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-registry",
+      "path_pattern": "people/*/registry.json",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-metadata",
+      "path_pattern": "people/*/README.md",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-ignore",
+      "path_pattern": "people/*/.gitignore",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-marker",
+      "path_pattern": "people/*/.companion",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-credentials",
+      "path_pattern": "people/*/secrets/**",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-templates",
+      "path_pattern": "people/*/tools/**",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-reference",
+      "path_pattern": "people/*/reference/**",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-observations",
+      "path_pattern": "people/*/data/metrics/live-runs.jsonl",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-purchases",
+      "path_pattern": "people/*/data/purchases.jsonl",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-placeholders",
+      "path_pattern": "people/*/data/.gitkeep",
+      "purpose": "Current owner configuration, reference inputs or append-only observations.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-unreconciled-legacy",
+      "path_pattern": "people/*/data/metrics/live-runs.legacy.jsonl",
+      "purpose": "Legacy observations with no automatic runtime reader.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain only until unique observations and corrections are reconciled into the supported schema with a migration receipt. A frozen file is not automatically duplicate or permanently retained.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-activity-cache",
+      "path_pattern": "people/*/data/cache/**",
+      "purpose": "Rebuildable network lookup cache.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Entries for removed repositories and entries older than seven days are discarded during an online matrix run. An inactive cache can be removed entirely and regenerated from its declared sources.",
+        "class": "rebuildable"
+      }
+    },
+    {
+      "artifact_id": "person-evaluation-evidence",
+      "path_pattern": "people/*/data/evaluation/runs/**",
+      "purpose": "Run inputs, judge response and final evaluation receipt.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain while a run is active or its conclusion is selected evidence. Once the experiment is closed, preserve its final result and source hashes, then explicitly retire redundant transcripts and checkpoints.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-storage-receipts",
+      "path_pattern": "people/*/data/retention/*.json",
+      "purpose": "Compact maintenance and reconciliation decisions.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Keep current lossless/reconciliation receipts and unresolved decisions; do not use this directory as an indefinite raw-output archive.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "people-navigation",
+      "path_pattern": "people/README.md",
+      "purpose": "Generated per-person root selection instructions.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "person-people-navigation",
+      "path_pattern": "people/*/people/README.md",
+      "purpose": "Generated per-person root selection instructions.",
+      "schema": "CONFIG.md",
+      "producer": "Producer documented by CONFIG.md",
+      "consumer_or_final_deliverable": "Runtime reader or completed evaluation described by CONFIG.md",
+      "rebuild_or_restore": "Restore the PRIVATE companion revision; rerun only explicitly rebuildable producers.",
+      "retention_rule": {
+        "rule": "Retain current owner decisions and real observations. A newer quote can supersede freshness, but does not authorize deleting purchase or observation history.",
+        "class": "core"
+      }
+    },
+    {
+      "artifact_id": "atomic-write-staging",
+      "path_pattern": "data/.write-staging/*.tmp",
+      "purpose": "One exclusive temporary for the generic atomic DATA writer.",
+      "schema": "tools/evaluation_store.py",
+      "producer": "PrivateStore.atomic_writer",
+      "consumer_or_final_deliverable": "The independently admitted final artifact in this same PRIVATE worktree.",
+      "rebuild_or_restore": "Keep interrupted writes until recovery review; a completed replacement removes its own temporary.",
+      "retention_rule": {
+        "class": "rebuildable",
+        "rule": "Only the active transaction owns this staging file; retain on unresolved recovery and remove after successful replacement."
+      },
+      "persistence": "transient",
+      "transient_reason": "Exclusive staging bytes are published to an independently admitted durable destination before successful completion."
+    },
+    {
+      "artifact_id": "person-atomic-write-staging",
+      "path_pattern": "people/*/data/.write-staging/*.tmp",
+      "purpose": "One exclusive temporary for the generic atomic DATA writer.",
+      "schema": "tools/evaluation_store.py",
+      "producer": "PrivateStore.atomic_writer",
+      "consumer_or_final_deliverable": "The independently admitted final artifact in this same PRIVATE worktree.",
+      "rebuild_or_restore": "Keep interrupted writes until recovery review; a completed replacement removes its own temporary.",
+      "retention_rule": {
+        "class": "rebuildable",
+        "rule": "Only the active transaction owns this staging file; retain on unresolved recovery and remove after successful replacement."
+      },
+      "persistence": "transient",
+      "transient_reason": "Exclusive staging bytes are published to an independently admitted durable destination before successful completion."
     }
   ]
 }

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "repository_kind": "skill",
+  "configuration": "settings",
+  "rationale": "Native settings govern supported runtime behavior; storage initialization and live capability acceptance are separate checks.",
+  "documentation": [
+    "CONFIG.md"
+  ],
+  "settings": {
+    "schema_document": "CONFIG.md",
+    "discovery_document": "CONFIG.md",
+    "environment": "SHOPPING_AGGREGATOR_CONFIG",
+    "aliases": [
+      "SHOPPING_AGGREGATOR_CONFIG_DIR",
+      "SHOPPING_AGGREGATOR_DATA_DIR"
+    ],
+    "precedence": [
+      "Explicit command root and environment must select the same root",
+      "SHOPPING_AGGREGATOR_DATA_DIR must equal selected root data/",
+      "SHOPPING_AGGREGATOR_CONFIG",
+      "SHOPPING_AGGREGATOR_CONFIG_DIR",
+      "Sibling shopping-aggregator-config",
+      "~/.shopping-aggregator-config",
+      "~/.shopping-aggregator-data"
+    ],
+    "required_fields": [
+      "profile.json.profile_id",
+      "profile.json.purchase_defaults.subscriptions",
+      "registry.json.schema_version",
+      "registry.json.skill",
+      "registry.json.tools"
+    ],
+    "initializer": {
+      "path": "scripts/init_config.py",
+      "args": [
+        "--out",
+        "{output}"
+      ]
+    },
+    "doctor": {
+      "path": "scripts/verify_config.py",
+      "args": []
+    }
+  }
+}

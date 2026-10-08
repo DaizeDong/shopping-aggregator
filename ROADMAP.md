@@ -121,3 +121,5 @@ next; completed work is in **Shipped**.
 - ❌ **Build a custom MCP server**, defer to BigGo MCP / Apify / Keepa. P5 again.
 - ❌ **Auto-monitor + alert mode inside the skill**, out of scope per P5; this is one-shot,
   use `/schedule` or `/loop` wrapper, see SKILL.md "Recurring / monitoring use" section.
+
+Configuration and storage repair: Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root. Synthetic checks establish the declared local behavior; live capability and protected-data retirement still require their own evidence.

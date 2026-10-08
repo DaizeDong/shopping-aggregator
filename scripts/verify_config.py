@@ -298,6 +298,7 @@ def main():
         print("NOT READY: %d check(s) failed. Fix the above; CONFIG.md defines every field." % failed)
         return 1
     print("CONFIG CONFORMS: %s matches CONFIG.md." % cfg)
+    print('READY: local configuration and required resources verified; live services not checked.')
     print("Sessions, MCP servers and retailers still need their own functional checks.")
     return 0
 

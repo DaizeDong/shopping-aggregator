@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Configuration and storage contracts
+
+- Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root.
+
 ### Storage review threshold
 - Set a 64 MiB companion working-data review threshold. Required observations and
   recovery state stay protected when the threshold is exceeded.

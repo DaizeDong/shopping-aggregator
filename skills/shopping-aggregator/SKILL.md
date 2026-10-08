@@ -286,3 +286,5 @@ For a requested source refresh, follow the refresh protocol and monthly cadence.
 Update evidence and versions together, preserve source tombstones/death codes,
 and run the repository's deterministic checks. Packaging verification uses
 Git's delivery index: a locally present untracked resource is not shipped.
+
+Configuration and retention: [CONFIG.md](../../CONFIG.md). Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root.

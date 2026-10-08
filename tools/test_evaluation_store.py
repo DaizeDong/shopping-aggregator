@@ -141,15 +141,43 @@ def test_hardlink_input_is_rejected(prepared, tmp_path):
 
 def test_atomic_write_rechecks_before_replace(prepared, storage_environment):
     store, _ = prepared
-    path = store.base / "result.json"
+    path = store.base / "cache/result.json"
+    path.parent.mkdir()
     before = evaluation_fixture()["transcript"].encode()
     path.write_bytes(before)
     with pytest.raises(storage.StorageError):
-        with store.atomic_writer("result.json") as stream:
+        with store.atomic_writer("cache/result.json") as stream:
             json.dump(evaluation_fixture(), stream)
             storage_visibility_fixture(storage_environment, {"example-owner/example-private": "PUBLIC"})
     assert path.read_bytes() == before
-    assert sorted(p.name for p in store.base.iterdir()) == ["input.txt", "result.json"]
+    pending = list((store.base / '.write-staging').iterdir())
+    assert len(pending) == 1
+    assert json.loads(pending[0].read_text(encoding='utf-8')) == evaluation_fixture()
+
+
+def test_atomic_writer_refuses_replaced_staging_without_deleting_it(prepared, tmp_path, monkeypatch):
+    store, _ = prepared
+    original = store.output_path
+    opened = []
+    replacement = tmp_path / 'replacement.bin'
+    payload = evaluation_fixture()['transcript'].encode()
+    replacement.write_bytes(payload)
+    replaced = []
+
+    def swap_before_publication(relative, **kwargs):
+        if opened and opened[0].closed and not replaced:
+            temporary, = (store.base / '.write-staging').iterdir()
+            os.replace(replacement, temporary)
+            replaced.append(temporary)
+        return original(relative, **kwargs)
+
+    monkeypatch.setattr(store, 'output_path', swap_before_publication)
+    with pytest.raises(storage.StorageError, match='staging changed'):
+        with store.atomic_writer('cache/result.json', binary=True) as stream:
+            opened.append(stream)
+            stream.write(payload[::-1])
+    assert not (store.base / 'cache/result.json').exists()
+    assert replaced[0].read_bytes() == payload
 
 
 def test_private_proof_does_not_launch_a_transport(prepared, monkeypatch):
@@ -160,6 +188,27 @@ def test_private_proof_does_not_launch_a_transport(prepared, monkeypatch):
         return original(args, *positional, **kwargs)
     monkeypatch.setattr(subprocess, "run", git_only)
     assert store.output_path("cache/result.json") == store.base / "cache/result.json"
+
+
+def test_writer_refuses_undeclared_output_before_creating_parent(prepared):
+    store, _ = prepared
+    with pytest.raises(storage.StorageError, match='owner'):
+        store.write_bytes('unowned/synthetic.bin', b'synthetic')
+    assert not (store.base / 'unowned').exists()
+
+
+def test_writer_refuses_retired_artifact_before_creating_parent(prepared, tmp_path, monkeypatch):
+    store, _ = prepared
+    storage._guards_module('storage_contract')
+    source = tmp_path / 'synthetic-source'
+    source.mkdir()
+    contract = json.loads((storage.TOOL_ROOT / 'storage.contract.json').read_text(encoding='utf-8'))
+    next(row for row in contract['artifacts'] if row['artifact_id'] == 'activity-cache')['retention_rule']['class'] = 'retired'
+    (source / 'storage.contract.json').write_text(json.dumps(contract), encoding='utf-8')
+    monkeypatch.setattr(storage, 'TOOL_ROOT', source)
+    with pytest.raises(storage.StorageError, match='retired'):
+        store.write_bytes('cache/retired.json', b'synthetic')
+    assert not (store.base / 'cache').exists()
 
 
 def test_repository_root_storage_cannot_write_git_metadata(prepared, monkeypatch):

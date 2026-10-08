@@ -267,3 +267,5 @@ See [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENS
 
 Sister skill: [market-intel](https://github.com/DaizeDong/market-intel), broad commercial
 research / seller-side intel.
+
+Each `people/<id>/` root inherits separate per-kind ownership from the root layout: purchases and observations remain core, cache keeps its seven-day rebuildable policy, and evaluation runs keep the selected-evidence lifecycle. Unknown per-person files have no owner. The explicit native lifecycle adapter is [config.contract.json](config.contract.json).

@@ -237,3 +237,5 @@ English ([`README.md`](README.md)) · 中文 (`README_CN.md`)
 见 [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE)（MIT）。
 
 姊妹 skill：[market-intel](https://github.com/DaizeDong/market-intel), 广义商业研究 / 卖家侧情报。
+
+`people/<id>/` 按产物类型分别保留：购买与观察记录是核心数据，缓存沿用七天的可重建规则，评估记录只在运行中或作为选定证据时保留。未知个人目录文件不再被整棵归为核心数据。原生生命周期声明见 [config.contract.json](config.contract.json)。
