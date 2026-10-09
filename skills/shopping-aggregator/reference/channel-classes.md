@@ -94,7 +94,7 @@ as a `not-attempted` gap if skipped). Use it to confirm an in-scope class is not
 | local-pickup-only | `grocery-cpg` (banner pickup) partial | ④ store-by-ZIP scrape | **shard-thin**, chain page lies on local stock |
 | cross-border / import | `cross-border` (border layer) + origin shard (`taobao-tmall`/`jd-pdd`/`amazon-us`) | ④ + duty JSON | well-owned; dutiable by default |
 | refurb / open-box | `amazon-us` (WHD), `ebay-walmart-target` | ④ | only if refurb-OK |
-| **price-comparison engine** | `claude-mcps` (BigGo, US), `oss-self-host` (pricebuddy EU) partial; **EU Idealo/Geizhals/PriceRunner have NO dedicated shard** | ④ | **shard-thin for EU**, read the engine via browser, then E1 the merchant PDP. Non-US/CN regional routing → [`../sources-index.md`](../sources-index.md) regional note |
+| **price-comparison engine** | `claude-mcps` (BigGo, US), `oss-self-host` (pricebuddy EU) partial; **EU Idealo/Geizhals/PriceRunner have NO dedicated shard** | ④ | **shard-thin for EU**, read the engine via browser, then E1 the merchant PDP. Non-US/CN regional routing → [`sources-index.md`](sources-index.md) regional note |
 | **travel-booking / OTA** | `hotel-travel` | ④ | Booking.com is the spine; total-stay cost READ off the Your-Details `(NN% Tax)` line (never hard-coded) + separate parking research; Google Hotels discovery-only (date-lock). Flights/cars/trains OUT of scope |
 | **offer-brokerage / name-your-price** | (none dedicated) | ④ | **shard-thin**; in scope only for MAP-controlled categories. The price is not on the page, so "covered" means a named broker + a calibrated offer band + the commitment caveat, not a read. Agent never submits the offer |
 

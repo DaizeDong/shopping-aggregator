@@ -1,6 +1,6 @@
 # shopping-aggregator
 
-把任意购买意图分流到 14 个购物 domain，按到手价（而非标价）排序，再把多源同时抓价的重活交给你已有的 research harness。
+在 14 个购物方向中比较购买方案，按已核验的结账总价排序，并把来源采集交给已有调研流程。
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -13,24 +13,17 @@
 
 ---
 
-## ⭐ 设计哲学
+## 设计理念
 
-shopping-aggregator 继承 market-intel 的统领原则,**从根本进行设计，而非小修小补**：出问题
-就改它底下的假设，而不是补它表面的症状。把这个原则套到「消费购物」场景上，催生了下面这些
-shopping-specific 决定：
+购物比价需要固定商品变体，核实当前库存、卖家身份和完整结账价。运费、税费、关税和已核验优惠
+都可能改变排名；延迟返利有条件，单独列出。Amazon Buy Box 等报价会频繁变化，因此每条价格
+都需要快照时间。
 
-- **Landed cost（到手价）而非标价**,标价排序是陷阱（Amazon Prime 包邮 vs eBay $15 运费会
-  翻盘冠军）。我们把"到手价"作为排序原语。
-- **快照时间戳必填**,价格按小时变（Amazon Buy Box）。没时间戳的价 = unverified。
-- **优惠码必须走购物车实测**,扩展的"已节省 $X"是有名的造假面（Honey 案）。我们用 playwright
-  实测购物车，或标 ⚠ 未核实。
-- **2026 Honey ≠ 默认推荐**,2026 年 1 月 Rakuten/Impact/Awin 接连切断 Honey 联盟网，
-  信任格局已变。skill 主动 surface 这点。
+优惠码要经购物车测试，否则标为未核实。Honey 案及 2026 年 1 月 Rakuten、Impact、Awin
+终止合作的记录属于来源信任评估的一部分，Honey 不作为默认推荐。证据要求可能使部分报价无法
+排名，覆盖也可能不完整；报告应保留这些限制。
 
-证据不足时会少排一个候选，覆盖结果也可能不完整；这比用片段价格或有条件返利来宣称
-最便宜更可靠。当前价格、库存、卖家身份和结账优惠需要一起核验，延迟返利只单独说明。
-
-📜 **[完整设计理念 → PHILOSOPHY.md](PHILOSOPHY.md)**。
+设计原则及其在购物中的应用见 [PHILOSOPHY.md](PHILOSOPHY.md)。
 
 ### 姊妹 skill, 何时用谁
 
@@ -45,34 +38,24 @@ shopping-specific 决定：
 | "找搬砖/FBA/批发机会（卖家侧）" | [**market-intel**](https://github.com/DaizeDong/market-intel) → `ecommerce-arbitrage` shard |
 | "X/Twitter 舆情、SEO 调研、获客" | [**market-intel**](https://github.com/DaizeDong/market-intel) |
 
-两个 skill 可以共存，各自的编排逻辑会管自己的边界。
+两个 skill 可以同时安装，分别处理各自范围内的请求。
 
 ---
 
-## 它是什么（和不是什么）
+## 适用范围
 
-为**消费级购物比价**设计的轻量编排 skill。把你的购买意图（商品 + 地区 + 预算 + 紧迫度）分流到正确的
-比价数据源（并指导你安装），然后把比价的"重活",多源同时抓价、历史核查、对抗式校验,交给你
-已有的 research harness 去做，而**不重复造轮子**。
+本 skill 使用 Keepa、Camelcamelcamel、慢慢买等购物来源，结合成本标准化和平台卖家核验，
+支持消费者的购买决策：
 
-Claude Code 有 `deep-research` 通用研究框架、`research-lit` 学术文献，以及 `market-intel`
-通用商业调研。但当问题变成「我要买 X, 帮我找最优价」时,这是消费工作流，有自己的数据源
-（Keepa、Camelcamelcamel、慢慢买）、自己的标准化（到手价、汇率、税费、运费、优惠码）、自己
-的信任模型（每家零售商内部的店铺/卖家分层）、自己的时间轴（Buy Box 按小时轮换）,前面那些
-都不够用。
+1. **解析意图：** 根据商品、地区、预算、紧迫度和敏感项，确定相关购物方向与需求侧渠道类别。
+   即使零售商没有专用工具，例如 Micro Center，也要纳入覆盖计划。
+2. **选源与配置：** 在当前宿主中发现工具并完成一次功能性读取。缺少 MCP、扩展或开源工具时，
+   查阅[逐工具文档](skills/shopping-aggregator/reference/tools/index.md)。`claude mcp list`
+   是 Claude 的安装诊断，连接指示本身不能证明来源可用。
+3. **证据要求：** 核验价格、库存、变体、卖家、时间和优惠，再报告冲突、风险和缺少的渠道。
 
-`shopping-aggregator` 就是填这个空白的薄层。它**只做三件别人不做的事**，其它全部委托：
-
-1. **解析购买意图**, 商品 + 地区 + 预算 + 紧迫度 + 敏感项 → triage 到 14 个购物 domain 的 1-N 个，
-   **并映射到需求侧 channel class**（让无工具的授权零售商,如 Micro Center,不再结构性隐形）。
-2. **检测 + 引导安装**, `claude mcp list` 查哪些专业购物 MCP/扩展/OSS 已连上；缺关键源时给
-   出确切安装命令，并指向**每工具一文档**
-   ([`reference/tools/`](skills/shopping-aggregator/reference/tools/index.md))。
-3. **质量护栏**, 时间戳、库存状态、到手价（非标价）、优惠码购物车实测、零售商信任分层、
-   不准默默降级、强制反向搜索、surface 分歧、明确空白。
-
-实际的多源 fan-out、历史查询、对抗校验、引用合成都**委托给** playwright MCP / BigGo MCP /
-Keepa MCP / `deep-research` / `market-intel`。无重复造轮。
+实时采价、历史查询和验证使用当前可用的 playwright MCP、BigGo MCP、Keepa MCP、
+`deep-research` 或 `market-intel` 能力。
 
 ---
 
@@ -108,6 +91,10 @@ python scripts/verify_config.py      # 体检：打印选中的配置根；profi
 
 切换到另一个人：把 `SHOPPING_AGGREGATOR_CONFIG` 指向这个人的配置根，或者把对方放在 `<伴生仓>/people/<id>/` 下再选中这个目录。对方的 profile、购买记录和观测记录会一起切过去，每份报告都会写明用的是哪个 `profile_id`。`--config-dir` 只对它所在的那一条 `scripts/` 命令生效，`tools/` 下的命令只认环境变量。完全没有配置也能比价，Step 1 会照旧在对话里逐项询问，只是不会替你点下单，最后一步交给你自己。
 
+个人目录遵守 [CONFIG.md 的保留规则](CONFIG.md#storage-lifecycle)：购买与观察记录是核心数据，
+缓存沿用七天的可重建规则，评估记录保留选定证据。未知个人目录文件没有声明的所有者；
+原生生命周期适配器见 [config.contract.json](config.contract.json)。
+
 ---
 
 ## 60 秒上手
@@ -124,7 +111,7 @@ python scripts/verify_config.py      # 体检：打印选中的配置根；profi
 1. **解析意图** → 商品: Bose QC45（refurb OK）; 地区: US; 预算 $200; 紧迫度: 低。
 2. **Triage** → 命中 `amazon-us`, `ebay-walmart-target`, `browser-extensions`（优惠码叠加）,
    `mobile-apps-aggregators`（Slickdeals 等不等促销信号）；选 standard depth。
-3. **检测** → 跑 `claude mcp list`；playwright 已连，BigGo MCP 未连，无 Keepa 订阅；记空白。
+3. **检测** → 在当前宿主发现来源，再核验所选读取操作、认证和可用响应正文。仅显示已连接不能证明可用；BigGo 无法访问或缺少 Keepa 订阅时仍记覆盖空白。
 4. **引导安装**（不阻塞）→ "Camelcamelcamel 免费可看 Amazon 历史；高频购物推荐 Keepa MCP
    €49/月；本次先用 Camelcamelcamel + playwright 跑各零售商"。
 5. **委托** → fan-out subagents：playwright on amazon.com / amazon WHD / ebay / Walmart /
@@ -138,7 +125,7 @@ python scripts/verify_config.py      # 体检：打印选中的配置根；profi
 
 ### 数据源矩阵（14 个 domain）
 
-知识资产。每个 domain shard 写明最佳工具、它的**信息壁垒路线**、如何检测、如何安装。
+每个方向分片记录推荐来源、访问路线、检测与配置方法。
 
 | Domain | 推荐源（壁垒路线） |
 |---|---|
@@ -206,20 +193,19 @@ python scripts/verify_config.py      # 体检：打印选中的配置根；profi
 
 ## 限制
 
-`shopping-aggregator` 是薄编排层，不是价格引擎,它在设计上就有结构性边界：
+- **来源可用性：** 采集依赖适用范围中列出的工具能力。没有可连接来源时，提供配置指引。
+- **目录时效：** 扩展可能失去联盟网（Honey/Rakuten 2026-01），API 可能关闭（PA-API 2026-05-15），
+  仓库可能停更。刷新协议要求重新核验；目录中存在条目不代表来源当前可用。
+- **会话门控访问：** 先完成匿名 S1 工作，再把 S2 渠道合并为一次登录交接。打开登录页后暂停，
+  等用户确认再继续。用户负责认证，代理不输入凭据；登录后重跑控制查询，确认内容可用。
+  用户拒绝或无人值守时记录带类型的 `session-gated-*` 缺口。
+  详见[登录交接](skills/shopping-aggregator/reference/login-handoff.md)。
 
-- **不重复造抓取引擎**, 多源实时抓价、历史查询、对抗校验都委托给 playwright / BigGo / Keepa /
-  `deep-research` / `market-intel`。若都没连上，skill 引导安装而不自己抓。
-- **矩阵会腐烂**, 扩展失联盟网（Honey/Rakuten 2026-01）、API 死亡（PA-API 2026-05-15）、OSS
-  仓库停更。新鲜度由 refresh 协议维护，并非时时保证。
-- **登录墙渠道是交接，不是空白。** 会话门控的市场属于 `S2`：你登录一次它就完全可读。skill 会先把
-  所有匿名能做的做完，再把全部门控渠道**合并成一次询问**，打开登录页后**停手**，等你确认再继续。
-  **它绝不替你登录**，也不碰任何凭据。你拒绝、或无人值守运行，它记录一个带类型的 `session-gated-*`
-  空白，含义是「差一次登录」而不是「够不着」。见
-  [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md)。
-- **非卖家侧/搬砖工具**, FBA / 批发 / 市场调研请用
+- **卖家侧范围：** FBA、批发或市场调研使用
   [`market-intel`](https://github.com/DaizeDong/market-intel)。
-- **只在你明确让它下单时才下单**：仅限零售商品，按叠满全部可用优惠的路径（guardrail #16）买，在最终页逐条核对优惠后只点一次；酒店和机票仍交给你。没有下单指令时只出推荐，下单由你点。
+- **下单授权：** 仅在买家明确逐项指示、且选定 profile 允许代理在该零售商结账时下单。
+  仅限零售商品，按完整优惠组合（guardrail #16）购买，在最终页逐条核验后只提交一次。
+  酒店和机票仍交给用户；缺少指示或权限时只给推荐，由用户完成购买。
 
 剩余路线缺口：demo 对话 + 与替代品对比文档（v0.5 打包质量），heartbeat issue 自动关闭 +
 discovery-state 日志（v0.3 闭环）。详见 [ROADMAP.md](ROADMAP.md)。
@@ -237,5 +223,3 @@ English ([`README.md`](README.md)) · 中文 (`README_CN.md`)
 见 [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE)（MIT）。
 
 姊妹 skill：[market-intel](https://github.com/DaizeDong/market-intel), 广义商业研究 / 卖家侧情报。
-
-`people/<id>/` 按产物类型分别保留：购买与观察记录是核心数据，缓存沿用七天的可重建规则，评估记录只在运行中或作为选定证据时保留。未知个人目录文件不再被整棵归为核心数据。原生生命周期声明见 [config.contract.json](config.contract.json)。

@@ -1,16 +1,16 @@
 # Install guide, shopping-aggregator (Level 0 / overview)
 
-This is the **top of a three-level install system** for `shopping-aggregator`'s tool stack.
+Use this guide for shopping-specific source setup. Shared installation mechanics
+remain in the market-intel guide linked below.
 
-> 🔗 **Most of L0 install mechanics is inherited from the sister skill, market-intel.**
+> **Shared L0 installation mechanics:**
 > The three install levels below, prerequisites, MCP transport types, the `claude mcp add`
 > mechanics, secret-handling hygiene, and Windows-specific notes are documented authoritatively
 > at:
 >
 > [market-intel install-guide](https://github.com/DaizeDong/market-intel/blob/main/skills/market-intel/reference/install-guide.md)
 >
-> Read that FIRST. This document only records the **delta** that's specific to
-> shopping-aggregator's tool stack.
+> Read it first for shared mechanics, then use the shopping-specific instructions below.
 
 ## The three levels, where to look
 
@@ -23,10 +23,9 @@ Same scheme as market-intel:
 | **L2 per-tool** | `reference/tools/<slug>.md` → `## Install` | install + auth + usage + gotchas for one specific tool. Find the slug in `reference/tools/index.md`. |
 | **L3 ops state (recommended)** | your config root in a private companion repo ([CONFIG.md](../../../CONFIG.md)): `registry.json` and `profile.json` | which tools *you* installed, *your* memberships and store credit, which retailers the agent may check out at |
 
-## Tools at THIS layer (shopping-specific kinds)
+## Shopping tool categories
 
-The four install categories users will hit when configuring shopping-aggregator (different
-from market-intel's mix because consumer shopping has more retail-specific tooling):
+Shopping sources use four installation routes:
 
 1. **MCP servers** (BigGo, Apify price-intelligence, Keepa, Taobao, Oxylabs), same
    `claude mcp add` / `~/.claude.json` edit mechanics as market-intel; see market-intel's
@@ -63,10 +62,10 @@ coverage-gaps section, not as a mid-flow blocker.
 | Self-host OSS | git clone → docker compose / pip install | LLM key + hosting | n/a |
 | API account (Keepa) | sign up → get key → wire into MCP | €49/mo+ | yes |
 
-## What `shopping-aggregator` deviates from market-intel on
+## Shopping-specific routing
 
-Almost nothing, secret-handling, MCP transport choice, `claude mcp list` health states,
-Windows notes are all identical. The few differences:
+Use the shared secret-handling, transport and Windows procedures. Shopping adds
+these source-selection and configuration rules:
 
 - **`firecrawl` skill is NOT enough for Amazon/Taobao** (anti-bot / login-wall). Always route
   to **playwright** for those two retailers. Other JS-static retailer pages (Best Buy, Home
@@ -77,16 +76,14 @@ Windows notes are all identical. The few differences:
   defines `profile.json` (memberships, ship-to, accounts, purchase defaults), `registry.json`
   (installed tools) and the run ledgers, and `python scripts/init_config.py` creates one.
 
-Everything else: read market-intel's install-guide.
-
 ## Cross-reference with market-intel
 
 | Need | Where |
 |---|---|
-| Secret-handling hygiene (the HARD rules learned the hard way) | market-intel install-guide § Secret-handling hygiene |
+| Secret-handling requirements | market-intel install-guide § Secret-handling hygiene |
 | MCP transport preference (HTTP vs stdio, Windows flakiness) | market-intel install-guide § MCP transport types |
 | `claude mcp add` two-ways procedure (with vs without key) | market-intel install-guide § Adding an MCP |
-| Verifying an install (`claude mcp list` parsing) | market-intel install-guide § Verify an install |
+| Verifying an install (current-session operation, authentication and content) | market-intel install-guide § Verify an install |
 | Windows-specific gotchas | market-intel install-guide § Windows-specific notes |
 | Bootstrap a private config root | `python scripts/init_config.py`, then [CONFIG.md](../../../CONFIG.md); the companion contract is [guards/COMPANION.md](../../../guards/COMPANION.md) |
 | Shopping-tool categories (browser ext, mobile app, OSS) | this file ↑ |

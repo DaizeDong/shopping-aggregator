@@ -273,8 +273,8 @@ For transcript evaluation read
 ## Progressive loading and maintenance
 
 Load the source index first, then selected domain/tool shards. Read CONFIG.md
-only to set up or change a config root; Step 1 needs just the doctor and the
-profile. Load channel
+for configuration and retention changes; each person uses the same per-kind rules
+from [CONFIG.md](../../CONFIG.md). Step 1 needs just the doctor and the profile. Load channel
 classes for coverage, reliability for retrieval trouble, login guidance for S2,
 the evidence schema for worker results, and only applicable cost tables. Load
 purchase execution only when the buyer has instructed a purchase. Never
@@ -286,5 +286,3 @@ For a requested source refresh, follow the refresh protocol and monthly cadence.
 Update evidence and versions together, preserve source tombstones/death codes,
 and run the repository's deterministic checks. Packaging verification uses
 Git's delivery index: a locally present untracked resource is not shipped.
-
-Configuration and retention: [CONFIG.md](../../CONFIG.md). Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root.

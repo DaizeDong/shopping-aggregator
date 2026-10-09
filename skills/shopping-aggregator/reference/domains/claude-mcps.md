@@ -15,7 +15,7 @@ Claude Code", "make Claude do the shopping".
 | **BuyWhere MCP** | ② paid | Lazada, Shopee, Amazon (SG/SEA/US, 11M+ SKUs) | `npx -y @buywhere/mcp-server` + API key | low; **SE Asia focus**, limited US relevance |
 | **playwright MCP** | ④ free | bespoke page fetch on ANY retailer | usually pre-installed in Claude Code | low; the fallback that always works |
 | **firecrawl MCP / skill** | ② paid | general scrape, OK for static product pages | already in user's setup if firecrawl skill present | **fails on Amazon/Taobao anti-bot**, don't use for those |
-| **Bright Data Web Unlocker MCP** ([brightdata.md via market-intel](../../../market-intel/skills/market-intel/reference/tools/brightdata.md)) | ② paid | beats Cloudflare/DataDome on hard targets at scale | hosted HTTP MCP | $1.50/1k req; 5k req/mo free tier |
+| **Bright Data Web Unlocker MCP** ([brightdata.md via market-intel](https://github.com/DaizeDong/market-intel/blob/main/skills/market-intel/reference/tools/brightdata.md)) | ② paid | beats Cloudflare/DataDome on hard targets at scale | hosted HTTP MCP | $1.50/1k req; 5k req/mo free tier |
 
 **Default pick:** **playwright MCP + BigGo MCP** for free / general; layer Keepa MCP for Amazon
 history; layer Apify price-intelligence MCP for paid US-retailer scale.

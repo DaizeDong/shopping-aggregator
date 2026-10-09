@@ -2,20 +2,25 @@
 
 Current: **v0.10.0**
 
-`shopping-aggregator` is at v0.10.0. The v0.4.0 self-evolve round closed the entire v0.2 enforcement
-gap and the v0.4 domain expansion in one batch (see **Shipped** below), on top of the v0.2.0
-structural/framework batch (CONSTITUTION, demand-side channel-class primitive, the evidence-unit
-schema `variant_key` / `seller_tier` / `evidence_grade`, seller-identity gate, codex-crossval) and
-the v0.1.0 base (orchestration core, philosophy inherited from market-intel). This file tracks what's
-next; completed work is in **Shipped**.
+The current release supports per-person configuration, verified shopping comparisons
+and retail purchases on explicit per-action instruction. Current workflow details
+are in [SKILL.md](skills/shopping-aggregator/SKILL.md); dated release facts remain
+in [CHANGELOG.md](CHANGELOG.md).
+
+## Current configuration and storage contracts
+
+Per-person cache and selected evaluation retention follow the same per-kind rules
+as the companion root. [CONFIG.md](CONFIG.md#storage-lifecycle) owns these rules.
+Synthetic checks establish declared local behavior; live capability and protected-data
+retirement require separate evidence.
 
 ## Shipped
 
-### v0.10.0, config roots: who is buying is configuration, not conversation
+### v0.10.0, per-person configuration
 
 - [x] **`CONFIG.md` defines a config root per person** (profile, registry, private reference tables, both ledgers, `people/<id>/`); real roots live only in the PRIVATE companion, and the schema refuses identity, contact and payment data.
 - [x] **`scripts/init_config.py`, `scripts/verify_config.py`, `scripts/ledger.py`**, with `tools/config_schema.py` as the one implementation every caller shares; switching people is one selection (`SHOPPING_AGGREGATOR_CONFIG`, or `--config-dir` per command) that moves profile and ledgers together.
-- [x] **Purchases are recorded** (`data/purchases.jsonl`) under the selected root's profile id, and the observation ledger finally has a writer.
+- [x] **Purchases are recorded** (`data/purchases.jsonl`) under the selected root's profile id, and the observation ledger has a validated writer.
 
 ### v0.6.0, the login handoff and the reading-a-result-page guardrails
 
@@ -31,7 +36,7 @@ next; completed work is in **Shipped**.
 - [x] Cross-border oversized-goods rules (volumetric weight, box dimensions, sea freight) and the
       rule that tariff list membership is verified against the primary schedule.
 
-### v0.5.0, data boundary: the skill stops writing its user's life into a public repo
+### v0.5.0, private runtime data boundary
 
 - [x] **Every path declared TOOL / FIXTURE / DATA** (`.dataclass.json`); real-run output resolves
       from a private companion dir via the resolver (now `guards/tools/datadir.py`), with no in-repo fallback.
@@ -77,11 +82,11 @@ next; completed work is in **Shipped**.
       0.3.0, CI-enforced via `.github/workflows/gate.yml` (THREEWAY · FRESH · TEMPLATE · VERSION ·
       RENAME · LIVERUNS).
 - [x] **CONSTITUTION.md**, shipped in 0.2.0. Hard constraints injected at refresh-time so the
-      editing subagents physically can't propose changes that violate the philosophy.
+      editing subagents receive the invariants; deterministic checks enforce the clauses they cover.
 - [x] **Domain expansion (cross-border / grocery-cpg / auction-resale)**, shard bodies authored
       in the v0.4 era, wired into all discovery surfaces in 0.4.0.
 
-## v0.3, Real-run feedback (remaining)
+## Next: remaining feedback work
 
 - [ ] **Heartbeat issue auto-close**, when a refresh PR lands for the month, close the
       heartbeat-triggered "missed refresh" issue automatically.
@@ -89,7 +94,7 @@ next; completed work is in **Shipped**.
       candidates surfaced by Discovery sweeps that didn't make it into shards yet (with FOLD /
       NEW-DOMAIN / NEW-SKILL verdicts + reasons).
 
-## v0.5, Public packaging quality
+## Planned: public packaging
 
 - [ ] **Demo conversations** in `docs/`, annotated end-to-end transcripts (US buy / CN buy /
       cross-border buy / "wait for sale" projection) that show what good output looks like.
@@ -99,7 +104,7 @@ next; completed work is in **Shipped**.
 - [ ] **Skill-installation troubleshooting**, common gotchas with `/plugin install` on
       Windows, MCP transport flakes, etc.
 
-## Beyond v0.5, speculative
+## Future proposals
 
 - [ ] **Live API integration with retailer Open Banking** for actual purchase confirmation
       (only if Claude Code's tool-use story supports a "purchase intent → execute" loop with
@@ -121,5 +126,3 @@ next; completed work is in **Shipped**.
 - ❌ **Build a custom MCP server**, defer to BigGo MCP / Apify / Keepa. P5 again.
 - ❌ **Auto-monitor + alert mode inside the skill**, out of scope per P5; this is one-shot,
   use `/schedule` or `/loop` wrapper, see SKILL.md "Recurring / monitoring use" section.
-
-Configuration and storage repair: Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root. Synthetic checks establish the declared local behavior; live capability and protected-data retirement still require their own evidence.
