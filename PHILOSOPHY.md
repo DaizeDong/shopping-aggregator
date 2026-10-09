@@ -2,173 +2,110 @@
 
 > **设计理念, 从根本进行设计，而非小修小补**
 
-This is the organizing principle of shopping-aggregator, **inherited unchanged from market-intel**
-(by design; the philosophy is skill-agnostic and was earned through hard lessons there). Every
-shopping-specific feature in this repo exists because of the six principles below, applied to the
-**consumer shopping** context. The principles are not after-the-fact rationalizations, they are
-the lens that produced each decision, and the test every future change must pass.
+The principles below adapt market-intel's approach to consumer shopping. They govern
+landed-cost ranking, evidence, source maintenance and delegation. When a failure
+recurs, review the assumption that produces it and encode the correction in the
+workflow or its checks.
 
-> 这是 shopping-aggregator 的统领原则，**完整继承自 market-intel**,这套理念是 skill-agnostic
-> 的，在那边经过血泪验证；本仓库每个 shopping-specific 决定都源于把下面六条套到「消费购物」场景。
-
-**The one-sentence version:** when something is wrong, change the assumption underneath it, not
-the symptom on top of it. A patch leaves the bad default in place; fixing the framing changes
-every decision that follows.
-
-> **一句话：** 出了问题，改它底下的假设，而不是它表面的症状。补丁让错误的默认值继续存在；
-> 改框架则会改变其后的每一个决定。
+> 以下七条原则将 market-intel 的设计方法用于消费购物，指导到手价排序、证据、来源维护和委托。
+> 问题反复出现时，应检查导致它的前提，并把修正落实到流程或检查中。
 
 ---
 
 ## P1, Fix the framing, not the symptom · 改框架，不改症状
 
-- **The patch:** sticker price ranking misled users → add a "shipping included?" note in the
-  output.
-- **The root:** the **ranking primitive itself was wrong**. Sticker price is not the consumer's
-  question; **landed cost** is. So we reclassified the ranking unit from "$X sticker" to "$Y
-  checkout (sticker + shipping + tax + duty − verified checkout coupons)" everywhere in the workflow + report
-  template + tool docs. Delayed cashback is conditional and separate: eligibility, attribution,
-  exclusions and payout can fail after checkout, so it cannot determine the ranked winner.
-- **Why it matters:** the patch (a note in the output) would leave the bad default in place; the
-  next session would re-rank by sticker and someone would re-discover the same trap. Fixing the
-  framing reroutes every comparison the skill ever makes.
+Use landed cost as the ranking unit throughout the workflow, report template and
+tool documentation: sticker price + shipping + tax + duty − verified checkout coupons.
+A shipping note beside a sticker-price ranking would leave the ranking inconsistent
+with what the buyer pays. Delayed cashback is separate because eligibility,
+attribution, exclusions and payout can fail after checkout.
 
-> - **补丁：** 标价排序误导用户 → 输出里加一行"包邮吗？"备注。
-> - **根本：** **排序原语本身错了**。标价不是消费者的问题，**到手价**才是。于是把整个 workflow +
->   report 模板 + 工具文档里的排序单位从「$X 标价」改成「$Y 结账价 = 标价+运费+税费+关税-已核验结账优惠」。
->   延迟返利有资格、归因、排除项和到账条件，结账后仍可能失败，因此单独说明，不用它决定排名冠军。
-> - **为何重要：** 补丁让错误默认值留着；改框架重塑了 skill 以后做的每一次比较。
+> 在流程、报告模板和工具文档中统一按到手价排序：标价 + 运费 + 税费 + 关税 − 已核验结账优惠。
+> 仅在标价旁注明运费仍会使排名偏离实际支付额。延迟返利可能因资格、归因、排除项或到账条件
+> 而在结账后失效，因此单独列出。
 
 ## P2, Mechanisms, not intentions · 机制，而非意图
 
-- **The patch:** write "remember to add the timestamp" in the docs, and hope it happens.
-- **The root:** **make the timestamp mandatory in the structured evidence unit schema**, a
-  subagent's return missing `snapshot_ts` is rejected at the synthesis layer, not flagged with a
-  warning. Same for `stock_state` and `landed_cost`. The schema becomes the enforcement.
-- **Why it matters:** intentions decay between runs; an LLM forgets to add timestamps. A schema
-  refuses to accept a unit without one. Correct behavior becomes structural.
+Make `snapshot_ts`, `stock_state` and `landed_cost` required fields in the
+structured evidence unit. The synthesis layer must reject a unit missing the
+required information. A reminder to add timestamps does not provide this check.
 
-> - **补丁：** 文档里写"记得加时间戳"，然后指望它发生。
-> - **根本：** **把时间戳作为结构化证据单元 schema 的必填字段**, subagent 返回没带
->   `snapshot_ts` 的会在合成层被拒，而不是给个 warning。`stock_state` 和 `landed_cost`
->   同理。schema 即执行。
-> - **为何重要：** 意图会衰减、LLM 会忘加时间戳。schema 不会接受没时间戳的条目。正确行为变结构性。
+> 结构化证据单元必须包含 `snapshot_ts`、`stock_state` 和 `landed_cost`。
+> 合成层须拒绝缺少必要信息的单元，将要求落实为检查。
 
 ## P3, Monotonic evolution against default decay · 对抗默认腐化的单调进化
 
-- **The patch:** schedule a "refresh" reminder and trust the matrix stays good.
-- **The root:** recognize that **the default trajectory of any source matrix is decay**:
-  extensions lose affiliate networks (Honey 2026-01), APIs die (PA-API 2026-05-15), OSS goes
-  silent (any repo without a 6mo commit). Design the refresh so the system can *only move
-  forward*: guardrails only accumulate, dead tools become `⚠ Avoid` tombstones (not silent
-  deletions), coverage can't drop past a threshold, methodology is preserved.
-- **Why it matters:** "evolves automatically" is the easy promise; "cannot silently degrade" is
-  the hard guarantee, and the only one worth making.
+Source matrices become stale when extensions lose affiliate networks
+(Honey 2026-01), APIs close (PA-API 2026-05-15), or repositories stop receiving
+commits for six months. Refreshes preserve existing guardrails and methodology,
+enforce coverage thresholds, and retain dead sources as `⚠ Avoid` tombstones.
+Automation must make these changes visible rather than silently remove coverage.
 
-> - **补丁：** 设个"刷新"提醒，相信矩阵会保持优秀。
-> - **根本：** 承认**任何源矩阵的默认轨迹都是腐烂**,扩展会失联盟网、API 会死、OSS 会停更。
->   设计 refresh 让系统**只能往前走**：护栏只增不减，死工具变 `⚠ Avoid` 墓碑而非默删，覆盖率
->   不能跌破阈值，方法论保留。
-> - **为何重要：** "自动进化"是好说的；"不会默默退化"是难给的保证,也是唯一值得给的。
+> 扩展失去联盟网、API 关闭或仓库长期停更，都会使来源矩阵过时。刷新必须保留已有护栏和方法要求，
+> 遵守覆盖阈值，并将失效来源保留为 `⚠ Avoid` 条目，使读者能看到来源变化。
 
 ## P4, The editor is never its own verifier · 编辑者不能自审
 
-- **The patch:** "let the same subagent that fetched the price also verify it's accurate."
-- **The root:** **dispatch a fresh verifier subagent that does NOT see the original fetch**;
-  it independently re-fetches the cited URL, confirms the price + stock state + timestamp match
-  the unit. Then the synthesis layer reconciles. Confirmation bias is structurally prevented
-  by zero-context verification.
-- **Why it matters:** an LLM that wrote a wrong number is the LLM least likely to spot it. A
-  fresh-context verifier is cheap and ruthless.
+A fresh verifier that has not seen the original fetch independently reopens the
+cited URL and checks price, stock and timestamp. The synthesis layer then reconciles
+the observations. This separates collection from verification and reduces reliance
+on the original worker's judgment. Fresh context alone does not establish a different
+backend; the workflow must disclose the independence actually achieved.
 
-> - **补丁：** "让抓价的 subagent 自己再校验一遍"。
-> - **根本：** **派一个零上下文的 verifier subagent**,它独立重抓引用 URL，确认价格 + 库存 + 时间戳
->   和单元一致。然后合成层调和分歧。confirmation bias 在结构上被阻断。
-> - **为何重要：** 写错数字的 LLM 是最不可能发现错的 LLM。fresh-context verifier 廉价又狠。
+> 由未看过原始采集结果的核验者独立打开引用 URL，检查价格、库存和时间，再由合成层对照结果。
+> 这样可分开采集与核验，减少对原工作者判断的依赖。新上下文本身不能证明使用了不同后端，
+> 流程必须说明实际达到的独立性。
 
 ## P5, Thin layer, delegate the heavy work · 薄层，重活外包
 
-- **The patch:** "build another deep-research harness specialized for shopping."
-- **The root:** **a thin orchestration layer that delegates** to playwright MCP, BigGo MCP, Keepa
-  MCP, deep-research, market-intel. No reinvented engine. The skill's value is the **triage +
-  source detection + price-specific guardrails + structured output schema**, three things
-  nothing else does. Delegation is not laziness; it's the *only* way to stay current as the
-  underlying engines (Claude Code's harness, MCP ecosystem, OSS scrapers) evolve.
-- **Why it matters:** a clone-with-trigger-conflict would compete with deep-research instead of
-  amplifying it. Same trap market-intel originally fell into and rejected in its 5-subagent
-  adversarial design review.
+Delegate source collection to playwright MCP, BigGo MCP, Keepa MCP, `deep-research`
+and `market-intel`. This skill owns triage, source detection, shopping-specific
+requirements and the structured output schema. Reusing those capabilities limits
+maintenance as host workflows, MCPs and scrapers change.
 
-> - **补丁：** "再写一个专为购物特化的 deep-research"。
-> - **根本：** **薄编排层，把重活委托** 给 playwright MCP / BigGo MCP / Keepa MCP /
->   deep-research / market-intel。不重造引擎。skill 的价值是 **triage + 源检测 + 购物特有护栏 +
->   结构化输出 schema**,别人不做的三件事。委托不是懒，而是**唯一**让 skill 跟上底层引擎演化的方式。
-> - **为何重要：** clone-with-trigger-conflict 会和 deep-research 抢，而不是放大它。
+The five-subagent adversarial review behind market-intel rejected a duplicate
+research engine with conflicting triggers. The same scope decision applies here.
+
+> 采集委托给 playwright MCP、BigGo MCP、Keepa MCP、`deep-research` 和 `market-intel`。
+> 本 skill 负责分诊、来源检测、购物证据要求和结构化输出，减少对底层能力的重复维护。
+> market-intel 的五子任务对抗评审否决了会产生触发冲突的重复引擎；本项目采用同样的范围划分。
 
 ## P6, Visible degradation > silent decay · 可见的退化优于隐形的腐烂
 
-- **The patch:** "if Honey breaks, the user will figure it out eventually."
-- **The root:** **flag it the moment it changes, in every recommendation surface**. When Rakuten
-  terminated Honey's affiliate network on 2026-01-12, the skill should already carry that:
-  in the browser-extensions shard, in the Honey tool doc, in the recommendations.
-- **Why it matters:** silent degradation looks like a working skill until a user follows bad
-  advice. Visible degradation gives them the option to choose.
+Reflect a source's changed status wherever it is recommended: the domain shard,
+tool document and report. Rakuten's termination of Honey on 2026-01-12 is an example
+of a trust change that these surfaces must carry. A reader needs the status to
+decide whether to use that source.
 
-> - **补丁：** "Honey 坏了，用户最终自己会发现"。
-> - **根本：** **变化瞬间标出来，每个推荐界面都要更新**。2026-01-12 Rakuten 切断 Honey 联盟网，
->   skill 就该带着这个信息,在 browser-extensions shard、Honey 工具文档、所有推荐里。
-> - **为何重要：** 隐形退化看着像 skill 还能用，直到用户跟着坏建议踩坑。可见退化把选择权交还用户。
+Configuration and retention apply the same evidence distinction. PRIVATE storage
+establishes a boundary, while each artifact's role determines retention. Local
+readiness checks do not establish live integration. [CONFIG.md](CONFIG.md) and the
+source contracts define exact ownership and lifecycle.
+
+> 来源状态变化须同步到方向分片、工具文档和报告，使读者能够判断是否继续使用。
+> 2026-01-12 Rakuten 终止 Honey 合作属于需要同步的信任变化。配置与保留也须区分证据：
+> PRIVATE 说明存储边界，产物用途决定保留规则，本地配置检查不能证明线上集成可用。
 
 ---
 
 ## P7, Load budget is a design constraint · 加载预算是设计约束
 
-**SKILL.md is paid for on every single invocation. Reference docs are paid for only when read.**
-That asymmetry is the whole reason progressive loading exists, and it dictates where a sentence
-belongs, not taste:
+`SKILL.md` is loaded on every invocation; references are loaded only when needed.
+Keep required rules and checks in SKILL, and put detailed procedures, rationale and
+failure examples in the relevant reference. Avoid duplicate prose that can drift.
 
-- **SKILL.md carries the RULE and its test.** Imperative, checkable, and short enough that the reader
-  reaches the end.
-- **References carry the RATIONALE, the signature, and the war-story.** Why the rule exists, how the
-  failure looks when it happens, what to do instead.
-- **The same sentence never appears in both.** A rule with its evidence pasted underneath is not a
-  clearer rule, it is two copies that will drift, and the copy a future reader trusts is whichever
-  one they happened to open.
+A prior change grew SKILL from 291 to 422 lines (+45%) by adding narrative already
+present in references. The placement test is whether SKILL remains correct and
+actionable without the reference, and whether removing a paragraph leaves its rule
+enforceable. Move explanation, while retaining any necessary rule and stable cited IDs.
 
-**The failure mode is specific and it feels like diligence at the time.** You learn something
-expensive in a real run, you write the rule, and then you paste the story that justifies the rule
-right next to it so nobody weakens the rule later. Do that a dozen times and the always-loaded file
-has grown by half while carrying nothing new that is enforceable. Observed here: one change took
-SKILL.md from 291 to 422 lines (+45%), and the added bulk was narrative that the reference doc
-already held verbatim.
+Keep an invariant in the main file when omitting it would reintroduce the failure
+the skill prevents. Keep troubleshooting branches beside the steps where they are
+needed. A small skill may appropriately remain one file when every run needs every line.
 
-**Two questions settle every placement:**
-1. Delete the reference doc. Is SKILL.md still *correct and actionable*? If no, you moved too much out.
-2. Delete the SKILL.md paragraph. Is the rule still *enforceable* from what remains? If yes, the
-   paragraph was rationale and belongs in the reference.
-
-**The tell, and it is nearly always the same section.** An audit across every skill in the fleet found
-one shape recurring: a **war-story / gotcha compendium**, and each one announced itself. Their own
-opening lines say "the rules above already encode the fix, this section explains why" and "each
-gotcha is rooted in a real past incident". **A section that describes itself as explaining where the
-rules above came from is, by definition, a reference.** Move it and leave an ID index; the rules it
-explains are already stated, so nothing enforceable leaves with it. Where such a compendium is
-already cited by ID from elsewhere, the move is pure relocation with no de-duplication risk at all.
-
-**And the inverse tell, which matters just as much.** A small skill whose every run needs every line
-is *correctly* monolithic, and splitting it costs a tool call to save nothing. Two signals that
-prose should STAY in an always-loaded file even though it reads like rationale: it states an
-invariant whose violation is the exact bug the skill exists to fix (a maintainer who does not read it
-will "repair" the thing back into the defect), or it is a troubleshooting branch of the main flow
-rather than an appendix (the failure happens *during* the procedure, so a jump costs more than it
-saves). **Do not refactor for tidiness. Measure first, and be willing to conclude "this one is
-already right".**
-
-**Corollary: fewer files is not the goal.** A directory of small, densely specific docs is healthy
-when each is loaded only by the run that needs it; the audit that motivated this principle went
-looking for bloat in a 33-file tool directory and found layering instead (a one-line routing index, a
-machine-readable registry, and per-tool docs holding real operational knowledge). Merging those would
-have destroyed value while saving nothing at run time. **Count what a run loads, not what the repo
-contains.**
+Measure loading per run before restructuring. A reviewed 33-file tool directory
+had distinct routing, registry and per-tool duties; merging it would add runtime
+loading without reducing duplication. File count alone is not a loading measure.
 
 ## How these apply to shopping-aggregator specifically
 
@@ -196,6 +133,4 @@ Before merging any PR / matrix update / new shard / new guardrail, answer:
 5. Did we **delegate** to existing engines, or did we **reinvent** them?
 6. Will any **degradation be visible** in the output, or could it **silently mislead the user**?
 
-If you can answer all six yes, the change passes the philosophy bar.
-
-Configuration selection and retention follow the actual consuming capability. A PRIVATE boundary does not make every cache core, and a local readiness check does not prove a live integration. Exact storage ownership and lifecycle remain declared in CONFIG and the source contracts.
+Review each answer against the corresponding principle before accepting the change.

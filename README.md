@@ -1,6 +1,7 @@
 # shopping-aggregator
 
-Triage any buy intent across 14 shopping domains, rank by landed cost (not sticker), and delegate the live-price fan-out to your existing research harness.
+Compare consumer purchases across 14 shopping domains using verified checkout costs,
+with source collection delegated to an existing research workflow.
 
 [![Claude Code Skill](https://img.shields.io/badge/Claude%20Code-Skill-orange?style=flat)](https://docs.anthropic.com/en/docs/claude-code)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -13,28 +14,19 @@ Triage any buy intent across 14 shopping domains, rank by landed cost (not stick
 
 ---
 
-## ⭐ Design Philosophy
+## Design philosophy
 
-shopping-aggregator inherits market-intel's organizing principle, **root-cause design, not
-incremental patching.** When something is wrong, change the assumption underneath it, not the
-symptom on top. That principle, applied to *consumer shopping*, produced every shopping-specific
-decision in this skill:
+Shopping comparisons need a consistent product variant, current stock, seller identity
+and the full checkout cost. Shipping, tax, duty and verified coupons can change the
+ranking; delayed cashback remains conditional and is shown separately. Each price
+needs a snapshot timestamp because offers such as Amazon's Buy Box change frequently.
 
-- **Landed cost, not sticker price**, sticker rankings are a trap (Amazon Prime free-ship vs
-  eBay $15 ship flips winners). We made landed cost the ranking primitive.
-- **Snapshot timestamp is mandatory**, prices change hourly (Buy Box). An undated price is
-  unverified by default.
-- **Coupon-cart verification**, extension "savings" badges are a known fraud surface (the
-  Honey lawsuit). We verify via playwright cart test or label as ⚠ claim.
-- **Honey ≠ default-good in 2026**, the Rakuten/Impact/Awin terminations of Jan 2026 changed
-  the trust landscape. The skill carries this forward proactively.
+Coupon claims require a cart test or an unverified label. The Honey case and the
+Rakuten/Impact/Awin terminations in January 2026 are part of the source trust review;
+Honey is not a default recommendation. Stronger evidence requirements can leave an
+offer unranked or coverage incomplete. The report retains those limits.
 
-Requiring stronger evidence can leave a candidate unranked or coverage incomplete.
-That is preferable to naming a winner from a snippet price or conditional rebate.
-Verify current price, stock, seller identity and checkout discounts together; show
-delayed cashback separately.
-
-📜 **[Read the full design philosophy → PHILOSOPHY.md](PHILOSOPHY.md)**.
+See [PHILOSOPHY.md](PHILOSOPHY.md) for the design principles and their shopping applications.
 
 ### Sister skill, when to use which
 
@@ -49,42 +41,27 @@ toolkit at [`market-intel`](https://github.com/DaizeDong/market-intel).
 | "Find arbitrage / FBA / wholesale opportunities (seller side)" | [**market-intel**](https://github.com/DaizeDong/market-intel) → `ecommerce-arbitrage` shard |
 | "X/Twitter sentiment / competitor SEO / lead generation" | [**market-intel**](https://github.com/DaizeDong/market-intel) |
 
-Both skills can coexist, install both, the orchestration logic in each handles its own scope.
+Both skills can be installed; each routes requests within its documented scope.
 
 ---
 
-## What it is (and isn't)
+## Scope
 
-A thin orchestration skill for **consumer shopping price comparison**. Triages your buy intent
-(product + region + budget + urgency), finds the right specialized shopping source (and helps you
-install it), then hands the heavy lifting to your existing research harness, instead of
-reinventing it.
+The skill handles consumer buying decisions with shopping-specific sources such as
+Keepa, Camelcamelcamel and 慢慢买, cost normalization and marketplace seller checks:
 
-Claude Code already has a `deep-research` harness, a `research-lit` skill, and `market-intel` for
-broad commercial research. Those fall short the moment a question is **"I'm about to buy X, find
-me the best price"**: that's a specialized consumer workflow with its own data sources (Keepa,
-Camelcamelcamel, 慢慢买), its own normalization (landed cost, currency, tax, shipping, coupons),
-its own trust model (per-retailer marketplace seller tiers), and its own time-axis (Buy Box
-rotates hourly).
+1. **Parse intent:** product, region, budget, urgency and sensitivity determine the
+   relevant shopping domains and demand-side channel classes. A retailer without a
+   dedicated tool, such as Micro Center, still belongs in the coverage plan.
+2. **Select sources and setup:** discover tools in the active host and perform a
+   functional read. Use [per-tool documentation](skills/shopping-aggregator/reference/tools/index.md)
+   for missing MCP, extension or open-source setup. `claude mcp list` is a Claude
+   installation diagnostic; a connected indicator alone does not prove a usable source.
+3. **Apply evidence requirements:** verify price, stock, variant, seller, timestamp and
+   discounts, then report conflicts, risks and missing channels.
 
-`shopping-aggregator` is the **thin layer** that fills exactly that gap. It does **only three
-things nothing else does**, and delegates everything else:
-
-1. **Parse the buy intent**, product + region + budget + urgency + sensitivity → triage to 1 to N
-   of 14 shopping domains **and to the demand-side channel classes** (so a tool-less authorized
-   retailer, e.g. Micro Center, stays visible instead of being structurally invisible).
-2. **Detect + guide install**, check which specialized shopping MCP/extension/OSS tool is
-   connected (via `claude mcp list`, not unreliable tool-name guessing), and if a key source is
-   missing, hand you the exact install command, or open its **per-tool how-to doc**
-   ([`reference/tools/`](skills/shopping-aggregator/reference/tools/index.md)) for install + auth
-   + usage + gotchas.
-3. **Quality guardrails**, snapshot timestamp, stock state, landed cost (not sticker),
-   coupon-cart verification, retailer trust tiers, no silent degradation, disconfirmation
-   mandate, surfaced disagreements, explicit gaps.
-
-The actual live-price fan-out, history lookup, adversarial verification, and citation synthesis
-are **delegated** to playwright MCP / BigGo MCP / Keepa MCP / `deep-research` / `market-intel`.
-No reinvented engine.
+Live-price collection, history lookup and verification use available playwright MCP,
+BigGo MCP, Keepa MCP, `deep-research` or `market-intel` capabilities.
 
 ---
 
@@ -110,7 +87,11 @@ installation with `python tools/refresh_priority.py --help` and
 
 ## Config
 
-Each buyer's standing facts (market, ship-to ZIP and state, memberships, store credit, which retailers the agent may check out at, purchase defaults) live in a **config root** inside a private companion repository, and the run ledgers (observations and purchases) are written there too. [CONFIG.md](CONFIG.md) defines every file and field, and nothing is stored outside that schema: not in agent memory, not in script defaults.
+Each buyer has a **config root** in a PRIVATE versioned companion repository. It holds
+market, destination, memberships, store credit, checkout permissions and purchase
+defaults alongside that buyer’s observation and purchase ledgers. [CONFIG.md](CONFIG.md)
+defines the supported files and fields; buyer state must not be duplicated in agent
+memory or script defaults.
 
 ```bash
 python scripts/init_config.py        # find the companion, or create ~/.shopping-aggregator-config
@@ -120,6 +101,11 @@ python scripts/verify_config.py      # doctor: prints the selected root; NOT REA
 Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the pinned `guards/tools/datadir.py` order: `$SHOPPING_AGGREGATOR_DATA_DIR`, a sibling `shopping-aggregator-config/` next to this repository, `~/.shopping-aggregator-config`, then `~/.shopping-aggregator-data`. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
 
 To switch to another person, point `SHOPPING_AGGREGATOR_CONFIG` at their root, or keep them under `<companion>/people/<id>/` and select that directory; their profile, purchases and observations switch together, and every report names the `profile_id` it used. `--config-dir` selects a root for one `scripts/` command only, while the `tools/` commands follow only the environment variable. Without any config the skill still compares prices, asking for the same facts in Step 1, but it never submits an order itself: the final click goes to you.
+
+Per-person storage follows [CONFIG.md’s lifecycle rules](CONFIG.md#storage-lifecycle):
+observations and purchases remain core, cache is rebuildable with a seven-day policy,
+and evaluation runs retain selected evidence. Unknown per-person files have no owner;
+[config.contract.json](config.contract.json) declares the native lifecycle adapter.
 
 ---
 
@@ -137,8 +123,9 @@ What runs:
 1. **Parse intent** → product: Bose QC45 (refurb OK); region: US; budget $200; urgency: low.
 2. **Triage** → maps to `amazon-us`, `ebay-walmart-target`, `browser-extensions` (coupon stack),
    `mobile-apps-aggregators` (Slickdeals "wait for sale" signal); picks depth budget standard.
-3. **Detect** → runs `claude mcp list`; sees playwright connected, BigGo MCP not connected, no
-   Keepa subscription; notes the gap.
+3. **Detect** → discovers sources in the active host, then checks the selected read operation,
+   authentication and usable response content. A connected listing alone does not establish
+   readiness; unavailable BigGo access or a missing Keepa subscription remains a coverage gap.
 4. **Guide install** (non-blocking) → "Camelcamelcamel free will give you Amazon history; if you
    shop a lot, Keepa MCP €49/mo gives deeper data. For now I'll use Camelcamelcamel + playwright
    per retailer."
@@ -155,8 +142,7 @@ What runs:
 
 ### The source matrix (14 domains)
 
-The knowledge asset. Each domain shard names the best tool, its **barrier route**, how to detect
-it, and what to install.
+Each domain shard records recommended sources, barrier routes, detection and setup.
 
 | Domain | Top pick (barrier route) |
 |---|---|
@@ -231,24 +217,20 @@ hard rules applied during synthesis, full list in
 
 ## Limitations
 
-`shopping-aggregator` is a thin orchestration layer, not a price engine, it has structural limits
-by design:
+- **Source availability:** collection depends on the capabilities listed under Scope.
+  If none is connected, the skill provides setup guidance.
+- **Catalog freshness:** extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs
+  close (PA-API 2026-05-15), and repositories stop updating. The refresh protocol requires
+  re-verification; catalog presence does not establish current availability.
+- **Session-gated access:** finish anonymous S1 work, then batch S2 channels into one
+  login handoff. Open the login page, pause and resume only after user confirmation.
+  The user handles authentication; the agent never enters credentials. Re-run the control
+  query after login before trusting content. Declined or unattended handoffs produce
+  typed `session-gated-*` gaps. See [login-handoff.md](skills/shopping-aggregator/reference/login-handoff.md).
 
-- **No reinvented fetch engine**, the live-price fan-out, history lookup, and adversarial
-  verification are delegated to playwright / BigGo / Keepa / `deep-research` / `market-intel`. If
-  none is connected, the skill guides install rather than fetching itself.
-- **The matrix decays**, extensions lose affiliate networks (Honey/Rakuten Jan 2026), APIs die
-  (PA-API 2026-05-15), OSS repos go silent. Freshness is maintained by the refresh protocol, not
-  guaranteed at every moment.
-- **Login-walled channels are a handoff, not a gap.** A session-gated marketplace is `S2`: it becomes
-  fully readable the moment you sign in once. The skill finishes everything anonymous first, then
-  batches every gated channel into a single ask, opens the login page and **stops**, and resumes after
-  you confirm. **It never signs in for you** and never touches a credential. Decline, or run it
-  unattended, and it records a typed `session-gated-*` gap that says "one login away" rather than
-  "unreachable". See [`login-handoff.md`](skills/shopping-aggregator/reference/login-handoff.md).
-- **Not a seller-side / arbitrage tool**, for FBA / wholesale / market research, use
+- **Seller-side scope:** for FBA, wholesale or market research, use
   [`market-intel`](https://github.com/DaizeDong/market-intel).
-- **Buys only when you say so**: retail orders only, on an explicit per-action instruction, at the full discount stack (guardrail #16), verified line by line on the final page before a single click, and only at retailers where the selected profile lets the agent check out. Lodging and flights stay hand-off. Without that instruction or that permission it produces a recommendation and you click buy.
+- **Purchase authorization:** retail orders only, on an explicit per-action instruction, at the full discount stack (guardrail #16), verified line by line on the final page before a single click, and only at retailers where the selected profile lets the agent check out. Lodging and flights stay hand-off. Without that instruction or that permission it produces a recommendation and you click buy.
 
 Remaining roadmap gaps: demo conversations + comparison-vs-alternatives docs (v0.5 packaging),
 heartbeat issue auto-close + discovery-state log (v0.3 loop-closing). See [ROADMAP.md](ROADMAP.md).
@@ -267,5 +249,3 @@ See [ROADMAP.md](ROADMAP.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENS
 
 Sister skill: [market-intel](https://github.com/DaizeDong/market-intel), broad commercial
 research / seller-side intel.
-
-Each `people/<id>/` root inherits separate per-kind ownership from the root layout: purchases and observations remain core, cache keeps its seven-day rebuildable policy, and evaluation runs keep the selected-evidence lifecycle. Unknown per-person files have no owner. The explicit native lifecycle adapter is [config.contract.json](config.contract.json).
