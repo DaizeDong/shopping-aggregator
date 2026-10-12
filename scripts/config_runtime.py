@@ -171,5 +171,10 @@ class ConfigRuntime:
         if root is not None:
             return self._destination(root), "consumer guards/tools/datadir.py"
         if initialize:
-            return self._destination("~/.%s-config" % self.skill), "new home config skeleton"
+            # No home-directory default: a directory there is versioned, backed up and pushed by
+            # nothing. Initialization needs a real companion or an explicit destination.
+            raise ConfigError(
+                "No companion found for %s. Create a PRIVATE companion repository with an origin "
+                "and clone it beside this repository as %s-config, or set %s to it, or pass "
+                "--out <dir>." % (self.skill, self.skill, env_var(self.skill)))
         return None, None

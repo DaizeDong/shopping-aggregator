@@ -19,9 +19,7 @@
       "SHOPPING_AGGREGATOR_DATA_DIR must equal selected root data/",
       "SHOPPING_AGGREGATOR_CONFIG",
       "SHOPPING_AGGREGATOR_CONFIG_DIR",
-      "Sibling shopping-aggregator-config",
-      "~/.shopping-aggregator-config",
-      "~/.shopping-aggregator-data"
+      "Sibling shopping-aggregator-config"
     ],
     "required_fields": [
       "profile.json.profile_id",

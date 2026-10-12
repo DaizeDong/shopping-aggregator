@@ -94,11 +94,11 @@ defines the supported files and fields; buyer state must not be duplicated in ag
 memory or script defaults.
 
 ```bash
-python scripts/init_config.py        # find the companion, or create ~/.shopping-aggregator-config
+python scripts/init_config.py        # find the companion; without one, pass --out <dir>
 python scripts/verify_config.py      # doctor: prints the selected root; NOT READY until the profile is filled
 ```
 
-Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the pinned `guards/tools/datadir.py` order: `$SHOPPING_AGGREGATOR_DATA_DIR`, a sibling `shopping-aggregator-config/` next to this repository, `~/.shopping-aggregator-config`, then `~/.shopping-aggregator-data`. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
+Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the pinned `guards/tools/datadir.py` order: `$SHOPPING_AGGREGATOR_DATA_DIR`, then a sibling `shopping-aggregator-config/` next to this repository. There is no home-directory location. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
 
 To switch to another person, point `SHOPPING_AGGREGATOR_CONFIG` at their root, or keep them under `<companion>/people/<id>/` and select that directory; their profile, purchases and observations switch together, and every report names the `profile_id` it used. `--config-dir` selects a root for one `scripts/` command only, while the `tools/` commands follow only the environment variable. Without any config the skill still compares prices, asking for the same facts in Step 1, but it never submits an order itself: the final click goes to you.
 

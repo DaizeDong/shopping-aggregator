@@ -46,11 +46,11 @@ Settings sit at the root and everything a run produces sits under `data/`. `peop
 1. `--out <dir>` (init) or `--config-dir <dir>` (doctor and ledger).
 2. `$SHOPPING_AGGREGATOR_CONFIG`.
 3. `$SHOPPING_AGGREGATOR_CONFIG_DIR`, an accepted alias.
-4. The pinned resolver `guards/tools/datadir.py`: `$SHOPPING_AGGREGATOR_DATA_DIR` (its parent when it ends in `data`), then the sibling `shopping-aggregator-config/` next to this repository, then `~/.shopping-aggregator-config/`, then `~/.shopping-aggregator-data/`.
+4. The pinned resolver `guards/tools/datadir.py`: `$SHOPPING_AGGREGATOR_DATA_DIR` (its parent when it ends in `data`), then the sibling `shopping-aggregator-config/` next to this repository. There is no home-directory location.
 
-An explicit selection never falls through. A selection that is empty (`--config-dir ""`, or a variable exported empty) is an error, and so is a selected directory that does not exist, except for `init_config.py`, which creates it. The sibling counts only when it proves it belongs to this skill, through an origin URL named `shopping-aggregator-config` or a `.companion` file whose first line is `shopping-aggregator`. When nothing resolves, the doctor exits 1 and `init_config.py` creates `~/.shopping-aggregator-config/`. There is no in-repository fallback, no XDG directory and no vendored copy of the resolver. [`guards/COMPANION.md`](guards/COMPANION.md) is the contract for the companion repository itself.
+An explicit selection never falls through. A selection that is empty (`--config-dir ""`, or a variable exported empty) is an error, and so is a selected directory that does not exist, except for `init_config.py`, which creates it. The sibling counts only when it proves it belongs to this skill, through an origin URL named `shopping-aggregator-config` or a `.companion` file whose first line is `shopping-aggregator`. When nothing resolves, the doctor exits 1 and `init_config.py` stops with instructions: create a PRIVATE companion repository beside this one as `shopping-aggregator-config/`, set `$SHOPPING_AGGREGATOR_CONFIG`, or pass `--out <dir>`. There is no in-repository fallback, no XDG directory and no vendored copy of the resolver. [`guards/COMPANION.md`](guards/COMPANION.md) is the contract for the companion repository itself.
 
-`$SHOPPING_AGGREGATOR_DATA_DIR` and `~/.shopping-aggregator-data/` are data-only locations from before config roots existed. The resolver still finds them, but they have no `profile.json` and no `data/` of their own, so the doctor reports them NOT READY and the ledger writer refuses them. Migrate their contents into a root's `data/`.
+`$SHOPPING_AGGREGATOR_DATA_DIR` is a data-only location from before config roots existed. The resolver still finds it, but it has no `profile.json` and no `data/` of its own, so the doctor reports it NOT READY and the ledger writer refuses it. Migrate its contents into a root's `data/`.
 
 The `tools/` commands (evaluation runs, the GitHub-activity cache, `refresh_priority`, `verify_matrix`) do not take `--config-dir`; they follow only the environment through the resolver, in which `$SHOPPING_AGGREGATOR_DATA_DIR` outranks `$SHOPPING_AGGREGATOR_CONFIG`. So the doctor and the ledger writer both refuse to proceed when `$SHOPPING_AGGREGATOR_DATA_DIR` is anything other than the selected root's `data/`, or when `$SHOPPING_AGGREGATOR_CONFIG` or `_CONFIG_DIR` names a different root than `--config-dir`: either would send those tools to another person's data. A selection variable that is set but empty, or that names a directory that does not exist, stops every command, `tools/` included, because the resolver would skip it and fall through to the next candidate. Quote Windows paths or write them with forward slashes: Git Bash drops the backslashes of an unquoted one.
 
@@ -167,7 +167,7 @@ Generated ignore rules exclude `secrets/*` and credential files from accidental 
 
 ```bash
 git submodule update --init --recursive guards
-python scripts/init_config.py        # reuses the companion it finds, or creates ~/.shopping-aggregator-config
+python scripts/init_config.py        # reuses the companion it finds; without one, pass --out <dir>
 cd <root> && git init && git remote add origin <PRIVATE repository URL>
 ```
 
