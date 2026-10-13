@@ -3,8 +3,8 @@
 Runtime writes carry no PRIVATE visibility proof. The destination is decided by companion
 resolution with no in-repository fallback, and a write is refused only by cheap path checks:
 the data directory must resolve and exist, sit in a versioned repository of its own outside this
-public tool tree, and every destination must stay inside it, outside Git metadata and nested
-repositories, and free of filesystem aliases. Commit-time Guards hooks and CI keep the companion's history out of public
+public tool tree (checked once, on that repository), and every destination must stay inside it,
+outside Git metadata and nested repositories, and free of filesystem aliases. Commit-time Guards hooks and CI keep the companion's history out of public
 remotes.
 """
 from contextlib import contextmanager
@@ -61,15 +61,6 @@ def _plain_path(path):
             raise StorageError("Companion storage path contains a filesystem alias")
 
 
-def _outside_tool_tree(path):
-    if path.is_relative_to(TOOL_ROOT) or TOOL_ROOT.is_relative_to(path):
-        raise StorageError("Runtime DATA must be outside the public tool worktree")
-    try:
-        _guards_module("datadir").assert_outside_own_repo(path, SKILL, source_root=str(TOOL_ROOT))
-    except (OSError, RuntimeError, ValueError) as exc:
-        raise StorageError(str(exc)) from exc
-
-
 def companion_repository(path):
     """The nearest enclosing directory with a `.git` entry, found without running git.
 
@@ -79,7 +70,6 @@ def companion_repository(path):
     path = Path(path).expanduser().absolute()
     _plain_path(path)
     path = path.resolve()
-    _outside_tool_tree(path)
     for candidate in (path, *path.parents):
         if os.path.lexists(candidate / ".git"):
             if candidate.is_relative_to(TOOL_ROOT) or TOOL_ROOT.is_relative_to(candidate):
@@ -108,7 +98,6 @@ class PrivateStore:
                 break
             if os.path.lexists(parent / ".git"):
                 raise StorageError("Runtime paths cannot enter a nested repository")
-        _outside_tool_tree(path)
         return path
 
     def transcript(self, requested):
@@ -117,13 +106,12 @@ class PrivateStore:
             raise StorageError("Transcript must be a file within the companion data directory")
         return path
 
-    def output_path(self, relative, *, directory=False, transient=False):
-        """A checked destination below the data directory; `directory` and `transient` are accepted
-        for callers and no longer change the checks."""
+    def output_path(self, relative):
+        """A checked destination below the data directory."""
         return self._validate(self.base / relative)
 
     def new_run(self):
-        path = self.output_path(Path("evaluation") / "runs" / uuid.uuid4().hex, directory=True)
+        path = self.output_path(Path("evaluation") / "runs" / uuid.uuid4().hex)
         path.mkdir(parents=True, exist_ok=False)
         return path
 
@@ -131,28 +119,18 @@ class PrivateStore:
     def atomic_writer(self, relative, *, binary=False):
         """Stage beside the data, then replace; a failed write preserves the old file."""
         path = self.output_path(relative)
-        temporary = self.output_path(Path('.write-staging') / (uuid.uuid4().hex + '.tmp'),
-                                     transient=True)
+        temporary = self.output_path(Path('.write-staging') / (uuid.uuid4().hex + '.tmp'))
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary.parent.mkdir(parents=True, exist_ok=True)
         options = {} if binary else {"encoding": "utf-8", "newline": "\n"}
         # Failed publication retains staging bytes for the declared recovery review.
         with temporary.open(mode='xb' if binary else 'x', **options) as stream:
             opened = os.fstat(stream.fileno())
-            identity = (opened.st_dev, opened.st_ino)
             if not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1:
                 raise StorageError('Atomic staging must be a single regular file')
-            current = temporary.lstat()
-            if (current.st_dev, current.st_ino) != identity:
-                raise StorageError('Atomic staging changed before open')
             yield stream
             stream.flush()
             os.fsync(stream.fileno())
-        self.output_path(relative)
-        self.output_path(temporary.relative_to(self.base), transient=True)
-        current = temporary.lstat()
-        if (current.st_dev, current.st_ino) != identity:
-            raise StorageError('Atomic staging changed before publication')
         temporary.replace(path)
 
     def write_bytes(self, relative, contents):
@@ -177,9 +155,5 @@ def prepare_store(base=None):
         raise StorageError("Uninitialized: clone the shopping-aggregator-config companion, create data/, "
                            "and configure SHOPPING_AGGREGATOR_CONFIG or SHOPPING_AGGREGATOR_DATA_DIR")
     base = Path(base).expanduser().absolute()
-    _plain_path(base)
-    base = base.resolve()
     repository = companion_repository(base)
-    store = PrivateStore(base, repository)
-    store._validate(base)
-    return store
+    return PrivateStore(base.resolve(), repository)

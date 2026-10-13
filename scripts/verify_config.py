@@ -32,8 +32,8 @@ from evaluation_store import StorageError, companion_repository  # noqa: E402
 
 PASS, FAIL = "PASS", "FAIL"
 LOAD_ERRORS = (OSError, ValueError, RecursionError)
-# Every path the writers create under data/. The private store refuses an ignored path, so one
-# ignore rule that matches any of these turns that writer off while everything else looks fine.
+# Every path the writers create under data/. An ignored path under data/ would never reach the
+# companion's history, so one ignore rule that matches any of these silently drops that writer's output.
 DATA_PROBES = ("data/metrics/live-runs.jsonl", "data/metrics/live-runs.legacy.jsonl", "data/purchases.jsonl",
                "data/evaluation/runs/probe/result.json", "data/cache/gh-api-cache.json")
 
@@ -214,7 +214,7 @@ def doctor(cfg, skill, check):
             problems = ["root .gitignore is unreadable"]
         check("root .gitignore excludes representative secret paths", not problems, "; ".join(problems))
     ignored = ignored_under_data(cfg)
-    check("nothing under data/ is ignored (the private writer refuses ignored paths)", ignored == [],
+    check("nothing under data/ is ignored (an ignored path would never reach the companion history)", ignored == [],
           "git could not answer" if ignored is None else
           "%d path(s) ignored; remove the rule, data/ is versioned" % len(ignored))
 

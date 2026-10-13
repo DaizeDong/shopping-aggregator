@@ -103,31 +103,6 @@ def test_hardlink_input_is_rejected(prepared, tmp_path):
         store.transcript(transcript)
 
 
-def test_atomic_writer_refuses_replaced_staging_without_deleting_it(prepared, tmp_path, monkeypatch):
-    store, _ = prepared
-    original = store.output_path
-    opened = []
-    replacement = tmp_path / 'replacement.bin'
-    payload = evaluation_fixture()['transcript'].encode()
-    replacement.write_bytes(payload)
-    replaced = []
-
-    def swap_before_publication(relative, **kwargs):
-        if opened and opened[0].closed and not replaced:
-            temporary, = (store.base / '.write-staging').iterdir()
-            os.replace(replacement, temporary)
-            replaced.append(temporary)
-        return original(relative, **kwargs)
-
-    monkeypatch.setattr(store, 'output_path', swap_before_publication)
-    with pytest.raises(storage.StorageError, match='staging changed'):
-        with store.atomic_writer('cache/result.json', binary=True) as stream:
-            opened.append(stream)
-            stream.write(payload[::-1])
-    assert not (store.base / 'cache/result.json').exists()
-    assert replaced[0].read_bytes() == payload
-
-
 def test_failed_write_preserves_old_bytes(prepared):
     store, _ = prepared
     path = store.base / "cache/result.json"

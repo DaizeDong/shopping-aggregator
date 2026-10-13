@@ -30,7 +30,7 @@ identity. This declared marker supports discovery only.
     metrics/live-runs.legacy.jsonl  frozen pre-schema rows that could not be reconciled (optional)
     purchases.jsonl              every order action taken on the buyer's instruction
     evaluation/runs/<run-id>/    scenario-eval transcripts and results
-    cache/                       rebuildable, and versioned too: the private writer refuses ignored paths
+    cache/                       rebuildable, and versioned too: an ignored path would never reach the companion history
   people/<id>/                   another person's complete root, same layout
   tools/<slug>/                  required directory; per-tool templates (env.template, claude.json.template)
   secrets/                       required directory; credentials, ignored by default
@@ -160,7 +160,7 @@ When a field becomes required after rows were written without it, the old rows a
 
 A profile says where a person lives and what they pay for, so the root belongs in a PRIVATE companion repository. The doctor checks the part a path can show: the root sits in a versioned repository of its own, outside this tool repository; a root that is not is NOT READY even when every field is right. Nothing at runtime queries remote visibility; the commit-time Guards hooks and CI keep real data out of public remotes. The public tool repository never holds a real root: `.dataclass.json` seals the config-root names (`profile.json`, `registry.json`, `people/`, `data/`, `reference/`, `secrets/`, `row.json`) at this repository's root and declares a real-file twin next to every example, and `guards/tools/data_boundary.py` blocks them on commit, push and CI. Below the root, `verify_matrix` (CONFIGROOT, run in CI) refuses any tracked file named `profile.json`, `purchases.jsonl`, `row.json` or `forwarder-<name>.json`, and anything under a `people/` directory.
 
-Generated ignore rules exclude `secrets/*` and credential files from accidental staging, and nothing under `data/`, because the private writer refuses ignored paths; the doctor checks both, probing every path the writers create and every existing file under `data/`. Keep credentials out of version control with a separate backup, or deliberately track selected ones in the PRIVATE companion; an ignore rule does not stop an explicit `git add`. A credential committed there stays in that history, so rotating it means replacing the credential itself. No tool here echoes a secret value.
+Generated ignore rules exclude `secrets/*` and credential files from accidental staging, and nothing under `data/`, because an ignored path under `data/` would never reach the companion's history; the doctor checks both, probing every path the writers create and every existing file under `data/`. Keep credentials out of version control with a separate backup, or deliberately track selected ones in the PRIVATE companion; an ignore rule does not stop an explicit `git add`. A credential committed there stays in that history, so rotating it means replacing the credential itself. No tool here echoes a secret value.
 
 ## First-time setup
 

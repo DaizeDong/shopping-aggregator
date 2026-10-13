@@ -41,7 +41,7 @@ claude.json
 !*.key.template
 !*.pem.template
 
-# Everything under data/ is versioned, caches included: the private writer refuses ignored paths.
+# Everything under data/ is versioned, caches included: an ignored path would never reach the companion history.
 __pycache__/
 *.pyc
 """
