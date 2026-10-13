@@ -12,14 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scenario_eval as evaluator
 import evaluation_store as storage
 from make_fixtures import (evaluation_fixture, judge_response, matrix_cache_fixture,
-                           storage_repository_fixture, storage_visibility_fixture)
+                           storage_repository_fixture)
 
 
 @pytest.fixture
 def private_store(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json")
     data, transcript = storage_repository_fixture(tmp_path / "companion")
     monkeypatch.setattr(storage, "resolve_base", lambda: data)
     return data, transcript
@@ -50,14 +49,14 @@ def test_offline_plan_has_no_result_or_model_call(monkeypatch):
     assert "score" not in plan
 
 
-@pytest.mark.parametrize("visibility", ["PUBLIC", "", "UNKNOWN"])
-def test_nonprivate_preflight_happens_before_transcript_read(private_store, monkeypatch, visibility):
-    storage_visibility_fixture(Path.home() / ".pii-guard/visibility.json",
-                               {"example-owner/example-private": visibility})
+def test_unversioned_store_fails_before_transcript_read(private_store, monkeypatch, tmp_path):
+    plain = tmp_path / "plain" / "data"
+    plain.mkdir(parents=True)
+    monkeypatch.setattr(storage, "resolve_base", lambda: plain)
     monkeypatch.setattr(evaluator, "read_transcript", lambda _: pytest.fail("private transcript read"))
     with pytest.raises(storage.StorageError):
         run_judge(private_store, caller=lambda _: pytest.fail("model called"))
-    assert not (private_store[0] / "evaluation").exists()
+    assert not (plain / "evaluation").exists()
 
 
 def test_missing_store_fails_without_fallback(monkeypatch, tmp_path):
@@ -144,19 +143,6 @@ def test_unexpected_backend_exception_is_private_and_unavailable(private_store):
     assert result["backend"]["error"] == "synthetic private backend diagnostic"
 
 
-def test_judge_cannot_publish_after_storage_becomes_public(private_store):
-    def change_visibility(prompt):
-        reply = result_call()(prompt)
-        storage_visibility_fixture(Path.home() / ".pii-guard/visibility.json",
-                                   {"example-owner/example-private": "PUBLIC"})
-        return reply
-    with pytest.raises(storage.StorageError):
-        run_judge(private_store, caller=change_visibility)
-    directory, = (private_store[0] / "evaluation/runs").iterdir()
-    assert not (directory / "response.txt").exists()
-    assert json.loads((directory / "result.json").read_text(encoding="utf-8"))["status"] == "in_progress"
-
-
 def test_llmcall_invocation_uses_installed_defaults(monkeypatch):
     seen = []
     monkeypatch.setitem(sys.modules, "llmcall", SimpleNamespace(call=lambda *a, **k: seen.append((a, k))))
@@ -204,15 +190,6 @@ def test_matrix_cache_without_private_storage_never_falls_back(monkeypatch):
         verify_matrix._cache_path("gh-api-cache.json")
 
 
-def test_matrix_cache_rejects_public_companion(private_store, monkeypatch):
-    import verify_matrix
-    storage_visibility_fixture(Path.home() / ".pii-guard/visibility.json",
-                               {"example-owner/example-private": "PUBLIC"})
-    with pytest.raises(storage.StorageError):
-        verify_matrix._cache_path("gh-api-cache.json")
-    assert not (private_store[0] / "cache").exists()
-
-
 def test_conditional_na_keeps_required_passes(private_store):
     def conditional(response):
         next(row for row in response["criteria"] if row["id"] == "U7")["verdict"] = "N/A"
@@ -254,15 +231,6 @@ def test_failed_cache_write_preserves_old_bytes_and_is_visible(private_store, mo
         verify_matrix._write_cache("gh-api-cache.json", matrix_cache_fixture())
     assert cache.read_bytes() == before
     assert list(cache.parent.iterdir()) == [cache]
-
-
-def test_cache_write_rechecks_private_visibility(private_store, monkeypatch):
-    import verify_matrix
-    verify_matrix._cache_path("gh-api-cache.json")
-    storage_visibility_fixture(Path.home() / ".pii-guard/visibility.json", {})
-    with pytest.raises(storage.StorageError):
-        verify_matrix._write_cache("gh-api-cache.json", matrix_cache_fixture())
-    assert not (private_store[0] / "cache").exists()
 
 
 def test_network_matrix_requires_storage_before_network_access(monkeypatch):

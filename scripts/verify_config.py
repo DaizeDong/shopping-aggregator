@@ -28,7 +28,7 @@ from config_schema import (forwarder_table_problems, live_run_problems, load_str
                            loads_strict, profile_id_of, profile_problems, purchase_problems,
                            rate_table_ok)
 from config_selection import selection_checks  # noqa: E402
-from evaluation_store import StorageError, prove_private  # noqa: E402
+from evaluation_store import StorageError, companion_repository  # noqa: E402
 
 PASS, FAIL = "PASS", "FAIL"
 LOAD_ERRORS = (OSError, ValueError, RecursionError)
@@ -168,12 +168,13 @@ def doctor(cfg, skill, check):
     for name in ("data", "tools", "secrets"):
         check(name + "/ dir present", os.path.isdir(os.path.join(cfg, name)))
     # A profile names where a person lives and what they pay for. The root has to be in a versioned
-    # repository whose every remote is PRIVATE before it may hold one (CONFIG.md, Storage).
+    # companion repository of its own, outside this public tool tree (CONFIG.md, Storage). This is
+    # a path check; remote visibility is enforced at commit time, not here.
     try:
-        prove_private(cfg)
-        check("root is in a versioned PRIVATE repository", True)
+        companion_repository(cfg)
+        check("root is in a separate versioned companion repository", True)
     except StorageError as exc:
-        check("root is in a versioned PRIVATE repository", False, str(exc))
+        check("root is in a separate versioned companion repository", False, str(exc))
 
     registry = os.path.join(cfg, "registry.json")
     check("registry.json present", os.path.isfile(registry))

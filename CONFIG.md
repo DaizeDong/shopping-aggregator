@@ -14,10 +14,9 @@ command-line defaults or free-text notes: those copies bypass validation and per
 
 ## Layout
 
-An existing verified PRIVATE root may contain a `.companion` file with the single
+An existing PRIVATE root may contain a `.companion` file with the single
 line `shopping-aggregator` when literal Git configuration cannot establish its
-identity. This declared marker supports discovery; it does not replace PRIVATE
-visibility or runtime write-admission checks.
+identity. This declared marker supports discovery only.
 
 ```
 <root>/                          one person
@@ -149,7 +148,7 @@ python scripts/ledger.py check --config-dir <root>
 
 In PowerShell, pipe the row: `'{"domain": ...}' | python scripts/ledger.py append live-runs --row-file - --config-dir <root>`.
 
-The writer stamps `ts` when the row has none (a `ts` that is present must be an ISO-8601 date or date-time), validates the row before opening anything and refuses even what the checker only warns about, proves the destination is in a versioned PRIVATE repository, and replaces the file atomically under a lock kept in that repository's git directory, so concurrent appends cannot drop each other's rows. It escapes the three characters that some readers treat as line breaks (U+2028, U+2029, U+0085), so every row stays one line. A row that is invalid is fixed and appended again; any other refusal is reported in the reply, and nothing is written anywhere else (CONSTITUTION II.5). `check` reports invalid rows and exits 0 when no root is initialized at all.
+The writer stamps `ts` when the row has none (a `ts` that is present must be an ISO-8601 date or date-time), validates the row before opening anything and refuses even what the checker only warns about, checks that the destination is inside the root's `data/` in a separate versioned companion outside this tool repository (path checks only, with no runtime visibility proof), and replaces the file atomically under a lock kept in that repository's git directory, so concurrent appends cannot drop each other's rows. It escapes the three characters that some readers treat as line breaks (U+2028, U+2029, U+0085), so every row stays one line. A row that is invalid is fixed and appended again; any other refusal is reported in the reply, and nothing is written anywhere else (CONSTITUTION II.5). `check` reports invalid rows and exits 0 when no root is initialized at all.
 
 `data/metrics/live-runs.jsonl` requires `ts` (ISO-8601 date or date-time), `domain`, `source`, `outcome`, `detail` (non-empty strings) and `user_correction` (null or a string). `outcome` is one of `created`, `verified`, `unverifiable`, `dead`, `fallback_used`, `price_mismatch`, `coupon_fake`, `coverage_gap`: the writer refuses any other value, and `verify_matrix` only warns about one in an old row. A `coverage_gap` row requires a `gap_reason` from the [refresh protocol](skills/shopping-aggregator/reference/refresh-protocol.md#feedback-loop). Example: [`live-runs.jsonl.example`](skills/shopping-aggregator/metrics/live-runs.jsonl.example).
 
@@ -159,7 +158,7 @@ When a field becomes required after rows were written without it, the old rows a
 
 ## Storage, secrets and backups
 
-A profile says where a person lives and what they pay for, so the doctor requires the root to sit in a versioned repository whose every fetch and push remote is PRIVATE, proven against the visibility receipt at `~/.pii-guard/visibility.json` (format in `guards/README.md`; it must be under 30 days old). A root that cannot be proven private is NOT READY even when every field is right. The public tool repository never holds a real root: `.dataclass.json` seals the config-root names (`profile.json`, `registry.json`, `people/`, `data/`, `reference/`, `secrets/`, `row.json`) at this repository's root and declares a real-file twin next to every example, and `guards/tools/data_boundary.py` blocks them on commit, push and CI. Below the root, `verify_matrix` (CONFIGROOT, run in CI) refuses any tracked file named `profile.json`, `purchases.jsonl`, `row.json` or `forwarder-<name>.json`, and anything under a `people/` directory.
+A profile says where a person lives and what they pay for, so the root belongs in a PRIVATE companion repository. The doctor checks the part a path can show: the root sits in a versioned repository of its own, outside this tool repository; a root that is not is NOT READY even when every field is right. Nothing at runtime queries remote visibility; the commit-time Guards hooks and CI keep real data out of public remotes. The public tool repository never holds a real root: `.dataclass.json` seals the config-root names (`profile.json`, `registry.json`, `people/`, `data/`, `reference/`, `secrets/`, `row.json`) at this repository's root and declares a real-file twin next to every example, and `guards/tools/data_boundary.py` blocks them on commit, push and CI. Below the root, `verify_matrix` (CONFIGROOT, run in CI) refuses any tracked file named `profile.json`, `purchases.jsonl`, `row.json` or `forwarder-<name>.json`, and anything under a `people/` directory.
 
 Generated ignore rules exclude `secrets/*` and credential files from accidental staging, and nothing under `data/`, because the private writer refuses ignored paths; the doctor checks both, probing every path the writers create and every existing file under `data/`. Keep credentials out of version control with a separate backup, or deliberately track selected ones in the PRIVATE companion; an ignore rule does not stop an explicit `git add`. A credential committed there stays in that history, so rotating it means replacing the credential itself. No tool here echoes a secret value.
 
@@ -171,7 +170,7 @@ python scripts/init_config.py        # reuses the companion it finds; without on
 cd <root> && git init && git remote add origin <PRIVATE repository URL>
 ```
 
-Name the private repository `shopping-aggregator-config` and keep it next to this repository so the resolver finds it by itself; otherwise select it with `SHOPPING_AGGREGATOR_CONFIG`. Refresh the visibility receipt so it lists that repository as PRIVATE. Fill `profile.json` (including `purchase_defaults.subscriptions`) and `registry.json` from the examples, commit them in the companion, and run `python scripts/verify_config.py` until it prints `CONFIG CONFORMS`. `init_config.py` writes the same bytes on every run and skips files that exist unless `--force` is given. Conformance is not proof that a session, an MCP server or a retailer works; those still need a functional read.
+Name the private repository `shopping-aggregator-config` and keep it next to this repository so the resolver finds it by itself; otherwise select it with `SHOPPING_AGGREGATOR_CONFIG`. Fill `profile.json` (including `purchase_defaults.subscriptions`) and `registry.json` from the examples, commit them in the companion, and run `python scripts/verify_config.py` until it prints `CONFIG CONFORMS`. `init_config.py` writes the same bytes on every run and skips files that exist unless `--force` is given. Conformance is not proof that a session, an MCP server or a retailer works; those still need a functional read.
 
 ## Switching between people
 

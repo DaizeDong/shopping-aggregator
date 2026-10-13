@@ -220,7 +220,7 @@ def main():
 
     print("\nNext:")
     print("  1) Make the root a git repository whose only remotes are PRIVATE, before adding real values")
-    print("     (CONFIG.md, First-time setup), and keep ~/.pii-guard/visibility.json current.")
+    print("     (CONFIG.md, First-time setup).")
     print("  2) Fill profile.json: profile_id, label, market, ship_to, purchase_defaults.subscriptions.")
     shown = Path(out).as_posix()
     print("  3) Only for a root the resolver does not find by itself, select it in each shell:")

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- The runtime PRIVATE visibility proof before every ledger append, evaluation read or write and matrix cache write (receipt lookup, effective remote routes, `git rev-parse HEAD`, `git check-ignore` and storage-contract admission on each call). `tools/evaluation_store.py` and the config doctor now use path checks only: the data directory must resolve and exist in a separate versioned companion outside this tool repository, and destinations must stay inside it, outside Git metadata and nested repositories, with no filesystem alias. Unresolved storage still fails with initialization guidance and there is no in-repository fallback. Commit-time Guards hooks and CI are unchanged. Proof-only tests and the `storage_visibility_fixture` generator are gone.
+
 ### Configuration and storage contracts
 
 - Per-person cache and selected evaluation retention follow the same per-kind rules as the companion root.

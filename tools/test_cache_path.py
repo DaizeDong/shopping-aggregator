@@ -10,7 +10,7 @@ companion" produced the same output.
 
 So the property under test is stated both ways:
 
-  1. With a verified private companion, the cache lives under <companion>/data/cache/.
+  1. With a resolved companion, the cache lives under <companion>/data/cache/.
   2. With no companion, resolving a cache path fails before any directory is created.
 
 Run: python test_cache_path.py     (also collectable by pytest)
@@ -22,7 +22,7 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_fixtures import storage_repository_fixture, storage_visibility_fixture  # noqa: E402
+from make_fixtures import storage_repository_fixture  # noqa: E402
 import verify_matrix  # noqa: E402
 import evaluation_store  # noqa: E402
 
@@ -37,7 +37,6 @@ def _inside_repo(path):
 def private_cache(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json")
     data, _ = storage_repository_fixture(tmp_path / "companion")
     monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(data))
     return data
@@ -50,9 +49,11 @@ def test_companion_cache_lives_outside_the_repo(private_cache):
 
 
 def test_no_companion_means_no_cache_path(tmp_path, monkeypatch):
-    # HOME moves to an empty directory, so no visibility receipt exists. That keeps the test true on
-    # a machine whose real companion sits next to this checkout: whatever the resolver finds, it
-    # cannot be proven PRIVATE, and nothing may be created.
+    # Sibling discovery is switched off so the test stays true on a machine whose real companion
+    # sits next to this checkout: with nothing selected and nothing beside it, no path resolves and
+    # nothing may be created.
+    monkeypatch.setattr(evaluation_store._guards_module("datadir"), "_convention_roots",
+                        lambda *args, **kwargs: [])
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
     missing = tmp_path / "missing/data"

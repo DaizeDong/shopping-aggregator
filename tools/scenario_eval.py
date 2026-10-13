@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Offline evaluation plan; explicit --judge uses llmcall and PRIVATE storage.
+"""Offline evaluation plan; explicit --judge uses llmcall and the companion data directory.
 
 No model is imported or invoked in plan/list/show mode. A live evaluation is
 optional external validation, separate from deterministic packaging checks.
@@ -201,7 +201,7 @@ def evaluate(scenario_id, transcript_path, *, caller=None):
               "input_hashes": hashes, "prompt_sha256": digest(prompt.encode("utf-8")),
               "policy": POLICY, "backend": None,
               "independence": {"status": "not_established", "reason": "One invocation; aliases do not prove independent judges"},
-              "storage": {"repository": store.identity, "visibility": "PRIVATE", "checked_at": store.checked_at},
+              "storage": {"repository": store.repository.name},
               "started_at": datetime.now(timezone.utc).isoformat(), "result_path": str(directory / "result.json")}
     write_result(store, directory, result)
     try:

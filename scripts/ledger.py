@@ -18,7 +18,8 @@ Reading degrades; writing fails closed. A row is validated against tools/config_
 anything is opened, and the writer refuses even what the checker only warns about. A purchase row
 must name the selected root's profile_id itself: the writer never fills it in, because a default
 would file one person's order under whichever root happened to be selected. Writes go through
-tools/evaluation_store.py, which proves the destination is a versioned PRIVATE repository and
+tools/evaluation_store.py, which keeps the destination inside the root's data/ in a separate
+versioned companion outside this repository (path checks only, no runtime visibility proof) and
 replaces the file atomically, under a lock kept in that repository's git directory, so concurrent
 appends cannot drop each other's rows. Rows are read and written as UTF-8 whatever the console's
 code page, and the three characters that str.splitlines() treats as line breaks are escaped, so

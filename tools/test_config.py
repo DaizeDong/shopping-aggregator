@@ -1,8 +1,8 @@
 """Config contract tests (CONFIG.md): init, doctor, switching between people, ledgers.
 
 Every root here is generated from tools/make_fixtures.py; nothing reads the operator's real
-companion. Each test runs under a temporary HOME with a generated visibility receipt, so the
-PRIVATE proof is real but only ever sees invented repositories. Every command names its root
+companion. Each test runs under a temporary HOME and only ever sees invented repositories; runtime
+writes carry no PRIVATE visibility proof, so no receipt is generated. Every command names its root
 explicitly, because the resolver's sibling step would otherwise find whatever companion sits next
 to this checkout.
 """
@@ -12,6 +12,7 @@ import importlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -23,7 +24,7 @@ sys.path.insert(0, str(TOOLS))
 from config_schema import (forwarder_table_problems, live_run_problems, loads_strict,  # noqa: E402
                            profile_problems, purchase_problems)
 from make_fixtures import (forwarder_table_example, profile_example, purchase_examples,  # noqa: E402
-                           registry_example, storage_repository_fixture, storage_visibility_fixture)
+                           registry_example, storage_repository_fixture)
 
 PROXY_VARS = ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
               "http_proxy", "https_proxy", "all_proxy", "no_proxy")
@@ -50,11 +51,6 @@ def home(tmp_path, monkeypatch):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json", {
-        "example-owner/example-private": "PRIVATE",
-        "example-owner/example-private-b": "PRIVATE",
-        "example-owner/example-public": "PUBLIC",
-    })
     return tmp_path
 
 
@@ -177,10 +173,11 @@ def test_all_refuses_two_roots_with_one_profile_id(home):
     assert code == 1 and "share one profile_id" in output
 
 
-def test_public_root_cannot_hold_a_profile(home):
-    root = make_root(home / "public", "example-owner/example-public", profile_example())
+def test_unversioned_root_cannot_hold_a_profile(home):
+    root = make_root(home / "plain", "example-owner/example-private", profile_example())
+    shutil.rmtree(root / ".git", onerror=lambda function, path, _: (os.chmod(path, 0o700), function(path)))
     code, output = run("verify_config.py", "--config-dir", str(root))
-    assert code == 1 and "versioned PRIVATE repository" in output
+    assert code == 1 and "[FAIL] root is in a separate versioned companion repository" in output
 
 
 def test_doctor_reports_paths_never_values(home):
@@ -316,9 +313,10 @@ def test_purchase_rows_must_name_their_profile(home):
     assert not (root / "data" / "purchases.jsonl").exists()
 
 
-def test_ledger_refuses_invalid_rows_and_public_roots(home):
+def test_ledger_refuses_invalid_rows_and_unversioned_roots(home):
     private = make_root(home / "private", "example-owner/example-private", profile_example())
-    public = make_root(home / "public", "example-owner/example-public", profile_example())
+    public = make_root(home / "plain", "example-owner/example-private", profile_example())
+    shutil.rmtree(public / ".git", onerror=lambda function, path, _: (os.chmod(path, 0o700), function(path)))
     gap = gap_row()
     del gap["gap_reason"]
     code, output = run("ledger.py", "append", "live-runs", "--row", json.dumps(gap), "--config-dir", str(private))

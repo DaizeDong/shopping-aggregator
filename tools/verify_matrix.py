@@ -1002,7 +1002,7 @@ def run_checks():
 
 
 def _cache_path(name):
-    """Resolve a cache destination only after verifying its PRIVATE repository."""
+    """Resolve a cache destination in the companion data directory (path checks only, no fallback)."""
     from evaluation_store import prepare_store
     return prepare_store().output_path(Path("cache") / name)
 

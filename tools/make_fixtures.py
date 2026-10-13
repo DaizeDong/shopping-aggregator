@@ -224,18 +224,6 @@ def evaluation_fixture():
     return {"synthetic": True, "transcript": "Synthetic evidence: the example run records its checks.\n"}
 
 
-def storage_visibility_fixture(path, states=None, refreshed=None):
-    """Write a local receipt for invented repositories, with no visibility lookup."""
-    from datetime import datetime, timezone
-    from pathlib import Path
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    receipt = {"_refreshed": refreshed or datetime.now(timezone.utc).isoformat(),
-               **(states if states is not None else {"example-owner/example-private": "PRIVATE"})}
-    path.write_text(json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
-    return path
-
-
 def person_retention_cases():
     """Generated parallel roots; never use a real buyer or purchase."""
     return [

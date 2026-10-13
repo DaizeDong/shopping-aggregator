@@ -146,7 +146,7 @@ activity, see `.github/workflows/heartbeat.yml`.
 
 Run `python tools/verify_matrix.py --no-net` for local artifact and DATA checks.
 The matrix also implements REPO, STAR, GHACTIVE, COVER, CHURN and DELETE checks;
-network mode requires verified PRIVATE storage for its observations. Baseline-dependent
+network mode requires an initialized companion data directory for its observations. Baseline-dependent
 checks report when the selected Git baseline is unavailable. Read the script's current
 check list rather than relying on a fixed count in this document.
 

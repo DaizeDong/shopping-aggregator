@@ -1,4 +1,10 @@
-"""Native Git controls for the PRIVATE storage boundary, using generated repositories."""
+"""Path-only controls for the companion storage boundary, using generated repositories.
+
+Runtime writes carry no PRIVATE visibility proof: no receipt, no remote lookup and no git
+subprocess. These tests pin what is left: resolution with no fallback, a separate versioned
+companion outside the tool tree, and destinations that stay inside the data directory, outside
+Git metadata and free of filesystem aliases.
+"""
 from pathlib import Path
 import json
 import os
@@ -9,39 +15,25 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import evaluation_store as storage
-from make_fixtures import (evaluation_fixture, storage_repository_fixture,
-                           storage_visibility_fixture)
+from make_fixtures import evaluation_fixture, storage_repository_fixture
 
 
 @pytest.fixture
 def storage_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
-    receipt = storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json", {
-        "example-owner/example-private": "PRIVATE",
-        "example-owner/example-public": "PUBLIC",
-    })
-    return receipt
+    for name in ("SHOPPING_AGGREGATOR_CONFIG", "SHOPPING_AGGREGATOR_CONFIG_DIR"):
+        monkeypatch.delenv(name, raising=False)
+    return tmp_path
 
 
-@pytest.mark.parametrize("destination,selectors,rejected", [
-    ("private", False, False), ("public", False, True), ("public", True, True),
-])
-def test_physical_repository_controls_storage(tmp_path, monkeypatch, storage_environment,
-                                              destination, selectors, rejected):
-    private, _ = storage_repository_fixture(tmp_path / "private")
-    public, _ = storage_repository_fixture(tmp_path / "public", "example-owner/example-public")
-    target = public if destination == "public" else private
-    monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(target))
-    if selectors:
-        monkeypatch.setenv("GIT_DIR", str(private.parent / ".git"))
-        monkeypatch.setenv("GIT_WORK_TREE", str(public.parent))
-    if rejected:
-        with pytest.raises(storage.StorageError):
-            storage.prepare_store()
-    else:
-        assert storage.prepare_store().repository == private.parent
-    assert not (target / "evaluation").exists()
+@pytest.mark.parametrize("identity", ["example-owner/example-private", "example-owner/example-public"])
+def test_remote_visibility_is_not_consulted(tmp_path, monkeypatch, storage_environment, identity):
+    data, _ = storage_repository_fixture(tmp_path / "companion", identity)
+    monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(data))
+    assert not (tmp_path / ".pii-guard").exists()
+    assert storage.prepare_store().repository == data.parent
+    assert not (data / "evaluation").exists()
 
 
 @pytest.fixture
@@ -57,76 +49,48 @@ def test_arbitrary_remote_name_is_supported(tmp_path, monkeypatch, storage_envir
     assert storage.prepare_store().repository == data.parent
 
 
-def test_unborn_repository_is_not_versioned(tmp_path, monkeypatch, storage_environment):
-    data, _ = storage_repository_fixture(tmp_path / "companion", head=False)
+def test_unversioned_directory_is_refused(tmp_path, monkeypatch, storage_environment):
+    data = tmp_path / "plain" / "data"
+    data.mkdir(parents=True)
     monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(data))
     with pytest.raises(storage.StorageError, match="versioned"):
         storage.prepare_store()
 
 
-@pytest.mark.parametrize("route", ["public", "unknown"])
-def test_push_destination_must_also_be_private(prepared, route):
-    store, _ = prepared
-    subprocess.run(["git", "-C", str(store.repository), "remote", "set-url", "--push", "origin",
-                    f"https://github.com/example-owner/example-{route}.git"], check=True)
+def test_missing_data_directory_raises_with_initialization_guidance(tmp_path, monkeypatch,
+                                                                    storage_environment):
+    with pytest.raises(storage.StorageError, match="Uninitialized"):
+        storage.prepare_store(base=tmp_path / "absent")
+    assert not (tmp_path / "absent").exists()
+
+
+def test_data_inside_the_tool_repository_is_refused(tmp_path, storage_environment):
     with pytest.raises(storage.StorageError):
-        store.output_path("cache/result.json")
-    assert not (store.base / "cache").exists()
+        storage.prepare_store(base=storage.TOOL_ROOT / "tools")
 
 
-def test_effective_rewrite_cannot_hide_public_physical_remote(tmp_path, monkeypatch, storage_environment):
-    data, _ = storage_repository_fixture(tmp_path / "public", "example-owner/example-public")
-    monkeypatch.setenv("SHOPPING_AGGREGATOR_DATA_DIR", str(data))
-    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
-    monkeypatch.setenv("GIT_CONFIG_KEY_0", "url.https://github.com/example-owner/example-private.git.insteadOf")
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "https://github.com/example-owner/example-public.git")
-    with pytest.raises(storage.StorageError):
-        storage.prepare_store()
-
-
-@pytest.mark.parametrize("operation", ["transcript", "output"])
-def test_existing_store_rechecks_receipt(prepared, storage_environment, operation):
+def test_store_runs_no_subprocess(prepared, monkeypatch):
     store, transcript = prepared
-    storage_visibility_fixture(storage_environment, {"example-owner/example-private": "PUBLIC"})
-    with pytest.raises(storage.StorageError):
-        if operation == "transcript":
-            store.transcript(transcript)
-        else:
-            store.write_bytes("cache/result.json", evaluation_fixture()["transcript"].encode())
-    assert not (store.base / "cache").exists()
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("runtime write ran a process"))
+    monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: pytest.fail("runtime write ran a process"))
+    assert store.output_path("cache/result.json") == store.base / "cache/result.json"
+    assert store.transcript(transcript) == transcript.resolve()
+    store.write_bytes("cache/result.json", b"synthetic")
+    assert (store.base / "cache/result.json").read_bytes() == b"synthetic"
 
 
-@pytest.mark.parametrize("receipt_kind", ["missing", "damaged", "stale", "future"])
-def test_unverifiable_receipt_fails_closed(prepared, storage_environment, receipt_kind):
-    from datetime import datetime, timedelta, timezone
+def test_destination_cannot_escape_the_data_directory(prepared, tmp_path):
     store, _ = prepared
-    if receipt_kind == "missing":
-        storage_environment.unlink()
-    elif receipt_kind == "damaged":
-        storage_environment.write_text("{", encoding="utf-8")
-    else:
-        days = -365 if receipt_kind == "stale" else 2
-        refreshed = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
-        storage_visibility_fixture(storage_environment, refreshed=refreshed)
-    with pytest.raises(storage.StorageError):
-        store.output_path("cache/result.json")
+    with pytest.raises(storage.StorageError, match="escapes"):
+        store.output_path("../outside.json")
+    with pytest.raises(storage.StorageError, match="escapes"):
+        store.transcript(tmp_path / "elsewhere.txt")
 
 
-@pytest.mark.parametrize("target", ["data/", "data/cache/", "data/input.txt"])
-def test_ignored_runtime_paths_are_rejected(prepared, target):
-    store, transcript = prepared
-    (store.repository / ".gitignore").write_text(target + "\n", encoding="utf-8")
-    with pytest.raises(storage.StorageError, match="version control"):
-        if target.endswith("input.txt"):
-            store.transcript(transcript)
-        else:
-            store.output_path("cache/result.json")
-
-
-def test_nested_private_repository_cannot_replace_store_authority(prepared):
+def test_nested_repository_is_refused(prepared):
     store, _ = prepared
     nested, _ = storage_repository_fixture(store.base / "cache")
-    with pytest.raises(storage.StorageError, match="changed"):
+    with pytest.raises(storage.StorageError, match="nested"):
         store.output_path("cache/result.json")
     assert not (nested.parent / "result.json").exists()
 
@@ -137,22 +101,6 @@ def test_hardlink_input_is_rejected(prepared, tmp_path):
     os.link(transcript, alias)
     with pytest.raises(storage.StorageError, match="alias"):
         store.transcript(transcript)
-
-
-def test_atomic_write_rechecks_before_replace(prepared, storage_environment):
-    store, _ = prepared
-    path = store.base / "cache/result.json"
-    path.parent.mkdir()
-    before = evaluation_fixture()["transcript"].encode()
-    path.write_bytes(before)
-    with pytest.raises(storage.StorageError):
-        with store.atomic_writer("cache/result.json") as stream:
-            json.dump(evaluation_fixture(), stream)
-            storage_visibility_fixture(storage_environment, {"example-owner/example-private": "PUBLIC"})
-    assert path.read_bytes() == before
-    pending = list((store.base / '.write-staging').iterdir())
-    assert len(pending) == 1
-    assert json.loads(pending[0].read_text(encoding='utf-8')) == evaluation_fixture()
 
 
 def test_atomic_writer_refuses_replaced_staging_without_deleting_it(prepared, tmp_path, monkeypatch):
@@ -180,35 +128,17 @@ def test_atomic_writer_refuses_replaced_staging_without_deleting_it(prepared, tm
     assert replaced[0].read_bytes() == payload
 
 
-def test_private_proof_does_not_launch_a_transport(prepared, monkeypatch):
+def test_failed_write_preserves_old_bytes(prepared):
     store, _ = prepared
-    original = subprocess.run
-    def git_only(args, *positional, **kwargs):
-        assert Path(args[0]).name.lower() in {"git", "git.exe"}
-        return original(args, *positional, **kwargs)
-    monkeypatch.setattr(subprocess, "run", git_only)
-    assert store.output_path("cache/result.json") == store.base / "cache/result.json"
-
-
-def test_writer_refuses_undeclared_output_before_creating_parent(prepared):
-    store, _ = prepared
-    with pytest.raises(storage.StorageError, match='owner'):
-        store.write_bytes('unowned/synthetic.bin', b'synthetic')
-    assert not (store.base / 'unowned').exists()
-
-
-def test_writer_refuses_retired_artifact_before_creating_parent(prepared, tmp_path, monkeypatch):
-    store, _ = prepared
-    storage._guards_module('storage_contract')
-    source = tmp_path / 'synthetic-source'
-    source.mkdir()
-    contract = json.loads((storage.TOOL_ROOT / 'storage.contract.json').read_text(encoding='utf-8'))
-    next(row for row in contract['artifacts'] if row['artifact_id'] == 'activity-cache')['retention_rule']['class'] = 'retired'
-    (source / 'storage.contract.json').write_text(json.dumps(contract), encoding='utf-8')
-    monkeypatch.setattr(storage, 'TOOL_ROOT', source)
-    with pytest.raises(storage.StorageError, match='retired'):
-        store.write_bytes('cache/retired.json', b'synthetic')
-    assert not (store.base / 'cache').exists()
+    path = store.base / "cache/result.json"
+    path.parent.mkdir()
+    before = evaluation_fixture()["transcript"].encode()
+    path.write_bytes(before)
+    with pytest.raises(RuntimeError):
+        with store.atomic_writer("cache/result.json") as stream:
+            json.dump(evaluation_fixture(), stream)
+            raise RuntimeError("synthetic failure")
+    assert path.read_bytes() == before
 
 
 def test_repository_root_storage_cannot_write_git_metadata(prepared, monkeypatch):

@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_fixtures import (matrix_observation_fixture, matrix_package_fixture,
-                            storage_repository_fixture, storage_visibility_fixture,
+                            storage_repository_fixture,
                             activity_cache_retention_case)
 
 
@@ -56,7 +56,6 @@ def test_cold_and_warm_cache_have_same_severity(tmp_path, verdict, exit_code):
     subprocess.run(["git", "init", "-q", str(package)], env=environment, check=True)
     subprocess.run(["git", "-C", str(package), "add", "."], env=environment, check=True)
     data, _ = storage_repository_fixture(tmp_path / "companion")
-    storage_visibility_fixture(tmp_path / ".pii-guard/visibility.json")
     environment["SHOPPING_AGGREGATOR_DATA_DIR"] = str(data)
     results = []
     for temperature in ("cold", "warm"):
