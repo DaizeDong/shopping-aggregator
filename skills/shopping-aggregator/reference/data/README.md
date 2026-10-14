@@ -65,9 +65,8 @@ tax, baggage or refund terms cannot establish a lowest total.
 - **WARN**: age past **1x** the declared cadence · a numeric-looking `value`
   (rate/amount/quota) with no `unit` · `evidence_grade` outside `{E1,E2,E3}`.
 
-Freshness logic lives in `verify_matrix.check_data_freshness()`, kept a pure function so
-`tools/test_data_freshness.py` can exercise it without burning GitHub API quota on what is purely
-local arithmetic.
+Freshness logic lives in `verify_matrix.check_data_freshness()`, a pure function of local
+arithmetic that needs no GitHub API quota.
 
 ## Volatility note
 

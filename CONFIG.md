@@ -2,8 +2,8 @@
 
 This document defines each buyer’s configuration: market, destination, memberships,
 store credit, checkout permissions and purchase defaults. `tools/config_schema.py`
-implements the schema shared by `scripts/verify_config.py`, `scripts/ledger.py`,
-`tools/verify_matrix.py` and the tests.
+implements the schema shared by `scripts/verify_config.py`, `scripts/ledger.py`
+and `tools/verify_matrix.py`.
 
 A **config root** contains one person’s settings and run data in a separate,
 versioned PRIVATE companion. The public repository contains the schema, tooling and
