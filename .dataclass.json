@@ -22,9 +22,9 @@
     "skills/shopping-aggregator/reference/scenario-eval/evaluation-fixture.json",
     "skills/shopping-aggregator/reference/scenario-eval/flight-quote-fixture.json",
     "skills/shopping-aggregator/metrics/live-runs.jsonl.example",
-    "skills/shopping-aggregator/config/profile.example.json",
-    "skills/shopping-aggregator/config/forwarder-table.example.json",
-    "skills/shopping-aggregator/config/registry.example.json",
+    "skills/shopping-aggregator/config/profile.json.example",
+    "skills/shopping-aggregator/config/forwarder-table.json.example",
+    "skills/shopping-aggregator/config/registry.json.example",
     "skills/shopping-aggregator/config/purchases.jsonl.example"
   ],
   "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by the fleet_guards companion resolver or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl, purchases.jsonl, evaluation/runs/<run-id>/ and cache/",

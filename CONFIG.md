@@ -105,11 +105,11 @@ A `forwarders[]` entry has `name` (kebab-case, required), `zone`, `duty_inclusiv
 | `notes` | string | no | Surcharges, transit time, liability |
 | `source`, `verified_date` | string, `YYYY-MM-DD` | yes | Where the table came from and when it was last confirmed |
 
-The doctor follows `rate_table` only when it is a plain relative path that stays inside the root, and fails when the file is missing, malformed, or disagrees with its profile entry. Example: [`forwarder-table.example.json`](skills/shopping-aggregator/config/forwarder-table.example.json).
+The doctor follows `rate_table` only when it is a plain relative path that stays inside the root, and fails when the file is missing, malformed, or disagrees with its profile entry. Example: [`forwarder-table.json.example`](skills/shopping-aggregator/config/forwarder-table.json.example).
 
 `purchase_defaults` holds only the answers the guardrails leave to the buyer. Stacking every eligible discount, clipping coupons, checking each discount line on the final page and asking before any other commitment are guardrail #16 and CONSTITUTION V.4, the same for every buyer, so the schema has no field that could turn them off. An instruction in the current conversation overrides a default for that run only and does not edit the file.
 
-The full example, with synthetic values only, is [`skills/shopping-aggregator/config/profile.example.json`](skills/shopping-aggregator/config/profile.example.json).
+The full example, with synthetic values only, is [`skills/shopping-aggregator/config/profile.json.example`](skills/shopping-aggregator/config/profile.json.example).
 
 ### What a profile never holds
 
@@ -132,7 +132,7 @@ A balance or a date of birth written as plain words cannot be recognised by its 
 }
 ```
 
-`schema_version` is the integer `1`, `skill` must equal the plugin name and `tools` is required even when empty. Each tool needs a kebab-case `slug` and a Boolean `installed`; `transport` is one of `stdio`, `http`, `sse`, `rest`, `python-lib`. A tool that needs credentials gets `tools/<slug>/env.template` (and `claude.json.template` for an MCP server) with `<UPPER_SNAKE>` placeholders, and its real values go to `secrets/<slug>.env`, UTF-8 without BOM. Example: [`skills/shopping-aggregator/config/registry.example.json`](skills/shopping-aggregator/config/registry.example.json).
+`schema_version` is the integer `1`, `skill` must equal the plugin name and `tools` is required even when empty. Each tool needs a kebab-case `slug` and a Boolean `installed`; `transport` is one of `stdio`, `http`, `sse`, `rest`, `python-lib`. A tool that needs credentials gets `tools/<slug>/env.template` (and `claude.json.template` for an MCP server) with `<UPPER_SNAKE>` placeholders, and its real values go to `secrets/<slug>.env`, UTF-8 without BOM. Example: [`skills/shopping-aggregator/config/registry.json.example`](skills/shopping-aggregator/config/registry.json.example).
 
 ## Ledgers
 

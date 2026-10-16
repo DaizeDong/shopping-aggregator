@@ -431,10 +431,10 @@ def forwarder_table_example(name="example-forwarder"):
 def render_config_examples():
     """Basename -> text for every config example, in a fixed order."""
     return {
-        "profile.example.json": json.dumps(profile_example(), indent=2, ensure_ascii=False) + "\n",
-        "forwarder-table.example.json": json.dumps(forwarder_table_example(), indent=2,
+        "profile.json.example": json.dumps(profile_example(), indent=2, ensure_ascii=False) + "\n",
+        "forwarder-table.json.example": json.dumps(forwarder_table_example(), indent=2,
                                                    ensure_ascii=False) + "\n",
-        "registry.example.json": json.dumps(registry_example(), indent=2, ensure_ascii=False) + "\n",
+        "registry.json.example": json.dumps(registry_example(), indent=2, ensure_ascii=False) + "\n",
         "purchases.jsonl.example": "".join(json.dumps(row, ensure_ascii=False) + "\n"
                                            for row in purchase_examples()),
     }

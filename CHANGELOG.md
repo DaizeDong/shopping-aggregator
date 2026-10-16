@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The config examples are now `profile.json.example`, `registry.json.example` and `forwarder-table.json.example` (were `*.example.json`), the one `<file>.example` spelling the fleet_guards schema check accepts.
+
 ### Removed
 
 - The `guards` and `style` submodules and the pii-guard, dash-guard, doc-contract, load-budget, fleet-sync and gate workflows. The `.githooks/` shims run the privacy checks and the dash check (on added lines) from the local fleet-guards and fleet-style checkouts named by `git config fleet.guards` and `fleet.style`, and block while either is unset. `scripts/config_runtime.py`, `tools/evaluation_store.py`, `tools/refresh_priority.py` and `tools/verify_matrix.py` resolve storage through the installed `fleet_guards.runtime.companion_resolver`; the gitlink and pinned-bytes checks on the guards submodule are gone. `tools/verify_matrix.py` is now run by hand, and a clone no longer needs `--recurse-submodules`.
