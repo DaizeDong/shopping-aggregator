@@ -41,7 +41,7 @@ def resolve_base():
     problem = environment_problem()
     if problem:
         raise StorageError(problem)
-    return _resolver().resolve_data_dir(SKILL, create=False)
+    return _resolver().resolve_data_dir(SKILL)
 
 
 def _plain_path(path):

@@ -2,7 +2,7 @@
 """Doctor for a shopping-aggregator config root: layout, registry, profile, tables and ledgers.
 
 Uses the emitted consumer identity and the fleet_guards resolver, regardless of caller cwd.
-Explicit --config-dir, SHOPPING_AGGREGATOR_CONFIG and _CONFIG_DIR selections take precedence and
+Explicit --config-dir and SHOPPING_AGGREGATOR_CONFIG selections take precedence and
 never fall through. Prints exactly one "resolved via <how> -> <path>" line for the selected root.
 
 Exit 0: the root conforms to CONFIG.md (layout, registry, a filled profile, valid tables and
@@ -257,7 +257,7 @@ def main():
         return 1
     skill = runtime.skill
     print("Config doctor for skill '%s'" % skill)
-    print("Discovery env var: %s (and %s_DIR)" % (env_var(skill), env_var(skill)))
+    print("Discovery env var: %s" % env_var(skill))
     if not cfg:
         print("  [%s] config located -> none found." % FAIL)
         print("       Set %s=<dir> or run: python scripts/init_config.py" % env_var(skill))

@@ -11,14 +11,12 @@
     "discovery_document": "CONFIG.md",
     "environment": "SHOPPING_AGGREGATOR_CONFIG",
     "aliases": [
-      "SHOPPING_AGGREGATOR_CONFIG_DIR",
       "SHOPPING_AGGREGATOR_DATA_DIR"
     ],
     "precedence": [
       "Explicit command root and environment must select the same root",
       "SHOPPING_AGGREGATOR_DATA_DIR must equal selected root data/",
       "SHOPPING_AGGREGATOR_CONFIG",
-      "SHOPPING_AGGREGATOR_CONFIG_DIR",
       "Sibling shopping-aggregator-config"
     ],
     "required_fields": [

@@ -87,7 +87,7 @@ python scripts/init_config.py        # 找到伴生仓；没有时用 --out <dir
 python scripts/verify_config.py      # 体检：打印选中的配置根；profile 没填完就报 NOT READY
 ```
 
-查找顺序：先看 `--config-dir`（初始化时是 `--out`），再看 `$SHOPPING_AGGREGATOR_CONFIG`（别名 `$SHOPPING_AGGREGATOR_CONFIG_DIR`），最后按 `fleet_guards` 解析器的顺序找，依次是 `$SHOPPING_AGGREGATOR_DATA_DIR`、本仓旁边的 `shopping-aggregator-config/`。主目录下没有默认位置。如果还留着 `SHOPPING_AGGREGATOR_DATA_DIR`，它必须正好指向选中配置根的 `data/`，否则体检不通过。配置根必须先放进有版本管理的私有仓，才能写入真实信息。
+查找顺序：先看 `--config-dir`（初始化时是 `--out`），再看 `$SHOPPING_AGGREGATOR_CONFIG`，最后按 `fleet_guards` 解析器的顺序找，依次是 `$SHOPPING_AGGREGATOR_DATA_DIR`、本仓旁边的 `shopping-aggregator-config/`。主目录下没有默认位置。如果还留着 `SHOPPING_AGGREGATOR_DATA_DIR`，它必须正好指向选中配置根的 `data/`，否则体检不通过。配置根必须先放进有版本管理的私有仓，才能写入真实信息。
 
 切换到另一个人：把 `SHOPPING_AGGREGATOR_CONFIG` 指向这个人的配置根，或者把对方放在 `<伴生仓>/people/<id>/` 下再选中这个目录。对方的 profile、购买记录和观测记录会一起切过去，每份报告都会写明用的是哪个 `profile_id`。`--config-dir` 只对它所在的那一条 `scripts/` 命令生效，`tools/` 下的命令只认环境变量。完全没有配置也能比价，Step 1 会照旧在对话里逐项询问，只是不会替你点下单，最后一步交给你自己。
 

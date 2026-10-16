@@ -18,8 +18,8 @@ from pathlib import Path
 SKILL = "shopping-aggregator"
 PREFIX = "SHOPPING_AGGREGATOR"
 DATA_DIR = PREFIX + "_DATA_DIR"
-CONFIG_VARIABLES = (PREFIX + "_CONFIG", PREFIX + "_CONFIG_DIR")
-SELECTION_VARIABLES = (DATA_DIR,) + CONFIG_VARIABLES
+CONFIG = PREFIX + "_CONFIG"
+SELECTION_VARIABLES = (DATA_DIR, CONFIG)
 RESOLVER = "fleet_guards companion resolver"
 
 
@@ -55,12 +55,11 @@ def selection_checks(root, how, resolve_data_dir, environ=None):
                        "unset it or set it to <root>/data; evaluation runs, the cache, refresh_priority "
                        "and verify_matrix follow it"))
     if how == "explicit CLI path":
-        for name in CONFIG_VARIABLES:
-            value = environ.get(name)
-            if value is not None and value.strip():
-                checks.append(("%s agrees with --config-dir" % name, same_path(value, root),
-                               "the tools that follow the environment would use another root; "
-                               "unset it or point it here"))
+        value = environ.get(CONFIG)
+        if value is not None and value.strip():
+            checks.append(("%s agrees with --config-dir" % CONFIG, same_path(value, root),
+                           "the tools that follow the environment would use another root; "
+                           "unset it or point it here"))
     if how == RESOLVER:
         try:
             resolved = resolve_data_dir(SKILL)

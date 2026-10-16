@@ -6,7 +6,7 @@ companion found by the fleet_guards resolver; another person gets their own root
 <companion>/people/<id>/, selected with --out here and with SHOPPING_AGGREGATOR_CONFIG or
 --config-dir everywhere else. CONFIG.md is the contract for every file written here.
 
-Explicit --out, CONFIG and CONFIG_DIR selections take precedence. Without one, reuse an existing
+Explicit --out and CONFIG selections take precedence. Without one, reuse an existing
 companion; when none exists, stop with instructions to create one (no home default). Existing files are
 kept (SKIP) unless --force. The profile skeleton is deliberately incomplete, down to the
 subscription policy: the doctor reports NOT READY until a person fills it, because a profile
