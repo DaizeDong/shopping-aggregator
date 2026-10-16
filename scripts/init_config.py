@@ -2,7 +2,7 @@
 """Initialize a deterministic shopping-aggregator config root outside the tool repo.
 
 A config root is one person's settings plus their run data. The default root is the private
-companion found by the pinned guards resolver; another person gets their own root, by convention
+companion found by the fleet_guards resolver; another person gets their own root, by convention
 <companion>/people/<id>/, selected with --out here and with SHOPPING_AGGREGATOR_CONFIG or
 --config-dir everywhere else. CONFIG.md is the contract for every file written here.
 

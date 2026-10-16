@@ -1,7 +1,7 @@
 """Which config root a run uses, and whether every command lands in the same one.
 
-scripts/ commands take --config-dir; tools/ commands follow only the environment through the pinned
-resolver (guards/tools/datadir.py), in which SHOPPING_AGGREGATOR_DATA_DIR outranks
+scripts/ commands take --config-dir; tools/ commands follow only the environment through the installed
+resolver (fleet_guards.runtime.companion_resolver), in which SHOPPING_AGGREGATOR_DATA_DIR outranks
 SHOPPING_AGGREGATOR_CONFIG. Two rules keep them together, and both come from this one module so the
 doctor, the ledger writer and the tools cannot disagree:
 
@@ -20,7 +20,7 @@ PREFIX = "SHOPPING_AGGREGATOR"
 DATA_DIR = PREFIX + "_DATA_DIR"
 CONFIG_VARIABLES = (PREFIX + "_CONFIG", PREFIX + "_CONFIG_DIR")
 SELECTION_VARIABLES = (DATA_DIR,) + CONFIG_VARIABLES
-RESOLVER = "consumer guards/tools/datadir.py"
+RESOLVER = "fleet_guards companion resolver"
 
 
 def environment_problem(environ=None):

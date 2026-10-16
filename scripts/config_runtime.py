@@ -1,7 +1,5 @@
-"""Bind emitted config commands to their consumer and its pinned guard resolver."""
-import hashlib
+"""Bind emitted config commands to their consumer and the installed fleet_guards resolver."""
 import fnmatch
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -114,37 +112,12 @@ class ConfigRuntime:
         if requested_skill and requested_skill != self.skill:
             raise ConfigError("--skill must match the consuming plugin identity: %s" % self.skill)
 
-        kit = self.consumer / "guards"
-        resolver = kit / "tools/datadir.py"
-        if not (kit / ".git").is_file() or not resolver.is_file():
-            raise ConfigError("Pinned guards resolver missing; run git submodule update --init --recursive guards.")
-        gitlink = _git(self.consumer, "ls-files", "--stage", "--", "guards").split()
-        if len(gitlink) != 4 or gitlink[0] != "160000" or gitlink[2:] != ["0", "guards"]:
-            raise ConfigError("The consumer must track guards as a pinned submodule.")
-        if Path(_git(kit, "rev-parse", "--show-toplevel")).resolve() != kit:
-            raise ConfigError("The guards worktree is not the consumer's pinned kit.")
-        if _git(kit, "rev-parse", "--verify", "HEAD") != gitlink[1]:
-            raise ConfigError("guards HEAD differs from the consumer gitlink; restore the pinned kit.")
-        _git(kit, "ls-files", "--error-unmatch", "--", "tools/datadir.py")
-        pinned_bytes = _git(kit, "cat-file", "blob", gitlink[1] + ":tools/datadir.py", binary=True)
         try:
-            resolver_bytes = resolver.read_bytes()
-        except OSError as exc:
-            raise ConfigError("Cannot read the pinned guards resolver: %s" % exc) from exc
-        if resolver_bytes != pinned_bytes:
-            raise ConfigError("guards resolver bytes differ from the consumer gitlink; restore the pinned kit.")
-        module_name = "_config_datadir_" + hashlib.sha256(str(self.consumer).encode()).hexdigest()
-        spec = importlib.util.spec_from_file_location(module_name, resolver)
-        if spec is None or spec.loader is None:
-            raise ConfigError("Cannot load the consumer's pinned guards resolver.")
-        self.resolver = importlib.util.module_from_spec(spec)
-        exec(compile(resolver_bytes, str(resolver), "exec"), self.resolver.__dict__)
-        for name in ("resolve_companion_root", "assert_outside_own_repo", "_own_repo_root"):
-            if not callable(getattr(self.resolver, name, None)):
-                raise ConfigError("Pinned guards resolver lacks %s; update the kit deliberately." % name)
-        # The pinned helper skips .git files, including linked consumer worktrees. Bind only
-        # this private module instance so discovery and containment share the verified consumer.
-        self.resolver._own_repo_root = lambda: str(self.consumer)
+            from fleet_guards.runtime import companion_resolver
+        except ImportError as exc:
+            raise ImportError('fleet_guards is not installed; run: pip install -e "$(git config --get fleet.guards)"') from exc
+        # Bound to this consumer's own root, so linked worktrees resolve their own companion.
+        self.resolver = companion_resolver(source_root=self.consumer)
 
     def _destination(self, value):
         root = Path(value).expanduser().resolve()
@@ -152,7 +125,7 @@ class ConfigRuntime:
         return str(root)
 
     def discover(self, override=None, initialize=False):
-        """Explicit config selections never fall through; defaults use the pinned resolver.
+        """Explicit config selections never fall through; defaults use the fleet_guards resolver.
 
         An empty selection is an error, not an absent one: `--config-dir "$ROOT"` with ROOT unset,
         or a variable exported empty, must not quietly hand the run to whichever root comes next.
@@ -169,7 +142,7 @@ class ConfigRuntime:
                 return self._destination(value), "env:%s" % variable
         root = self.resolver.resolve_companion_root(self.skill)
         if root is not None:
-            return self._destination(root), "consumer guards/tools/datadir.py"
+            return self._destination(root), "fleet_guards companion resolver"
         if initialize:
             # No home-directory default: a directory there is versioned, backed up and pushed by
             # nothing. Initialization needs a real companion or an explicit destination.

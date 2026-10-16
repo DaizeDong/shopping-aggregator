@@ -85,7 +85,7 @@ these source-selection and configuration rules:
 | `claude mcp add` two-ways procedure (with vs without key) | market-intel install-guide § Adding an MCP |
 | Verifying an install (current-session operation, authentication and content) | market-intel install-guide § Verify an install |
 | Windows-specific gotchas | market-intel install-guide § Windows-specific notes |
-| Bootstrap a private config root | `python scripts/init_config.py`, then [CONFIG.md](../../../CONFIG.md); the companion contract is [guards/COMPANION.md](../../../guards/COMPANION.md) |
+| Bootstrap a private config root | `python scripts/init_config.py`, then [CONFIG.md](../../../CONFIG.md); the companion contract is [fleet-guards COMPANION.md](https://github.com/DaizeDong/fleet-guards/blob/main/COMPANION.md) |
 | Shopping-tool categories (browser ext, mobile app, OSS) | this file ↑ |
 | Per-retailer install entry points (Amazon / Taobao / JD / etc.) | `domains/<domain>.md` |
 | Per-tool install + gotchas | `tools/<slug>.md` (slug in `tools/index.md`) |

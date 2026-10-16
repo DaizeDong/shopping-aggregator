@@ -10,7 +10,7 @@ SKILL.md prose, so they gate on schema/artifact facts, not wording.
 This file then PORTS market-intel's richer-judgement gates (REPO/GHACTIVE, STAR/DOCCOVER/STALE,
 COVER/CHURN/DELETE, CONST/METH, FRESH-future) and ADDS a DATA envelope check, conservatively:
 the baseline `python tools/verify_matrix.py` MUST stay PASS; anything uncertain is a WARN, never a
-BLOCK. Network gates (REPO/GHACTIVE/STAR) are skipped with `--no-net` for offline CI.
+BLOCK. Network gates (REPO/GHACTIVE/STAR) are skipped with `--no-net` for an offline run.
 
 Run from the repo root:  python tools/verify_matrix.py [--no-net] [--base main]
 Exit 0 = PASS · non-zero = FAIL (BLOCK). FAIL-CLOSED: any uncaught exception => FAIL, never a silent
@@ -77,17 +77,13 @@ import subprocess
 import sys
 from urllib.parse import urlsplit
 
+# Sibling modules in this tools/ directory are imported by bare name.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
-# which had already begun to drift. The insert above stays, because sibling modules in this
-# same tools/ directory are still imported by bare name.
-GUARDS_TOOLS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "guards", "tools")
-if not os.path.isfile(os.path.join(GUARDS_TOOLS, "datadir.py")):
-    raise SystemExit("Missing Guards resolver. Run git submodule update --init --recursive "
-                     "from the shopping-aggregator plugin directory.")
-sys.path.insert(0, GUARDS_TOOLS)
-from datadir import resolve_data_dir  # noqa: E402
+try:
+    from fleet_guards.runtime import companion_resolver  # noqa: E402
+except ImportError as exc:
+    raise ImportError('fleet_guards is not installed; run: pip install -e "$(git config --get fleet.guards)"') from exc
+_RESOLVER = companion_resolver(source_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS = os.path.join(ROOT, "skills")
@@ -512,11 +508,11 @@ def run_checks():
 
     # And the operator's REAL file, on a machine that has one. A corrupt private file breaks the
     # refresh loop exactly as badly as a corrupt tracked one did, and it is now the only file that
-    # actually feeds it. No data dir (fresh clone, CI) = uninitialized = correct: nothing to check.
+    # actually feeds it. No data dir (fresh clone) = uninitialized = correct: nothing to check.
     # A selection variable that is set but unusable makes the resolver fall through to another
     # candidate, which may be another person's root: block instead of checking the wrong file.
     _selection_problem = environment_problem()
-    _data_dir = None if _selection_problem else resolve_data_dir("shopping-aggregator")
+    _data_dir = None if _selection_problem else _RESOLVER.resolve_data_dir("shopping-aggregator")
     if _selection_problem:
         block("LIVERUNS", _selection_problem)
     if _data_dir is not None:

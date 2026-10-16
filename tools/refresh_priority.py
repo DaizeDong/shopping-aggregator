@@ -12,7 +12,7 @@ WHERE THE FILE LIVES (this used to be wrong, and the wrongness was the leak)
 live-runs.jsonl is DATA, not TOOL: every line is an observation from a REAL run, so the file
 accumulated which products got priced, which retailers got bought from, and which region they
 ship to. It was git-tracked in a public repo, and every content scan passed it — there is no
-email or phone in a domain slug. It now resolves from the PRIVATE data dir (guards/tools/datadir.py),
+email or phone in a domain slug. It now resolves from the PRIVATE data dir (fleet_guards companion resolver),
 and there is deliberately NO in-repo fallback: a fallback into the repo is not a convenience,
 it IS the leak. Uninitialized, this tool raises DataDirNotInitialized with instructions.
 
@@ -54,21 +54,21 @@ import json
 import os
 import sys
 
+# Sibling modules in this tools/ directory are imported by bare name.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-# datadir moved into the guards submodule: one copy for the fleet instead of one per repo,
-# which had already begun to drift. The insert above stays, because sibling modules in this
-# same tools/ directory are still imported by bare name.
-GUARDS_TOOLS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "guards", "tools")
-if not os.path.isfile(os.path.join(GUARDS_TOOLS, "datadir.py")):
-    raise SystemExit("Missing Guards resolver. Run git submodule update --init --recursive "
-                     "from the shopping-aggregator plugin directory.")
-sys.path.insert(0, GUARDS_TOOLS)
-from datadir import DataDirNotInitialized, resolve_data_dir  # noqa: E402
+try:
+    from fleet_guards.runtime import companion_resolver  # noqa: E402
+except ImportError as exc:
+    raise ImportError('fleet_guards is not installed; run: pip install -e "$(git config --get fleet.guards)"') from exc
+_RESOLVER = companion_resolver(source_root=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config_schema import loads_strict  # noqa: E402
 from config_selection import environment_problem  # noqa: E402
 
 SKILL_SLUG = "shopping-aggregator"
+
+
+class DataDirNotInitialized(RuntimeError):
+    """No private data directory resolves: an uninitialized tool, reported with instructions."""
 
 
 def _liveruns_file():
@@ -79,7 +79,7 @@ def _liveruns_file():
     problem = environment_problem()
     if problem:
         raise SystemExit("refresh_priority: " + problem)
-    d = resolve_data_dir(SKILL_SLUG)
+    d = _RESOLVER.resolve_data_dir(SKILL_SLUG)
     if d is None:
         raise DataDirNotInitialized(
             "shopping-aggregator has no private data directory, so there are no live-run\n"

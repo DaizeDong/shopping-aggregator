@@ -68,11 +68,11 @@
 或手动克隆：
 
 ```bash
-git clone --recurse-submodules https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
+git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
 ```
 
-命令行工具需要 Guards 子模块提供的解析器。如果已有克隆或插件安装缺少
-`guards/tools/datadir.py`，请在插件目录执行 `git submodule update --init --recursive`。
+命令行工具需要 `fleet_guards` 包提供的 Guards 解析器。请从本机的 fleet-guards checkout 安装：
+`pip install -e "$(git config --get fleet.guards)"`。
 随后运行 `python tools/refresh_priority.py --help` 和 `python tools/scenario_eval.py`
 检查安装；后一条命令只输出离线评估计划。
 
@@ -87,7 +87,7 @@ python scripts/init_config.py        # 找到伴生仓；没有时用 --out <dir
 python scripts/verify_config.py      # 体检：打印选中的配置根；profile 没填完就报 NOT READY
 ```
 
-查找顺序：先看 `--config-dir`（初始化时是 `--out`），再看 `$SHOPPING_AGGREGATOR_CONFIG`（别名 `$SHOPPING_AGGREGATOR_CONFIG_DIR`），最后按锁定版本的 `guards/tools/datadir.py` 找，依次是 `$SHOPPING_AGGREGATOR_DATA_DIR`、本仓旁边的 `shopping-aggregator-config/`。主目录下没有默认位置。如果还留着 `SHOPPING_AGGREGATOR_DATA_DIR`，它必须正好指向选中配置根的 `data/`，否则体检不通过。配置根必须先放进有版本管理的私有仓，才能写入真实信息。
+查找顺序：先看 `--config-dir`（初始化时是 `--out`），再看 `$SHOPPING_AGGREGATOR_CONFIG`（别名 `$SHOPPING_AGGREGATOR_CONFIG_DIR`），最后按 `fleet_guards` 解析器的顺序找，依次是 `$SHOPPING_AGGREGATOR_DATA_DIR`、本仓旁边的 `shopping-aggregator-config/`。主目录下没有默认位置。如果还留着 `SHOPPING_AGGREGATOR_DATA_DIR`，它必须正好指向选中配置根的 `data/`，否则体检不通过。配置根必须先放进有版本管理的私有仓，才能写入真实信息。
 
 切换到另一个人：把 `SHOPPING_AGGREGATOR_CONFIG` 指向这个人的配置根，或者把对方放在 `<伴生仓>/people/<id>/` 下再选中这个目录。对方的 profile、购买记录和观测记录会一起切过去，每份报告都会写明用的是哪个 `profile_id`。`--config-dir` 只对它所在的那一条 `scripts/` 命令生效，`tools/` 下的命令只认环境变量。完全没有配置也能比价，Step 1 会照旧在对话里逐项询问，只是不会替你点下单，最后一步交给你自己。
 
@@ -182,7 +182,7 @@ python scripts/verify_config.py      # 体检：打印选中的配置根；profi
   只有 E1 实读能当排名冠军，干净域名也不能把片段升级。
 - **卖家身份而非域名**, 零售商域名下挂着第三方市场卖家；盖 first-party(L1) 前必须读 `Sold by` / `Shipped by`。
 - **变体钉死**, `variant_key`（品牌|型号|配色|捆绑|成色）；不同变体 = 不同 SKU，绝不当一个比。
-- **覆盖地板**, 在场却从未查的渠道类 = 显式 `coverage_gap`，不许静默遗漏；确定性不变量由 `tools/verify_matrix.py` CI 强制。
+- **覆盖地板**, 在场却从未查的渠道类 = 显式 `coverage_gap`，不许静默遗漏；确定性不变量由手动运行的 `tools/verify_matrix.py` 检查。
 - **不准默默降级**, Keepa 没用时回退 playwright 要明确告知"历史数据缺失"。
 - **跨快照分歧不平均，重抓**, Buy Box 会换。
 - **反向搜索强制**, 假冒/DOA/欺诈关键词。

@@ -74,12 +74,11 @@ BigGo MCP, Keepa MCP, `deep-research` or `market-intel` capabilities.
 Or clone manually:
 
 ```bash
-git clone --recurse-submodules https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
+git clone https://github.com/DaizeDong/shopping-aggregator.git ~/.claude/plugins/shopping-aggregator
 ```
 
-The command-line tools require the bundled Guards resolver. If an existing clone or
-plugin installation is missing `guards/tools/datadir.py`, run
-`git submodule update --init --recursive` from the plugin directory. Then check the
+The command-line tools require the Guards resolver from the `fleet_guards` package. Install it
+from a local fleet-guards checkout with `pip install -e "$(git config --get fleet.guards)"`. Then check the
 installation with `python tools/refresh_priority.py --help` and
 `python tools/scenario_eval.py`; the latter prints an offline evaluation plan.
 
@@ -98,7 +97,7 @@ python scripts/init_config.py        # find the companion; without one, pass --o
 python scripts/verify_config.py      # doctor: prints the selected root; NOT READY until the profile is filled
 ```
 
-Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the pinned `guards/tools/datadir.py` order: `$SHOPPING_AGGREGATOR_DATA_DIR`, then a sibling `shopping-aggregator-config/` next to this repository. There is no home-directory location. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
+Discovery order: `--config-dir` (or `--out` for init), then `$SHOPPING_AGGREGATOR_CONFIG` (alias `$SHOPPING_AGGREGATOR_CONFIG_DIR`), then the `fleet_guards` resolver order: `$SHOPPING_AGGREGATOR_DATA_DIR`, then a sibling `shopping-aggregator-config/` next to this repository. There is no home-directory location. A leftover `SHOPPING_AGGREGATOR_DATA_DIR` must equal the selected root's `data/`, or the doctor fails. The root must sit in a PRIVATE versioned repository before it holds real values.
 
 To switch to another person, point `SHOPPING_AGGREGATOR_CONFIG` at their root, or keep them under `<companion>/people/<id>/` and select that directory; their profile, purchases and observations switch together, and every report names the `profile_id` it used. `--config-dir` selects a root for one `scripts/` command only, while the `tools/` commands follow only the environment variable. Without any config the skill still compares prices, asking for the same facts in Step 1, but it never submits an order itself: the final click goes to you.
 
@@ -206,7 +205,7 @@ hard rules applied during synthesis, full list in
 - **Variant pinning**, `variant_key` (brand|model|color|bundle|condition); different variant = different
   SKU, never compared as one.
 - **Coverage floor**, an in-scope channel class never checked is an explicit `coverage_gap`, not silent
-  omission; deterministic invariants are CI-enforced by `tools/verify_matrix.py`.
+  omission; deterministic invariants are enforced by `tools/verify_matrix.py`, run by hand.
 - **No silent degradation**, when Keepa is unavailable, fall-back-to-playwright is flagged.
 - **Cross-snapshot disagreement = re-fetch, don't average**, Buy Box rotates.
 - **Disconfirmation mandate**, counterfeit / DOA / fraud reverse-search.

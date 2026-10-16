@@ -39,8 +39,8 @@ retirement require separate evidence.
 ### v0.5.0, private runtime data boundary
 
 - [x] **Every path declared TOOL / FIXTURE / DATA** (`.dataclass.json`); real-run output resolves
-      from a private companion dir via the resolver (now `guards/tools/datadir.py`), with no in-repo fallback.
-- [x] **`guards/tools/data_boundary.py` wired into both hooks and CI** as the primary control, with
+      from a private companion dir via the resolver (now `fleet_guards.runtime.companion_resolver`), with no in-repo fallback.
+- [x] **fleet-guards `data_boundary.py` wired into both hooks** as the primary control, with
       `pii_guard` demoted to backstop; fixtures are generated, so a real record cannot pass.
 - [x] `reference/source-reliability.md`, the generalizable half of the removed observations,
       distilled with product, price and region stripped.
@@ -79,7 +79,7 @@ retirement require separate evidence.
 ### Earlier
 
 - [x] **Anti-regression gate (`tools/verify_matrix.py`)**, base 6 deterministic checks shipped in
-      0.3.0, CI-enforced via `.github/workflows/gate.yml` (THREEWAY · FRESH · TEMPLATE · VERSION ·
+      0.3.0, run by hand as `python tools/verify_matrix.py` (THREEWAY · FRESH · TEMPLATE · VERSION ·
       RENAME · LIVERUNS).
 - [x] **CONSTITUTION.md**, shipped in 0.2.0. Hard constraints injected at refresh-time so the
       editing subagents receive the invariants; deterministic checks enforce the clauses they cover.

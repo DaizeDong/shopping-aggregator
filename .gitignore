@@ -35,7 +35,7 @@ __pycache__/
 *.pyc
 
 # DATA class (see .dataclass.json): real-run output and real config. It lives in a config root in the
-# PRIVATE companion (CONFIG.md; found by guards/tools/datadir.py or selected with
+# PRIVATE companion (CONFIG.md; found by the fleet_guards companion resolver or selected with
 # SHOPPING_AGGREGATOR_CONFIG) and is PHYSICALLY ABSENT from this repo. The repo ships only generated
 # `.example` schemas, so a fresh clone is a usable, uninitialized tool with nothing real inside it.
 #

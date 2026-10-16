@@ -27,7 +27,7 @@
     "skills/shopping-aggregator/config/registry.example.json",
     "skills/shopping-aggregator/config/purchases.jsonl.example"
   ],
-  "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by guards/tools/datadir.py or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl, purchases.jsonl, evaluation/runs/<run-id>/ and cache/",
+  "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by the fleet_guards companion resolver or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl, purchases.jsonl, evaluation/runs/<run-id>/ and cache/",
   "data_sealed": [
     "profile.json",
     "registry.json",

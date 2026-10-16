@@ -9,7 +9,7 @@
 Ledgers live in <config root>/data/: metrics/live-runs.jsonl (what a run observed about sources)
 and purchases.jsonl (every order action taken on the buyer's instruction). The root is selected
 exactly as the doctor selects it (--config-dir, SHOPPING_AGGREGATOR_CONFIG, _CONFIG_DIR, then the
-pinned resolver), and the write is refused when the environment would send the tools/ commands to
+fleet_guards resolver), and the write is refused when the environment would send the tools/ commands to
 a different root (tools/config_selection.py). Environment variables do not survive between an
 agent's tool calls, so a run that is not about the default root passes the same --config-dir to
 every command.

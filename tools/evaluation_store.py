@@ -4,16 +4,14 @@ Runtime writes carry no PRIVATE visibility proof. The destination is decided by 
 resolution with no in-repository fallback, and a write is refused only by cheap path checks:
 the data directory must resolve and exist, sit in a versioned repository of its own outside this
 public tool tree (checked once, on that repository), and every destination must stay inside it,
-outside Git metadata and nested repositories, and free of filesystem aliases. Commit-time Guards hooks and CI keep the companion's history out of public
+outside Git metadata and nested repositories, and free of filesystem aliases. Commit-time Guards hooks keep the companion's history out of public
 remotes.
 """
 from contextlib import contextmanager
 from functools import lru_cache
-import importlib.util
 import os
 from pathlib import Path
 import stat
-import sys
 import uuid
 
 TOOL_ROOT = Path(__file__).resolve().parents[1]
@@ -25,15 +23,12 @@ class StorageError(RuntimeError):
 
 
 @lru_cache(maxsize=None)
-def _guards_module(name):
-    module_path = TOOL_ROOT / "guards/tools" / (name + ".py")
-    if not module_path.is_file():
-        raise StorageError("Initialize the guards submodule before evaluating")
-    spec = importlib.util.spec_from_file_location("shopping_" + name, module_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+def _resolver():
+    try:
+        from fleet_guards.runtime import companion_resolver
+    except ImportError as exc:
+        raise ImportError('fleet_guards is not installed; run: pip install -e "$(git config --get fleet.guards)"') from exc
+    return companion_resolver(source_root=TOOL_ROOT)
 
 
 def resolve_base():
@@ -46,7 +41,7 @@ def resolve_base():
     problem = environment_problem()
     if problem:
         raise StorageError(problem)
-    return _guards_module("datadir").resolve_data_dir(SKILL, create=False)
+    return _resolver().resolve_data_dir(SKILL, create=False)
 
 
 def _plain_path(path):

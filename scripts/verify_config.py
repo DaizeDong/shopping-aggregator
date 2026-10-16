@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Doctor for a shopping-aggregator config root: layout, registry, profile, tables and ledgers.
 
-Uses the emitted consumer identity and its pinned guards resolver, regardless of caller cwd.
+Uses the emitted consumer identity and the fleet_guards resolver, regardless of caller cwd.
 Explicit --config-dir, SHOPPING_AGGREGATOR_CONFIG and _CONFIG_DIR selections take precedence and
 never fall through. Prints exactly one "resolved via <how> -> <path>" line for the selected root.
 

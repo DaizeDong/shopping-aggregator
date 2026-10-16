@@ -11,13 +11,13 @@ A real transcript, blind prompt, raw response, and evaluation result are DATA.
 Clone a versioned PRIVATE companion, create its `data` directory, and configure
 `SHOPPING_AGGREGATOR_CONFIG` (companion root) or `SHOPPING_AGGREGATOR_DATA_DIR`
 (its data directory). Keep input transcripts inside that directory too. The
-shared `guards/tools/datadir.py` discovers storage. The evaluator runs no runtime
+shared `fleet_guards` companion resolver discovers storage. The evaluator runs no runtime
 visibility proof; it checks paths only. Storage must sit in a versioned companion repository
 of its own, outside the public tool tree. The path checks run again before transcript
 reads, output writes and atomic replacement: destinations outside the data directory,
 inside Git metadata or a nested repository, behind a filesystem alias, or in the tool tree
 fail closed. There is no public repository fallback. Keeping the companion's remotes
-PRIVATE is enforced at commit time by the Guards hooks and CI.
+PRIVATE is enforced at commit time by the Guards hooks.
 
 Run `python tools/scenario_eval.py --judge --scenario ID --transcript PATH` only
 when submitting that transcript to the configured model service is authorized.
