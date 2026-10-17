@@ -34,6 +34,7 @@ identity. This declared marker supports discovery only.
   people/<id>/                   another person's complete root, same layout
   tools/<slug>/                  required directory; per-tool templates (env.template, claude.json.template)
   secrets/                       required directory; credentials, ignored by default
+    billing-address.json         optional; the card's billing address for checkout automation outside this skill
 ```
 
 Settings sit at the root and everything a run produces sits under `data/`. `people/<id>/` is a complete root of its own: selecting it moves the profile and both ledgers, and the evaluation runs and the cache too when it is selected through the environment (see Switching). Apart from an optional `.companion` ownership marker and the generated READMEs, nothing else belongs in a root.
@@ -160,6 +161,8 @@ When a field becomes required after rows were written without it, the old rows a
 A profile says where a person lives and what they pay for, so the root belongs in a PRIVATE companion repository. The doctor checks the part a path can show: the root sits in a versioned repository of its own, outside this tool repository; a root that is not is NOT READY even when every field is right. Nothing at runtime queries remote visibility; the commit-time Guards hooks keep real data out of public remotes. The public tool repository never holds a real root: `.dataclass.json` seals the config-root names (`profile.json`, `registry.json`, `people/`, `data/`, `reference/`, `secrets/`, `row.json`) at this repository's root and declares a real-file twin next to every example, and fleet-guards `data_boundary.py` blocks them on commit and push. Below the root, `verify_matrix` (CONFIGROOT, run in CI) refuses any tracked file named `profile.json`, `purchases.jsonl`, `row.json` or `forwarder-<name>.json`, and anything under a `people/` directory.
 
 Generated ignore rules exclude `secrets/*` and credential files from accidental staging, and nothing under `data/`, because an ignored path under `data/` would never reach the companion's history; the doctor checks both, probing every path the writers create and every existing file under `data/`. Keep credentials out of version control with a separate backup, or deliberately track selected ones in the PRIVATE companion; an ignore rule does not stop an explicit `git add`. A credential committed there stays in that history, so rotating it means replacing the credential itself. No tool here echoes a secret value.
+
+`secrets/billing-address.json` is the one non-credential file under `secrets/`, tracked deliberately in the PRIVATE companion. It is a JSON object with the closed set of string fields `first`, `last`, `street1`, `street2`, `city`, `state`, `zip`, `country` and `phone`: the address the payment card is registered at, which is not necessarily the ship-to. No script of this skill reads it. Its reader is a separate checkout tool (gpu-stock-monitor `astral5090-autocart.py`), which finds the root through `SHOPPING_AGGREGATOR_CONFIG` only and stops when the variable or the file is missing. A profile never holds this address (see What a profile never holds).
 
 ## First-time setup
 
