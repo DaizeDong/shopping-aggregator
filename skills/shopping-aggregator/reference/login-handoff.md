@@ -59,9 +59,8 @@ Applies when an **in-scope** channel class resolves to S2 and the operator is pr
    control that now returns results confirms the session is live; a control that still returns zero
    means the login did not take (wrong account, marketplace-ineligible account, region block) and
    the channel is S3 after all. Say which.
-7. **Export and absorb before reading.** Unconditionally export the complete context, including
-   IndexedDB, to private staging; run the installed session-store absorber and check success.
-   Then perform the scoped reads. Follow the persistence procedure below.
+7. **Confirm the login was saved before reading.** Follow the persistence procedure below, then
+   perform the scoped reads.
 
 ## Hard rules
 
@@ -103,19 +102,16 @@ re-interrupts them for the same login. That is the single most wasteful outcome 
 **Therefore: immediately after the resume control query passes, export the session state.** Before
 reading prices, not after: the read can fail, the export must not be what you lose.
 
-- Export the entire context with `context.storageState({ path: incomingPath, indexedDB: true })`.
-  Do this unconditionally after the control query succeeds and before scoped reads. Include all
-  cookies, origins and IndexedDB state; do not filter to the site just used or try to infer whether
-  a new login occurred. If the installed browser cannot export IndexedDB, repair that capability
-  before claiming persistence succeeded.
-- `incomingPath` must be a unique file in the operator's configured private incoming directory.
-  Never write directly over the shared seed. Run the installed `pw-auth.py absorb` helper after
-  export and verify its exit status. The absorber merges the full context into the per-site stores
-  and rebuilds the union seed. Check domains and counts only; an unabsorbed file is still pending.
-- Keep staging, site stores and the union seed outside every public worktree. Retain the durable
-  stores in the operator's authorized, verified PRIVATE versioned configuration backup. A missing
-  private destination or failed absorption is a persistence failure, not permission to write into
-  this skill repository. Cookies and IndexedDB may contain bearer credentials.
+- When the operator's browser launcher saves sessions automatically (a session launcher whose
+  hook writes the context's cookies back to a private store after navigation and on close), the
+  login is persisted by the navigation of the control query. Confirm it by the store's per-site
+  cookie count, never by printing values.
+- Otherwise save explicitly through the operator's installed session-store helper, passing the
+  context's full storage state and the state it was seeded with, and check its exit status. Never
+  write over the store files directly.
+- Keep the session store outside every public worktree, in the operator's PRIVATE versioned
+  storage. A missing private destination or a failed save is a persistence failure, not permission
+  to write into this skill repository. Cookies are bearer credentials.
 - **Never print cookie values.** Report domains and counts only (CONSTITUTION V.4).
 - Treat an existing session file as a **capability, not a fact**: it may be stale. Validate with the
   control query before trusting a read, same as a fresh login. Expiry metadata is a poor proxy,
