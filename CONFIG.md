@@ -32,7 +32,8 @@ identity. This declared marker supports discovery only.
     evaluation/runs/<run-id>/    scenario-eval transcripts and results
     cache/                       rebuildable, and versioned too: an ignored path would never reach the companion history
   people/<id>/                   another person's complete root, same layout
-  tools/<slug>/                  required directory; per-tool templates (env.template, claude.json.template)
+  tools/<slug>/                  required directory; per-tool templates (env.template, claude.json.template), or the
+                                 machine-bound runner script a python-lib registry entry with that slug names
   secrets/                       required directory; credentials, ignored by default
     billing-address.json         optional; the card's billing address for checkout automation outside this skill
 ```
