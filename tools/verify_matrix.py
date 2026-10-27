@@ -516,8 +516,11 @@ def run_checks():
     if _selection_problem:
         block("LIVERUNS", _selection_problem)
     if _data_dir is not None:
-        _check_liveruns(os.path.join(str(_data_dir), "metrics", "live-runs.jsonl"),
-                        "<private data dir>/metrics/live-runs.jsonl", required=False)
+        _lanes = os.path.join(str(_data_dir), "metrics", "live-runs.jsonl.d")
+        for _lane in sorted(os.listdir(_lanes)) if os.path.isdir(_lanes) else []:
+            if _lane.endswith(".jsonl"):
+                _check_liveruns(os.path.join(_lanes, _lane),
+                                f"<private data dir>/metrics/live-runs.jsonl.d/{_lane}", required=False)
 
     # ================================================================= PORTED CHECKS (market-intel)
     # ---- gather domain shard text + the full corpus repos can hide in ----

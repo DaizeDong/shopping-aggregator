@@ -6,8 +6,10 @@
     python scripts/ledger.py append live-runs --row '{"domain": ...}'   (POSIX shells only)
     python scripts/ledger.py check [live-runs|purchases|all] [--config-dir <root>]
 
-Ledgers live in <config root>/data/: metrics/live-runs.jsonl (what a run observed about sources)
-and purchases.jsonl (every order action taken on the buyer's instruction). The root is selected
+Ledgers live in <config root>/data/: metrics/live-runs.jsonl.d/ (what a run observed about sources)
+and purchases.jsonl.d/ (every order action taken on the buyer's instruction). Each is a directory
+of per-machine lanes: a write appends to <ledger>.d/<CLAUDE_MACHINE_ID>.jsonl (an unset id refuses
+the write; there is no default lane) and check reads every lane. The root is selected
 exactly as the doctor selects it (--config-dir, SHOPPING_AGGREGATOR_CONFIG, then the
 fleet_guards resolver), and the write is refused when the environment would send the tools/ commands to
 a different root (tools/config_selection.py). Environment variables do not survive between an
@@ -38,6 +40,7 @@ import sys
 import time
 
 from config_runtime import ConfigRuntime
+from machine_role import machine_id
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "tools"))
@@ -47,8 +50,8 @@ from config_selection import environment_problem, selection_checks  # noqa: E402
 from evaluation_store import StorageError, prepare_store  # noqa: E402
 
 LEDGERS = {
-    "live-runs": (Path("metrics") / "live-runs.jsonl", live_run_problems),
-    "purchases": (Path("purchases.jsonl"), purchase_problems),
+    "live-runs": (Path("metrics") / "live-runs.jsonl.d", live_run_problems),
+    "purchases": (Path("purchases.jsonl.d"), purchase_problems),
 }
 LINE_BREAKS = {" ": "\\u2028", " ": "\\u2029", "\u0085": "\\u0085"}
 
@@ -205,7 +208,7 @@ def encode_row(row):
 
 
 def append(kind, row, config_dir):
-    relative, validate = LEDGERS[kind]
+    lanes, validate = LEDGERS[kind]
     row = dict(row)
     if row.get("ts") is None or row.get("ts") == "":
         row["ts"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -216,6 +219,7 @@ def append(kind, row, config_dir):
     if kind == "purchases" and row["profile_id"] != root_profile_id(root):
         raise Refused("the row's profile_id is not the selected root's; select that person's root "
                       "with --config-dir")
+    relative = lanes / (machine_id() + ".jsonl")
     store = prepare_store(base=checked_data_dir(root, how, runtime))
     target = store.output_path(relative)
     with LedgerLock(target, git_dir_of(root)):
@@ -238,37 +242,43 @@ def check(kind, config_dir):
         profile_id = None
     failed = 0
     for name in (LEDGERS if kind == "all" else [kind]):
-        relative, validate = LEDGERS[name]
-        path = root / "data" / relative
-        if not path.is_file():
+        lanes, validate = LEDGERS[name]
+        paths = sorted((root / "data" / lanes).glob("*.jsonl"))
+        if not paths:
             print("  [SKIP] %s: no ledger yet" % name)
             continue
-        rows = bad = 0
-        try:
-            text = path.read_bytes().decode("utf-8")
-        except (OSError, UnicodeDecodeError):
-            print("  [FAIL] %s: unreadable or not UTF-8" % name)
-            failed += 1
-            continue
-        for number, line in enumerate(text.split("\n"), 1):
-            if not line.strip():
-                continue
-            rows += 1
-            try:
-                row = loads_strict(line)
-                problems = [p for p in validate(row) if len(p) == 2 or p[0] == "block"]
-            except (ValueError, RecursionError):
-                row, problems = None, [("row", "invalid JSON")]
-            if name == "purchases" and isinstance(row, dict) and (profile_id is None
-                                                                   or row.get("profile_id") != profile_id):
-                problems.append(("profile_id", "belongs to another config root" if profile_id else
-                                 "ownership cannot be checked without a valid profile_id in profile.json"))
-            for problem in problems:
-                print("  [FAIL] %s line %d %s: %s" % (name, number, problem[-2], problem[-1]))
-            bad += bool(problems)
-        print("  [%s] %s: %d rows, %d invalid" % ("PASS" if not bad else "FAIL", name, rows, bad))
-        failed += bad
+        for path in paths:
+            failed += check_lane(name, path, validate, profile_id)
     return 1 if failed else 0
+
+
+def check_lane(name, path, validate, profile_id):
+    """Check one machine's lane; returns the number of invalid rows (1 when unreadable)."""
+    label = "%s[%s]" % (name, path.stem)
+    rows = bad = 0
+    try:
+        text = path.read_bytes().decode("utf-8")
+    except (OSError, UnicodeDecodeError):
+        print("  [FAIL] %s: unreadable or not UTF-8" % label)
+        return 1
+    for number, line in enumerate(text.split("\n"), 1):
+        if not line.strip():
+            continue
+        rows += 1
+        try:
+            row = loads_strict(line)
+            problems = [p for p in validate(row) if len(p) == 2 or p[0] == "block"]
+        except (ValueError, RecursionError):
+            row, problems = None, [("row", "invalid JSON")]
+        if name == "purchases" and isinstance(row, dict) and (profile_id is None
+                                                               or row.get("profile_id") != profile_id):
+            problems.append(("profile_id", "belongs to another config root" if profile_id else
+                             "ownership cannot be checked without a valid profile_id in profile.json"))
+        for problem in problems:
+            print("  [FAIL] %s line %d %s: %s" % (label, number, problem[-2], problem[-1]))
+        bad += bool(problems)
+    print("  [%s] %s: %d rows, %d invalid" % ("PASS" if not bad else "FAIL", label, rows, bad))
+    return bad
 
 
 def main():

@@ -45,6 +45,7 @@ __pycache__/
 # slug. The leak was never a bad regex, it was a pipe pointing at a public repo.
 skills/shopping-aggregator/metrics/live-runs.jsonl
 skills/shopping-aggregator/metrics/gh-api-cache.json
+skills/shopping-aggregator/metrics/live-runs.jsonl.d/
 !skills/shopping-aggregator/metrics/*.example
 
 # A config root's files, if one were ever created or copied in here. CONFIG.md, Storage.
@@ -61,6 +62,7 @@ purchases.jsonl
 skills/shopping-aggregator/config/profile.json
 skills/shopping-aggregator/config/registry.json
 skills/shopping-aggregator/config/purchases.jsonl
+skills/shopping-aggregator/config/purchases.jsonl.d/
 skills/shopping-aggregator/config/forwarder-table.json
 
 # Evaluation DATA belongs only in the versioned PRIVATE companion.

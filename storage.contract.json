@@ -5,13 +5,13 @@
   "protected_paths": [
     "profile.json",
     "registry.json",
-    "data/purchases.jsonl",
-    "data/metrics/live-runs.jsonl",
+    "data/purchases.jsonl.d/*.jsonl",
+    "data/metrics/live-runs.jsonl.d/*.jsonl",
     "data/metrics/live-runs.legacy.jsonl",
     "people/*/profile.json",
     "people/*/registry.json",
-    "people/*/data/purchases.jsonl",
-    "people/*/data/metrics/live-runs.jsonl",
+    "people/*/data/purchases.jsonl.d/*.jsonl",
+    "people/*/data/metrics/live-runs.jsonl.d/*.jsonl",
     "people/*/data/metrics/live-runs.legacy.jsonl"
   ],
   "artifacts": [
@@ -121,7 +121,7 @@
     },
     {
       "artifact_id": "observations",
-      "path_pattern": "data/metrics/live-runs.jsonl",
+      "path_pattern": "data/metrics/live-runs.jsonl.d/*.jsonl",
       "purpose": "Current owner configuration, reference inputs or append-only observations.",
       "schema": "CONFIG.md",
       "producer": "Producer documented by CONFIG.md",
@@ -134,7 +134,7 @@
     },
     {
       "artifact_id": "purchases",
-      "path_pattern": "data/purchases.jsonl",
+      "path_pattern": "data/purchases.jsonl.d/*.jsonl",
       "purpose": "Current owner configuration, reference inputs or append-only observations.",
       "schema": "CONFIG.md",
       "producer": "Producer documented by CONFIG.md",
@@ -316,7 +316,7 @@
     },
     {
       "artifact_id": "person-observations",
-      "path_pattern": "people/*/data/metrics/live-runs.jsonl",
+      "path_pattern": "people/*/data/metrics/live-runs.jsonl.d/*.jsonl",
       "purpose": "Current owner configuration, reference inputs or append-only observations.",
       "schema": "CONFIG.md",
       "producer": "Producer documented by CONFIG.md",
@@ -329,7 +329,7 @@
     },
     {
       "artifact_id": "person-purchases",
-      "path_pattern": "people/*/data/purchases.jsonl",
+      "path_pattern": "people/*/data/purchases.jsonl.d/*.jsonl",
       "purpose": "Current owner configuration, reference inputs or append-only observations.",
       "schema": "CONFIG.md",
       "producer": "Producer documented by CONFIG.md",

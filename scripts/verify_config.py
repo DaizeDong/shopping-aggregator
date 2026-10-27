@@ -34,7 +34,8 @@ PASS, FAIL = "PASS", "FAIL"
 LOAD_ERRORS = (OSError, ValueError, RecursionError)
 # Every path the writers create under data/. An ignored path under data/ would never reach the
 # companion's history, so one ignore rule that matches any of these silently drops that writer's output.
-DATA_PROBES = ("data/metrics/live-runs.jsonl", "data/metrics/live-runs.legacy.jsonl", "data/purchases.jsonl",
+DATA_PROBES = ("data/metrics/live-runs.jsonl.d/node-a.jsonl", "data/metrics/live-runs.legacy.jsonl",
+               "data/purchases.jsonl.d/node-a.jsonl",
                "data/evaluation/runs/probe/result.json", "data/cache/gh-api-cache.json")
 
 
@@ -219,10 +220,14 @@ def doctor(cfg, skill, check):
           "%d path(s) ignored; remove the rule, data/ is versioned" % len(ignored))
 
     data_dir = os.path.join(cfg, "data")
-    check_ledger(os.path.join(data_dir, "metrics", "live-runs.jsonl"), "data/metrics/live-runs.jsonl",
-                 live_run_problems, check)
-    check_ledger(os.path.join(data_dir, "purchases.jsonl"), "data/purchases.jsonl",
-                 purchase_problems, check, profile_id=profile_id, owned=True)
+    # Each ledger is a directory of per-machine lanes (<ledger>.d/<machine id>.jsonl); check every lane.
+    for lanes, validate, owned in (("metrics/live-runs.jsonl.d", live_run_problems, False),
+                                   ("purchases.jsonl.d", purchase_problems, True)):
+        directory = os.path.join(data_dir, *lanes.split("/"))
+        for name in sorted(os.listdir(directory)) if os.path.isdir(directory) else []:
+            if name.endswith(".jsonl"):
+                check_ledger(os.path.join(directory, name), "data/%s/%s" % (lanes, name), validate, check,
+                             profile_id=profile_id, owned=owned)
     return profile_id
 
 

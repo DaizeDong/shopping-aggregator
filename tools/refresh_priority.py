@@ -72,7 +72,7 @@ class DataDirNotInitialized(RuntimeError):
 
 
 def _liveruns_file():
-    """The private live-runs.jsonl. Never a path inside the repo — see the module docstring."""
+    """The private live-runs.jsonl.d/ lane directory; never a path inside the repo (see the module docstring)."""
     # A selection variable that is set but unusable would make the resolver fall through to the
     # next candidate, possibly another person's root. That is a misconfiguration, not an
     # uninitialized tool, so it stops the run instead of ranking someone else's observations.
@@ -91,7 +91,7 @@ def _liveruns_file():
             "The shape you are expected to produce is published in the repo as\n"
             "skills/shopping-aggregator/metrics/live-runs.jsonl.example."
         )
-    return os.path.join(str(d), "metrics", "live-runs.jsonl")
+    return os.path.join(str(d), "metrics", "live-runs.jsonl.d")
 
 
 class _LazyPath:
@@ -138,7 +138,12 @@ GAP_REASONS = frozenset({
 
 
 def load_records(path):
-    """Read numbered records, rejecting bad JSON or untyped coverage gaps."""
+    """Read numbered records, rejecting bad JSON or untyped coverage gaps.
+
+    A directory is a set of per-machine lanes (`<machine id>.jsonl`); every lane is read."""
+    if os.path.isdir(path):
+        return [record for name in sorted(os.listdir(path)) if name.endswith(".jsonl")
+                for record in load_records(os.path.join(path, name))]
     try:
         with open(path, "r", encoding="utf-8") as fh:
             raw = fh.read()
@@ -258,7 +263,8 @@ def main(argv=None):
         description="Rank shopping sources by refresh priority from live-runs.jsonl."
     )
     ap.add_argument("--file", default=DEFAULT_LIVERUNS,
-                    help="Path to live-runs.jsonl (default: the PRIVATE data dir's copy — "
+                    help="A live-runs JSONL file or a lane directory (default: the PRIVATE data dir's "
+                         "metrics/live-runs.jsonl.d/, every machine's lane merged; "
                          "real-run output never lives in the repo).")
     ap.add_argument("--by", choices=("source", "domain"), default="source",
                     help="Aggregate by source (default) or by domain.")

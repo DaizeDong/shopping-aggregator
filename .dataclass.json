@@ -8,10 +8,12 @@
   ],
   "data": [
     "skills/shopping-aggregator/metrics/live-runs.jsonl",
+    "skills/shopping-aggregator/metrics/live-runs.jsonl.d/",
     "skills/shopping-aggregator/metrics/gh-api-cache.json",
     "skills/shopping-aggregator/config/profile.json",
     "skills/shopping-aggregator/config/registry.json",
     "skills/shopping-aggregator/config/purchases.jsonl",
+    "skills/shopping-aggregator/config/purchases.jsonl.d/",
     "skills/shopping-aggregator/config/forwarder-table.json",
     "cache/",
     "evaluation/",
@@ -27,7 +29,7 @@
     "skills/shopping-aggregator/config/registry.json.example",
     "skills/shopping-aggregator/config/purchases.jsonl.example"
   ],
-  "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by the fleet_guards companion resolver or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl, purchases.jsonl, evaluation/runs/<run-id>/ and cache/",
+  "_data_home": "A config root (CONFIG.md) in the verified PRIVATE companion, resolved by the fleet_guards companion resolver or selected with SHOPPING_AGGREGATOR_CONFIG / --config-dir; run DATA goes to <root>/data: metrics/live-runs.jsonl.d/ and purchases.jsonl.d/ (one <CLAUDE_MACHINE_ID>.jsonl lane per machine, for example node-a.jsonl), evaluation/runs/<run-id>/ and cache/",
   "data_sealed": [
     "profile.json",
     "registry.json",

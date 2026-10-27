@@ -4,6 +4,8 @@
 
 ### Changed
 
+- The two run ledgers are split into one lane per machine: `scripts/ledger.py` appends to `data/metrics/live-runs.jsonl.d/<CLAUDE_MACHINE_ID>.jsonl` and `data/purchases.jsonl.d/<CLAUDE_MACHINE_ID>.jsonl` (for example `node-a.jsonl`) and refuses when the id is unset; `ledger.py check`, `scripts/verify_config.py`, `tools/refresh_priority.py` and `tools/verify_matrix.py` read every lane. `scripts/machine_role.py` reads the id from the process environment and `HKCU\Environment`.
+- SKILL.md and CONFIG.md: run `git -C <companion> pull --rebase` before editing `profile.json`, then commit and push.
 - The config examples are now `profile.json.example`, `registry.json.example` and `forwarder-table.json.example` (were `*.example.json`), the one `<file>.example` spelling the fleet_guards schema check accepts.
 
 ### Removed

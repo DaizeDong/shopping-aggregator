@@ -55,7 +55,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   the ranking, the verifier MUST independently confirm not just price + stock + timestamp but also the
   **seller** (read the Sold-by / Shipped-by field, consistent with seller_tier) and the
   **evidence_grade** (a real PDP / API read, not a snippet). `[S]`
-- **II.5** Live-run observations MUST be appended to the **private** `data/metrics/live-runs.jsonl` of the selected config root (CONFIG.md) through `scripts/ledger.py`, which resolves the root with the `fleet_guards` companion resolver and refuses any destination outside that root's companion `data/` before writing, and **MUST NOT** be written into this repo, which is public. If no root resolves (the skill is uninitialized) or the write is refused, the run MUST instead note the observations in its reply. Dropping the observations entirely, neither appended nor reported, is a bug (refresh-protocol depends on them). `[S]`
+- **II.5** Live-run observations MUST be appended to the **private** `data/metrics/live-runs.jsonl.d/<machine id>.jsonl` lane of the selected config root (CONFIG.md) through `scripts/ledger.py`, which resolves the root with the `fleet_guards` companion resolver and refuses any destination outside that root's companion `data/` before writing, and **MUST NOT** be written into this repo, which is public. If no root resolves (the skill is uninitialized) or the write is refused, the run MUST instead note the observations in its reply. Dropping the observations entirely, neither appended nor reported, is a bug (refresh-protocol depends on them). `[S]`
 - **II.5a** An observation is DATA: it records what a real person priced, which retailer they bought
   from, and where it ships. It has **no in-repo fallback path**, by construction, a fallback into
   the repo is not a convenience, it is the leak. The repo publishes only the shape
@@ -63,7 +63,7 @@ file is *what*. Violating any item below is a bug in the change, not a trade-off
   SOURCE or a RETAILER CLASS that holds regardless of who is shopping or for what, MAY be distilled
   into `reference/source-reliability.md`, stripped of product, price, and region. If the lesson
   cannot be stated without naming what was bought, it is not yet a lesson and stays private. `[S]`
-- **II.5b** Every order action taken on instruction (placed, cancelled, replaced, returned) MUST be appended to the selected root's private `data/purchases.jsonl` through `scripts/ledger.py`, carrying that root's `profile_id`; a row for another profile is refused, so one person's order cannot land in another person's ledger. A refused write is reported in the reply, under the same no-fallback rule as II.5a. `[S]`
+- **II.5b** Every order action taken on instruction (placed, cancelled, replaced, returned) MUST be appended to the selected root's private `data/purchases.jsonl.d/<machine id>.jsonl` lane through `scripts/ledger.py`, carrying that root's `profile_id`; a row for another profile is refused, so one person's order cannot land in another person's ledger. A refused write is reported in the reply, under the same no-fallback rule as II.5a. `[S]`
 - **II.6** A channel that is **session-gated** (loads, but needs a login the operator could supply)
   MUST NOT be recorded as unreachable until the operator has been asked and has declined or is
   absent. The ask is a **blocking handoff**: open the login page, stop emitting tool calls against
